@@ -297,6 +297,7 @@ export default function App() {
               compositionData={compositionData}
               onSelect={(dept) => setActiveId(dept.id)}
               masterData={masterData}
+              parameterRanges={parameterRanges}
             />
           ) : activeDept && allowedDepartments.some(d => d.id === activeId) ? (
             activeId === 'rm' ? (
