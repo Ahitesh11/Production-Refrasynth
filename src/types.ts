@@ -277,6 +277,9 @@ export const DEPARTMENTS: Department[] = [
     category: 'Process',
     fields: [
       { name: 'unique_no', label: 'Unique No.', type: 'text' },
+      { name: 'party_name', label: 'Party Name', type: 'text' },
+      { name: 'truck_no', label: 'Truck No.', type: 'text' },
+      { name: 'invoice_no', label: 'Invoice No.', type: 'text' },
       { name: 'rm_name', label: 'Raw Material Name', type: 'select', options: [] },
       { name: 'truck_qty', label: 'Truck Qty', type: 'number' },
       { name: 'chemist_name', label: 'Name of Chemist', type: 'text' },

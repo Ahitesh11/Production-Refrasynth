@@ -55,6 +55,9 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
 
     const headerMapping: Record<string, string> = {
         unique_no: 'Unique No.',
+        party_name: 'Party Name',
+        truck_no: 'Truck No.',
+        invoice_no: 'Invoice No.',
         rm_name: 'Raw Material Name',
         truck_qty: 'Truck Qty',
         chemist_name: 'Name of Chemist',
@@ -98,7 +101,8 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
 
         // Fields in exact order for the sheet (excluding Timestamp)
         const fieldsOrder = [
-            'unique_no', 'rm_name', 'truck_qty', 'chemist_name', 'date_of_testing',
+            'unique_no', 'party_name', 'truck_no', 'invoice_no', 'rm_name', 
+            'truck_qty', 'chemist_name', 'date_of_testing',
             'planned', 'actual', 'delay', 'ad', 'bd', 'fineness', 'loi', 'moisture',
             'remarks_physical', 'planned1', 'actual1', 'delay1', 'al2o3', 'fe2o3',
             'sio2', 'mgo', 'tio2', 'cao', 'remarks_chemical'
@@ -273,7 +277,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                         <DepartmentForm
                             department={{
                                 ...department,
-                                fields: department.fields.filter(f => ['rm_name', 'truck_qty', 'chemist_name', 'date_of_testing'].includes(f.name))
+                                fields: department.fields.filter(f => ['party_name', 'truck_no', 'invoice_no', 'rm_name', 'truck_qty', 'chemist_name', 'date_of_testing'].includes(f.name))
                             }}
                             onClose={() => { }}
                             onSuccess={async (submittedData) => {
@@ -292,7 +296,8 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                 setActiveTab('step1');
 
                                 const fieldsOrder = [
-                                    'unique_no', 'rm_name', 'truck_qty', 'chemist_name', 'date_of_testing',
+                                    'unique_no', 'party_name', 'truck_no', 'invoice_no', 'rm_name', 
+                                    'truck_qty', 'chemist_name', 'date_of_testing',
                                     'planned', 'actual', 'delay', 'ad', 'bd', 'fineness', 'loi', 'moisture',
                                     'remarks_physical', 'planned1', 'actual1', 'delay1', 'al2o3', 'fe2o3',
                                     'sio2', 'mgo', 'tio2', 'cao', 'remarks_chemical'
@@ -340,16 +345,25 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                             <>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Timestamp</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 left-0 bg-zinc-50 z-30 border-b border-zinc-200">Unique No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Party Name</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Truck No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Invoice No.</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">RM Name</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Truck Qty</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Chemist</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Testing Date</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Planned (Phy)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Actual (Phy)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Delay (Phy)</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">AD</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">BD</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fineness</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Loi</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Moisture</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Phy Remarks</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Planned (Chem)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Actual (Chem)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Delay (Chem)</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Al2O3</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fe2O3</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">SiO2</th>
@@ -362,6 +376,9 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                         ) : (
                                             <>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 left-0 bg-zinc-50 z-30 border-b border-zinc-200">Unique No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Party Name</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Truck No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Invoice No.</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">RM Name</th>
                                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Testing Date</th>
                                                 {activeTab === 'step1' ? (
@@ -402,7 +419,10 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                         sortedEntries
                                             .filter(e => {
                                                 const matchesSearch = getData(e, 'unique_no').toLowerCase().includes(searchTerm.toLowerCase()) || 
-                                                                    getData(e, 'rm_name').toLowerCase().includes(searchTerm.toLowerCase());
+                                                                    getData(e, 'rm_name').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                                    getData(e, 'party_name').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                                    getData(e, 'truck_no').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                                                    getData(e, 'invoice_no').toLowerCase().includes(searchTerm.toLowerCase());
                                                 if (!matchesSearch) return false;
 
                                                 if (activeTab === 'step1') return getData(e, 'planned') && !getData(e, 'ad');
@@ -416,10 +436,16 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                         <>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{entry.timestamp}</td>
                                                             <td className="px-6 py-4 text-xs font-bold text-zinc-900 sticky left-0 bg-white group-hover:bg-zinc-50 transition-colors z-10">{getData(entry, 'unique_no')}</td>
+                                                            <td className="px-6 py-4 text-xs text-zinc-600">{getData(entry, 'party_name')}</td>
+                                                            <td className="px-6 py-4 text-xs text-zinc-600">{getData(entry, 'truck_no')}</td>
+                                                            <td className="px-6 py-4 text-xs text-zinc-600">{getData(entry, 'invoice_no')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-600 font-medium">{getData(entry, 'rm_name')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'truck_qty')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'chemist_name')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'date_of_testing')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-blue-600 font-bold">{getData(entry, 'planned')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-zinc-500">{getData(entry, 'actual')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-zinc-500">{getData(entry, 'delay')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'ad')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'bd')}</td>
                                                             <td className={cn(
@@ -429,6 +455,9 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'loi')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'moisture')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-400 italic max-w-[150px] truncate">{getData(entry, 'remarks_physical')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-purple-600 font-bold">{getData(entry, 'planned1')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-zinc-500">{getData(entry, 'actual1')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-zinc-500">{getData(entry, 'delay1')}</td>
                                                             <td className="px-6 py-4 text-xs font-bold text-zinc-900">{getData(entry, 'al2o3')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'fe2o3')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'sio2')}</td>
@@ -446,6 +475,9 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                     ) : (
                                                         <>
                                                             <td className="px-6 py-4 text-xs font-bold text-zinc-900 sticky left-0 bg-white group-hover:bg-zinc-50 transition-colors z-10">{getData(entry, 'unique_no')}</td>
+                                                            <td className="px-6 py-4 text-xs text-zinc-600">{getData(entry, 'party_name')}</td>
+                                                            <td className="px-6 py-4 text-xs text-zinc-600 font-medium">{getData(entry, 'truck_no')}</td>
+                                                            <td className="px-6 py-4 text-xs text-zinc-600 font-medium">{getData(entry, 'invoice_no')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-600 font-medium">{getData(entry, 'rm_name')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'date_of_testing')}</td>
                                                             {activeTab === 'step1' ? (

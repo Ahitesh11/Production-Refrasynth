@@ -281,48 +281,55 @@ function doPost(e) {
           }
         }
       } else if (values) {
-        // Full Update (but preserve formulas if entry is empty in values)
-        var existingRow = sheet.getRange(rowIndex, 1, 1, headers.length).getValues()[0];
-        var finalValues = values.map(function (val, idx) {
-          var colHeader = headers[idx];
+        // --- Full Update (Smart & Safe) ---
+        var rowRange = sheet.getRange(rowIndex, 1, 1, headers.length);
+        var existingValues = rowRange.getValues()[0];
+        var existingFormulas = rowRange.getFormulas()[0];
 
-          // Robust Formula Preservation for RM Sheet
-          if (sheetName === "RM" && (colHeader === "Planned" || colHeader === "Planned1")) {
-            // NEVER overwrite these if they might be formulas
-            return existingRow[idx];
-          }
+        for (var k = 0; k < values.length; k++) {
+          var newVal = values[k];
+          var colHeader = headers[k];
 
-          if ((val === "" || val === null) && existingRow[idx] !== "") {
-            return existingRow[idx];
+          // 1. Skip if no new data from app
+          if (newVal === "" || newVal === null) continue;
+
+          // 2. NEVER overwrite a formula string
+          if (existingFormulas[k]) continue;
+
+          // 3. Special Protection for RM "Calculated" columns
+          // If sheet already has data here, and it's a known formula column, leave it alone.
+          var isProtected = (sheetName === "RM" && 
+            ["Planned", "Planned1", "Delay", "Delay1"].indexOf(colHeader) > -1);
+          
+          if (isProtected && existingValues[k] !== "") continue;
+
+          // 4. Update only if value is different
+          if (String(newVal) !== String(existingValues[k])) {
+            sheet.getRange(rowIndex, k + 1).setValue(newVal);
           }
-          return val;
-        });
-        sheet.getRange(rowIndex, 1, 1, finalValues.length).setValues([finalValues]);
+        }
       }
     } else {
-      // Create New
-      if (partialData) {
-        var newRow = new Array(headers.length).fill("");
-        newRow[0] = data.entryId || new Date();
-        for (var key in partialData) {
-          var colIdx = headers.indexOf(key);
-          if (colIdx > -1) newRow[colIdx] = partialData[key];
+      // --- Create New Row (Smart & Safe) ---
+      var newRowIdx = sheet.getLastRow() + 1;
+      
+      // If the sheet looks empty, use row 2 (after headers)
+      if (newRowIdx < 2) newRowIdx = 2;
+
+      for (var k = 0; k < values.length; k++) {
+        var val = values[k];
+        var colHeader = headers[k];
+
+        // 1. Skip writing empty strings to let sheet formulas (e.g. ArrayFormula) breathe
+        if (val === "" || val === null) continue;
+
+        // 2. Don't write to Planned columns in RM initial creation 
+        // (This allows your formulas to initialize automatically)
+        if (sheetName === "RM" && (colHeader === "Planned" || colHeader === "Planned1" || colHeader === "Delay" || colHeader === "Delay1")) {
+          continue;
         }
-        sheet.appendRow(newRow);
-      } else if (values) {
-        // Create New
-        if (sheetName === "RM") {
-          var newRowIdx = sheet.getLastRow() + 1;
-          for (var k = 0; k < values.length; k++) {
-            var colHeader = headers[k];
-            // Skip writing to formula columns entirely to let GS drag them down or keep them empty/initialized
-            if (colHeader !== "Planned" && colHeader !== "Planned1") {
-              sheet.getRange(newRowIdx, k + 1).setValue(values[k]);
-            }
-          }
-        } else {
-          sheet.appendRow(values);
-        }
+
+        sheet.getRange(newRowIdx, k + 1).setValue(val);
       }
     }
 
@@ -387,7 +394,7 @@ function getHeadersForDepartment(name) {
       ];
       break;
     case "RM":
-      midHeaders = ["Unique No.", "Raw Material Name", "Truck Qty", "Name of Chemist", "Date Of Testing", "Planned", "Actual", "Delay", "AD", "BD", "Fineness", "Loi", "Moisture", "Remarks", "Planned1", "Actual1", "Delay1", "Al2O3", "Fe2O3", "SiO2", "MgO", "TiO2", "CaO", "Remarks"];
+      midHeaders = ["Unique No.", "Party Name", "Truck No.", "Invoice No.", "Raw Material Name", "Truck Qty", "Name of Chemist", "Date Of Testing", "Planned", "Actual", "Delay", "AD", "BD", "Fineness", "Loi", "Moisture", "Remarks", "Planned1", "Actual1", "Delay1", "Al2O3", "Fe2O3", "SiO2", "MgO", "TiO2", "CaO", "Remarks"];
       break;
     case "Drop Test":
       midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Rm 1", "Drop Test 1", "Rm 2", "Drop Test 2", "Rm 3", "Drop Test 3", "Note"];
