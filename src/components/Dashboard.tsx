@@ -101,7 +101,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     // 1. Prepare Valid Entries with parsed dates
     const validEntries = entries.map(e => {
       try {
-        const d = new Date(e.timestamp);
+        // Use Date of Production if available (for Actual Production department), otherwise use timestamp
+        const prodDateStr = e.data.date_of_production || e.data['Date Of Production'] || e.timestamp;
+        const d = new Date(prodDateStr);
         return isNaN(d.getTime()) ? null : { ...e, d };
       } catch { return null; }
     }).filter(Boolean) as (Entry & { d: Date })[];
@@ -114,11 +116,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), slotHour + 1, 59, 59);
         
         const slotEntries = validEntries.filter(e => e.d >= start && e.d <= end);
-        const count = slotEntries.filter(e => e.departmentId === 'product_house').length;
+        const totalQty = slotEntries
+          .filter(e => e.departmentId === 'actual_production')
+          .reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
         
         return {
           name: format(start, 'HH:mm'),
-          production: count,
+          production: parseFloat(totalQty.toFixed(1)),
           fullDate: format(start, 'MMM dd, HH:mm')
         };
       });
@@ -131,11 +135,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         const dateStr = format(targetDate, 'yyyy-MM-dd');
         
         const dayEntries = validEntries.filter(e => format(e.d, 'yyyy-MM-dd') === dateStr);
-        const count = dayEntries.filter(e => e.departmentId === 'product_house').length;
+        const totalQty = dayEntries
+          .filter(e => e.departmentId === 'actual_production')
+          .reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
         
         return {
           name: format(targetDate, 'MMM dd'),
-          production: count,
+          production: parseFloat(totalQty.toFixed(1)),
           fullDate: dateStr
         };
       }).reverse();
@@ -152,11 +158,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       while (curr <= now) {
         const monthStr = format(curr, 'yyyy-MM');
         const monthEntries = validEntries.filter(e => format(e.d, 'yyyy-MM') === monthStr);
-        const count = monthEntries.filter(e => e.departmentId === 'product_house').length;
+        const totalQty = monthEntries
+          .filter(e => e.departmentId === 'actual_production')
+          .reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
         
         months.push({
           name: format(curr, 'MMM yy'),
-          production: count,
+          production: parseFloat(totalQty.toFixed(1)),
           fullDate: format(curr, 'MMMM yyyy')
         });
         curr = new Date(curr.getFullYear(), curr.getMonth() + 1, 1);
@@ -253,6 +261,68 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       };
     });
   }, [stats, dateFilter]);
+  
+  const campaignSummary = useMemo(() => {
+    const summary: Record<string, {
+      ground_total: number;
+      inputs: Record<string, number>;
+      products: Record<string, number>;
+      status: 'Active' | 'Closed';
+    }> = {};
+
+    entries.forEach(entry => {
+      const campaign = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
+      if (!campaign || typeof campaign !== 'string') return;
+
+      if (!summary[campaign]) {
+        summary[campaign] = { ground_total: 0, inputs: {}, products: {}, status: 'Active' };
+      }
+
+      const d = entry.data;
+      if (entry.departmentId === 'sb3_ground') {
+        const mats = [
+          { name: d.mat1 || d['Material 1'], qty: parseFloat(d.qty1 || d.Qty1) || 0 },
+          { name: d.mat2 || d['Material 2'], qty: parseFloat(d.qty2 || d.Qty2) || 0 },
+          { name: d.mat3 || d['Material 3'], qty: parseFloat(d.qty3 || d.Qty3) || 0 }
+        ];
+        mats.forEach(m => {
+          if (m.name && m.qty > 0) {
+            const materialName = String(m.name).trim();
+            summary[campaign].inputs[materialName] = (summary[campaign].inputs[materialName] || 0) + m.qty;
+            summary[campaign].ground_total += m.qty;
+          }
+        });
+      } else if (entry.departmentId === 'sb3_hopper') {
+        const h3 = parseFloat(d.hopper3 || d['Hopper 3'] || d.sb3_h1) || 0;
+        const h4 = parseFloat(d.hopper4 || d['Hopper 4'] || d.sb3_h2) || 0;
+        const h5 = parseFloat(d.hopper5 || d['Hopper 5'] || d.sb3_h3) || 0;
+        const hTotal = h3 + h4 + h5;
+        if (hTotal > 0) {
+          summary[campaign].inputs['Hopper Usage'] = (summary[campaign].inputs['Hopper Usage'] || 0) + hTotal;
+        }
+      } else if (entry.departmentId === 'ppt') {
+        const qty = parseFloat(d.ispileg_qty || d['Ispileg Re-feeded Qty'] || d.ppt_qty) || 0;
+        if (qty > 0) {
+          summary[campaign].inputs['PPT / Ispileg'] = (summary[campaign].inputs['PPT / Ispileg'] || 0) + qty;
+        }
+      } else if (entry.departmentId === 'actual_production') {
+        const prodName = d.product_name || d['Product Name'] || 'Unknown Product';
+        const prodQty = parseFloat(d.qty || d.Qty) || 0;
+        if (!summary[campaign].products[prodName]) summary[campaign].products[prodName] = 0;
+        summary[campaign].products[prodName] += prodQty;
+      } else if (entry.departmentId === 'campaign_closing') {
+        summary[campaign].status = 'Closed';
+        // Also capture closing day quantities if they haven't been recorded in process
+        const hClosing = (parseFloat(d.sb3_h1) || 0) + (parseFloat(d.sb3_h2) || 0) + (parseFloat(d.sb3_h3) || 0);
+        if (hClosing > 0) summary[campaign].inputs['Hopper (Closing)'] = (summary[campaign].inputs['Hopper (Closing)'] || 0) + hClosing;
+        
+        const ispClosing = (parseFloat(d.ispileg_qty) || 0) + (parseFloat(d.ppt_qty) || 0);
+        if (ispClosing > 0) summary[campaign].inputs['PPT / Ispileg (Closing)'] = (summary[campaign].inputs['PPT / Ispileg (Closing)'] || 0) + ispClosing;
+      }
+    });
+
+    return Object.entries(summary).map(([id, stats]) => ({ id, ...stats }));
+  }, [entries]);
 
   const handleExportExcel = () => {
     const dataToExport = misReportData.map(item => ({
@@ -403,7 +473,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   strokeWidth={3} 
                   fillOpacity={1} 
                   fill="url(#colorProd)" 
-                  name="Daily Throughput"
+                  name="Production Volume (MT)"
                   dot={{ r: 4, fill: '#fff', stroke: '#2563eb', strokeWidth: 2 }}
                   activeDot={{ r: 6, fill: '#2563eb', stroke: '#fff', strokeWidth: 2 }}
                 />
@@ -458,7 +528,8 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
-      <section className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      {/* MIS Operational Report Section */}
+      <section className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden mt-6">
         <div className="p-6 border-b border-slate-50 bg-slate-50/10 flex items-center justify-between">
           <div className="flex items-center gap-3">
              <div className="w-1.5 h-6 bg-slate-900 rounded-full" />
@@ -520,6 +591,100 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   </td>
                 </tr>
               ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {/* Campaign Lifecycle Intelligence */}
+      <section className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden animate-in slide-in-from-bottom-4 duration-700 mt-6">
+        <div className="p-6 border-b border-slate-50 bg-slate-50/10 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+             <div className="w-1.5 h-6 bg-orange-500 rounded-full shadow-[0_0_10px_rgba(249,115,22,0.3)]" />
+             <h2 className="text-lg font-bold text-slate-900 tracking-tight">Campaign Intelligence Hub</h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-2">Campaign Status:</span>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-bold border border-emerald-100">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              {campaignSummary.filter(c => c.status === 'Active').length} Active
+            </div>
+          </div>
+        </div>
+        
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-separate border-spacing-0">
+            <thead>
+              <tr className="bg-slate-50/50">
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest sticky left-0 bg-slate-50/50 z-10">Campaign ID</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Material Consumption (Input)</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Produced Products (Output)</th>
+                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {campaignSummary.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic text-xs">No campaign data synthesized yet.</td>
+                </tr>
+              ) : (
+                campaignSummary.map((campaign) => (
+                  <tr key={campaign.id} className="hover:bg-slate-50/30 transition-colors group">
+                    <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 transition-colors z-10">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-[10px] font-bold text-white shadow-lg shadow-orange-200">
+                          C
+                        </div>
+                        <span className="text-xs font-black text-slate-900 uppercase tracking-wider">{campaign.id}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2 max-w-[400px]">
+                        {Object.entries(campaign.inputs).length === 0 ? (
+                           <span className="text-[10px] text-slate-400 italic">No material data</span>
+                        ) : (
+                          Object.entries(campaign.inputs).sort((a,b) => (b[1] as number) - (a[1] as number)).map(([name, qty]) => (
+                            <div key={name} className="flex flex-col bg-slate-50 border border-slate-200 rounded-lg p-2 min-w-[90px] hover:border-orange-200 transition-colors">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter truncate">{name}</span>
+                              <span className="text-[11px] font-black text-slate-700">{(qty as number).toFixed(1)} <span className="text-[9px] text-slate-400 font-bold ml-0.5">MT</span></span>
+                            </div>
+                          ))
+                        )}
+                        {campaign.ground_total > 0 && (
+                          <div className="flex flex-col bg-orange-50 border border-orange-100 rounded-lg p-2 min-w-[90px]">
+                            <span className="text-[9px] font-bold text-orange-400 uppercase tracking-tighter">TOTAL GROUND</span>
+                            <span className="text-xs font-black text-orange-600">{campaign.ground_total.toFixed(1)} MT</span>
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2 max-w-[300px]">
+                        {Object.entries(campaign.products).length === 0 ? (
+                           <span className="text-[10px] text-slate-400 italic">No production recorded</span>
+                        ) : (
+                          Object.entries(campaign.products).map(([name, qty]) => (
+                            <div key={name} className="flex flex-col bg-blue-50/50 border border-blue-100 rounded-lg p-2 min-w-[80px]">
+                              <span className="text-[9px] font-bold text-blue-400 uppercase tracking-tighter truncate">{name}</span>
+                              <span className="text-xs font-black text-blue-700">{(qty as number).toFixed(1)} MT</span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <span className={cn(
+                        "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                        campaign.status === 'Active' 
+                          ? "bg-emerald-50 text-emerald-600 border border-emerald-100" 
+                          : "bg-slate-100 text-slate-500 border border-slate-200"
+                      )}>
+                        {campaign.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
