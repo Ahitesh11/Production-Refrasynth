@@ -1,0 +1,5 @@
+{
+  "name": "Production-Refrasynth",
+  "description": "A comprehensive ERP for Lab and Stock departments with automated Google Sheets synchronization and workflow tracking.",
+  "requestFramePermissions": []
+}
