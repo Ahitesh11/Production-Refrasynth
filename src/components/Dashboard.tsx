@@ -596,7 +596,14 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       [
         { name: d.rm1 || d.RM1 || 'RM1', qty: parseFloat(d['Used RM1'] || 0) },
         { name: d.rm2 || d.RM2 || 'RM2', qty: parseFloat(d['Used RM2'] || 0) },
+<<<<<<< HEAD
         { name: d.rm3 || d.RM3 || 'RM3', qty: parseFloat(d['Used RM3'] || 0) }
+=======
+        { name: d.rm3 || d.RM3 || 'RM3', qty: parseFloat(d['Used RM3'] || 0) },
+        { name: d.rm4 || d.RM4 || 'RM4', qty: parseFloat(d['Used RM4'] || 0) },
+        { name: d.rm5 || d.RM5 || 'RM5', qty: parseFloat(d['Used RM5'] || 0) },
+        { name: d.rm6 || d.RM6 || 'RM6', qty: parseFloat(d['Used RM6'] || 0) }
+>>>>>>> 8b46b2f (Initial commit)
       ].forEach(({ name, qty }) => {
         if (name && !isNaN(qty) && qty > 0) {
           const key = String(name).trim();
@@ -710,7 +717,17 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
     const wipStatsOutput = wipStats.totalWIP;
 
+<<<<<<< HEAD
     const totalInput = totalHopper;
+=======
+    const consumptionRows = filteredEntries.filter(e => e.departmentId === 'consumption');
+    const totalConsumption = consumptionRows.reduce((sum, e) => sum + (parseFloat(e.data.Total || e.data.total) || 0), 0);
+    const totalInput = totalConsumption > 0 ? totalConsumption : totalHopper;
+    const consumptionLogic = totalConsumption > 0
+      ? `Sum of "Total" column from Consumption sheet (${consumptionRows.length} entries)`
+      : `Sum of Used RM1-RM6 cols (${hopperStats.count} entries)`;
+
+>>>>>>> 8b46b2f (Initial commit)
     const netSpillage = totalSpillage - totalPPT;
 
     // FIXED: Enhanced function to extract Ground Loss and LOI from composition records
@@ -815,8 +832,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const loiLossMT = totalInput * (avgLOI / 100);
     const balance1 = totalInput - loiLossMT;
 
+<<<<<<< HEAD
     const groundLossMT = totalInput * (avgGroundLoss / 100);
     const balance2 = balance1 - groundLossMT;
+=======
+    const groundLossMT = 0;
+    const balance2 = balance1;
+>>>>>>> 8b46b2f (Initial commit)
 
     const balance3 = balance2 - netSpillage;
     const balance4 = balance3 - wipStatsOutput;
@@ -832,7 +854,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       totalGround, totalHopper, totalProduction, totalSpillage, totalPPT,
       netOutput, efficiency, spillagePct, recycledPct,
       progressPct, periodTarget, dailyAvg, uniqueDays,
+<<<<<<< HEAD
       wipStatsOutput, unaccountedLoss, theoreticalLossMT
+=======
+      wipStatsOutput, unaccountedLoss, theoreticalLossMT, consumptionLogic
+>>>>>>> 8b46b2f (Initial commit)
     };
   }, [materialStats, hopperStats, productStats, spillageStats, pptStats, wipStats, dateFilter, filteredEntries, filteredCompositionData]);
 
@@ -863,7 +889,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const totalHours = dguDates.size * 24;
 
     const totalStopDuration = stopEntries.reduce((sum, e) => {
+<<<<<<< HEAD
       // âœ… Check for manual "Duration" from sheet first
+=======
+      // ✅ Check for manual "Duration" from sheet first
+>>>>>>> 8b46b2f (Initial commit)
       const manualDurStr = String(e.data.Duration || e.data.Duration_1 || e.data.duration || '').trim().toLowerCase();
       if (manualDurStr && !manualDurStr.includes('nan') && manualDurStr !== '-') {
         // Handle ISO String from Google Sheets (base date 1899-12-30)
@@ -1167,8 +1197,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const getParamRange = (label: string) => {
       if (!parameterRanges) return null;
       const keyMap: Record<string, string> = {
+<<<<<<< HEAD
         'Alâ‚‚Oâ‚ƒ': 'Alumina (%)', 'Feâ‚‚Oâ‚ƒ': 'Iron (%)', 'SiOâ‚‚': 'Silica (%)',
         'TiOâ‚‚': 'Titania (%)', 'MgO': 'Magnesia (%)', 'CaO': 'Lime (%)',
+=======
+        'Al2O3': 'Alumina (%)', 'Fe2O3': 'Iron (%)', 'SiO2': 'Silica (%)',
+        'TiO2': 'Titania (%)', 'MgO': 'Magnesia (%)', 'CaO': 'Lime (%)',
+>>>>>>> 8b46b2f (Initial commit)
         'Loi': 'LOI (%)', 'Moisture': 'Moisture (%)', 'GBM Avg (H1-H8)': 'GBM (%)',
         'Overall Fineness Avg': 'Fineness (%)'
       };
@@ -1192,7 +1227,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           let rowMax = parseFloat(e.data[`${label} Max`] || e.data[`${label.toLowerCase()} max`]);
 
           if (isNaN(rowMin)) {
+<<<<<<< HEAD
             const cleanLabel = label.replace(/â‚‚/g, '2').replace(/â‚ƒ/g, '3').replace(/[(%)]/g, '').trim();
+=======
+            const cleanLabel = label.replace(/2/g, '2').replace(/3/g, '3').replace(/[(%)]/g, '').trim();
+>>>>>>> 8b46b2f (Initial commit)
             rowMin = parseFloat(e.data[`${cleanLabel} Min`] || e.data[`${cleanLabel.toLowerCase()} min`]);
             rowMax = parseFloat(e.data[`${cleanLabel} Max`] || e.data[`${cleanLabel.toLowerCase()} max`]);
           }
@@ -1235,6 +1274,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
     return {
       dgu: [
+<<<<<<< HEAD
         makeStatInfo(dguRows, 'Alâ‚‚Oâ‚ƒ', 'dgu', 'Al2O3', 'al2o3'),
         makeStatInfo(dguRows, 'Feâ‚‚Oâ‚ƒ', 'dgu', 'Fe2O3', 'fe2o3'),
         makeStatInfo(dguRows, 'TiOâ‚‚', 'dgu', 'TiO2', 'tio2'),
@@ -1251,6 +1291,24 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         makeStatInfo(phRows, 'Feâ‚‚Oâ‚ƒ', 'product_house', 'Fe2O3', 'fe2o3'),
         makeStatInfo(phRows, 'SiOâ‚‚', 'product_house', 'SiO2', 'sio2'),
         makeStatInfo(phRows, 'TiOâ‚‚', 'product_house', 'TiO2', 'tio2'),
+=======
+        makeStatInfo(dguRows, 'Al2O3', 'dgu', 'Al2O3', 'al2o3'),
+        makeStatInfo(dguRows, 'Fe2O3', 'dgu', 'Fe2O3', 'fe2o3'),
+        makeStatInfo(dguRows, 'TiO2', 'dgu', 'TiO2', 'tio2'),
+        makeStatInfo(dguRows, 'Loi', 'dgu', 'Loi', 'loi')
+      ],
+      balling: [
+        makeStatInfo(ballingRows, 'Al2O3', 'balling_disc', 'Al2O3', 'al2o3'),
+        makeStatInfo(ballingRows, 'Fe2O3', 'balling_disc', 'Fe2O3', 'fe2o3'),
+        makeStatInfo(ballingRows, 'TiO2', 'balling_disc', 'TiO2', 'tio2'),
+        makeStatInfo(ballingRows, 'Loi', 'balling_disc', 'Loi', 'loi')
+      ],
+      product_house: [
+        makeStatInfo(phRows, 'Al2O3', 'product_house', 'Al2O3', 'al2o3'),
+        makeStatInfo(phRows, 'Fe2O3', 'product_house', 'Fe2O3', 'fe2o3'),
+        makeStatInfo(phRows, 'SiO2', 'product_house', 'SiO2', 'sio2'),
+        makeStatInfo(phRows, 'TiO2', 'product_house', 'TiO2', 'tio2'),
+>>>>>>> 8b46b2f (Initial commit)
         makeStatInfo(phRows, 'CaO', 'product_house', 'CaO', 'cao'),
         makeStatInfo(phRows, 'MgO', 'product_house', 'MgO', 'mgo'),
         makeStatInfo(phRows, 'AP', 'product_house', 'ap', 'AP'),
@@ -1310,7 +1368,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
   const handleExportComposition = () => {
     if (compositionData.length === 0) return;
+<<<<<<< HEAD
     const dataToExport = compositionData.map(row => ({ 'Timestamp': formatDisplayDate(row.timestamp), 'Campaign No.': row.campaign_no || '-', 'Product Name': row.product_name || '-', 'Qty': row.qty || '0', 'LOI (%)': row.loi_pct || '-', 'RM Required (MT)': row.rm_req || '-', 'Alâ‚‚Oâ‚ƒ': row.al2o3 || '-', 'Feâ‚‚Oâ‚ƒ': row.fe2o3 || '-', 'SiOâ‚‚': row.sio2 || '-', 'Total Cost': row.total_cost || row.totalCost || '0.00' }));
+=======
+    const dataToExport = compositionData.map(row => ({ 'Timestamp': formatDisplayDate(row.timestamp), 'Campaign No.': row.campaign_no || '-', 'Product Name': row.product_name || '-', 'Qty': row.qty || '0', 'LOI (%)': row.loi_pct || '-', 'RM Required (MT)': row.rm_req || '-', 'Al2O3': row.al2o3 || '-', 'Fe2O3': row.fe2o3 || '-', 'SiO2': row.sio2 || '-', 'Total Cost': row.total_cost || row.totalCost || '0.00' }));
+>>>>>>> 8b46b2f (Initial commit)
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Composition_Archives");
@@ -1319,7 +1381,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     saveAs(new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' }), `Composition_Archives_${format(new Date(), 'dd_MM_yyyy')}.xlsx`);
   };
 
+<<<<<<< HEAD
   const compositionHeaders = ["Timestamp", "Campaign No.", "Product Name", "Qty", "LOI (%)", "RM Required (MT)", "Alâ‚‚Oâ‚ƒ", "Feâ‚‚Oâ‚ƒ", "SiOâ‚‚", "Total Cost"];
+=======
+  const compositionHeaders = ["Timestamp", "Campaign No.", "Product Name", "Qty", "LOI (%)", "RM Required (MT)", "Al2O3", "Fe2O3", "SiO2", "Total Cost"];
+>>>>>>> 8b46b2f (Initial commit)
 
   const filterLabel = dateFilter === 'today' ? 'Today' : dateFilter === '7d' ? 'Last 7 Days' : dateFilter === '30d' ? 'Last 30 Days' : dateFilter === 'custom' ? 'Custom Range' : 'All Time';
 
@@ -1338,6 +1404,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 space-y-6 pb-32" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", background: '#f8f9fb' }}>
 
+<<<<<<< HEAD
       {/* â”€â”€ TOP BAR */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -1447,6 +1514,119 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* â”€â”€ ENERGY STATS */}
+=======
+      {/* -- TOP BAR */}
+      <div className="sticky top-0 z-50 bg-[#f8f9fb]/80 backdrop-blur-md -mx-4 md:-mx-6 px-4 md:px-6 py-4 mb-2 border-b border-transparent transition-all duration-300">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
+              <LayoutDashboard className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">Dashboard</h1>
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5">{filterLabel} • {stats.total} entries</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm">
+              <Filter className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                value={campaignFilter}
+                onChange={(e) => setCampaignFilter(e.target.value)}
+                className="bg-transparent text-slate-700 text-xs font-semibold outline-none cursor-pointer pr-1"
+              >
+                <option value="All">All Campaigns</option>
+                {allCampaigns.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            {selectedProducts.length > 0 && (
+              <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-100 px-3 py-2 rounded-xl">
+                <Package className="w-3.5 h-3.5 text-blue-500" />
+                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mr-1">Produced:</span>
+                <div className="flex gap-1.5 flex-wrap">
+                  {selectedProducts.map(p => (
+                    <span key={p} className="text-[11px] font-black text-blue-700 bg-blue-100/50 px-2.5 py-0.5 rounded-lg border border-blue-200">
+                      {p}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center gap-1 bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
+              {(['today', '7d', '30d', 'all', 'custom'] as const).map(f => (
+                <button
+                  key={f}
+                  onClick={() => setDateFilter(f)}
+                  className={cn(
+                    "px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-200",
+                    dateFilter === f ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" : "text-slate-500 hover:text-indigo-600 hover:bg-slate-50"
+                  )}
+                >
+                  {f === 'today' ? 'Today' : f === '7d' ? 'Week' : f === '30d' ? 'Month' : f === 'custom' ? 'Custom' : 'All'}
+                </button>
+              ))}
+            </div>
+
+            {dateFilter === 'custom' && (
+              <div className="flex items-center gap-2 bg-white border border-slate-200 p-1 rounded-xl shadow-sm">
+                <input
+                  type="date"
+                  value={customDateRange.start}
+                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, start: e.target.value }))}
+                  className="bg-transparent text-slate-700 text-xs font-semibold px-2 py-1 outline-none"
+                />
+                <select
+                  value={customDateRange.startShift || 'All'}
+                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, startShift: e.target.value }))}
+                  className="bg-transparent text-slate-700 text-xs font-semibold px-1 py-1 outline-none cursor-pointer"
+                >
+                  <option value="All">All Shifts</option>
+                  <option value="Shift A">Shift A</option>
+                  <option value="Shift B">Shift B</option>
+                  <option value="Shift C">Shift C</option>
+                </select>
+                <span className="text-slate-300 font-bold">-</span>
+                <input
+                  type="date"
+                  value={customDateRange.end}
+                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, end: e.target.value }))}
+                  className="bg-transparent text-slate-700 text-xs font-semibold px-2 py-1 outline-none"
+                />
+                <select
+                  value={customDateRange.endShift || 'All'}
+                  onChange={(e) => setCustomDateRange(prev => ({ ...prev, endShift: e.target.value }))}
+                  className="bg-transparent text-slate-700 text-xs font-semibold px-1 py-1 outline-none cursor-pointer"
+                >
+                  <option value="All">All Shifts</option>
+                  <option value="Shift A">Shift A</option>
+                  <option value="Shift B">Shift B</option>
+                  <option value="Shift C">Shift C</option>
+                </select>
+                <button
+                  onClick={() => setAppliedCustomDateRange(customDateRange)}
+                  className="ml-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm"
+                >
+                  Apply
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-sm shadow-emerald-600/25"
+            >
+              <Download className="w-3.5 h-3.5" />
+              MIS Export
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* -- ENERGY STATS */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 mb-8 group overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-20 group-hover:opacity-60 transition-all duration-700 z-0" />
         <div className="relative z-10">
@@ -1486,7 +1666,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ RM LAB + DROP TEST + FINENESS + BALLING UPDATES + KILN + PRODUCT HOUSE */}
+=======
+      {/* -- RM LAB + DROP TEST + FINENESS + BALLING UPDATES + KILN + PRODUCT HOUSE */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="flex flex-col gap-6 mb-8">
         {[
           {
@@ -1514,9 +1698,15 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
                     {[
+<<<<<<< HEAD
                       { label: 'Alâ‚‚Oâ‚ƒ', val: activeStat.al2o3 }, { label: 'Feâ‚‚Oâ‚ƒ', val: activeStat.fe2o3 },
                       { label: 'SiOâ‚‚', val: activeStat.sio2 }, { label: 'MgO', val: activeStat.mgo },
                       { label: 'TiOâ‚‚', val: activeStat.tio2 }, { label: 'CaO', val: activeStat.cao },
+=======
+                      { label: 'Al2O3', val: activeStat.al2o3 }, { label: 'Fe2O3', val: activeStat.fe2o3 },
+                      { label: 'SiO2', val: activeStat.sio2 }, { label: 'MgO', val: activeStat.mgo },
+                      { label: 'TiO2', val: activeStat.tio2 }, { label: 'CaO', val: activeStat.cao },
+>>>>>>> 8b46b2f (Initial commit)
                       { label: 'Moisture', val: activeStat.moisture }, { label: 'Loi', val: activeStat.loi },
                     ].map(row => (
                       <div key={row.label} className="bg-slate-50 rounded-2xl p-4 border border-slate-100/50">
@@ -1570,9 +1760,15 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
                   { label: 'Overall Fineness', data: dguDetailedAvg.fineness, unit: '%' },
+<<<<<<< HEAD
                   { label: 'Alâ‚‚Oâ‚ƒ', data: dguDetailedAvg.al2o3, unit: '%' },
                   { label: 'Feâ‚‚Oâ‚ƒ', data: dguDetailedAvg.fe2o3, unit: '%' },
                   { label: 'TiOâ‚‚', data: dguDetailedAvg.tio2, unit: '%' },
+=======
+                  { label: 'Al2O3', data: dguDetailedAvg.al2o3, unit: '%' },
+                  { label: 'Fe2O3', data: dguDetailedAvg.fe2o3, unit: '%' },
+                  { label: 'TiO2', data: dguDetailedAvg.tio2, unit: '%' },
+>>>>>>> 8b46b2f (Initial commit)
                   { label: 'Loi', data: dguDetailedAvg.loi, unit: '%' },
                 ].map((item) => (
                   <div key={item.label} className="bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-5 hover:border-emerald-200 transition-all">
@@ -1609,9 +1805,15 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             component: (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {[
+<<<<<<< HEAD
                   { label: 'ALâ‚‚Oâ‚ƒ', data: ballingUpdatesAvg.al2o3, unit: '%' },
                   { label: 'FEâ‚‚Oâ‚ƒ', data: ballingUpdatesAvg.fe2o3, unit: '%' },
                   { label: 'TIOâ‚‚', data: ballingUpdatesAvg.tio2, unit: '%' },
+=======
+                  { label: 'AL2O3', data: ballingUpdatesAvg.al2o3, unit: '%' },
+                  { label: 'FE2O3', data: ballingUpdatesAvg.fe2o3, unit: '%' },
+                  { label: 'TIO2', data: ballingUpdatesAvg.tio2, unit: '%' },
+>>>>>>> 8b46b2f (Initial commit)
                   { label: 'LOI', data: ballingUpdatesAvg.loi, unit: '%' },
                   { label: 'GBM AVG (H1-H8)', data: ballingUpdatesAvg.gbm, unit: '%' },
                   { label: 'DROP TESTING AVG', data: ballingUpdatesAvg.drop, unit: '' },
@@ -1727,7 +1929,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         ))}
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ PRODUCTION ACCOUNTING */}
+=======
+      {/* -- PRODUCTION ACCOUNTING */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden mb-8">
         <div className="px-5 sm:px-7 py-5 bg-gradient-to-r from-indigo-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100">
           <div>
@@ -1737,6 +1943,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         <div className="p-4 sm:p-6 overflow-x-auto">
+<<<<<<< HEAD
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 min-w-[600px] lg:min-w-0">
             {[
               { step: 1, label: 'SB3 Ground', sub: 'Raw Material Grinding', val: accountingSummary.totalGround.toFixed(1), unit: 'MT Input', accent: 'border-orange-200 bg-orange-50', num: 'bg-orange-500', text: 'text-orange-700', cap: 'text-orange-500', logic: `Sum of ${materialStats.count} SB3 Ground entries` },
@@ -1745,6 +1952,15 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               { step: 4, label: 'Spillage', sub: 'All Sources', val: accountingSummary.totalSpillage.toFixed(1), unit: 'MT Spillage', accent: 'border-red-200 bg-red-50', num: 'bg-red-500', text: 'text-red-700', cap: 'text-red-500', logic: `Sum of all spillage streams (${spillageStats.count} entries)` },
               { step: 5, label: 'PPT Recycle', sub: 'Spillage Re-feeded', val: accountingSummary.totalPPT.toFixed(1), unit: 'MT Recycled', accent: 'border-purple-200 bg-purple-50', num: 'bg-purple-500', text: 'text-purple-700', cap: 'text-purple-500', logic: `Sum of recycled spillage (${pptStats.count} entries)` },
             ].map((node, i) => (
+=======
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 min-w-[600px] lg:min-w-0">
+            {[
+              { step: 1, label: 'SB3 Hopper', sub: 'Used for Production', val: accountingSummary.totalInput.toFixed(1), unit: 'MT Used', accent: 'border-blue-200 bg-blue-50', num: 'bg-blue-500', text: 'text-blue-700', cap: 'text-blue-500', logic: accountingSummary.consumptionLogic },
+              { step: 2, label: 'Production', sub: 'Actual Output', val: accountingSummary.totalProduction.toFixed(1), unit: 'MT Output', accent: 'border-emerald-200 bg-emerald-50', num: 'bg-emerald-500', text: 'text-emerald-700', cap: 'text-emerald-500', logic: `Sum of all finished product (${productStats.count} entries)` },
+              { step: 3, label: 'Spillage', sub: 'All Sources', val: accountingSummary.totalSpillage.toFixed(1), unit: 'MT Spillage', accent: 'border-red-200 bg-red-50', num: 'bg-red-500', text: 'text-red-700', cap: 'text-red-500', logic: `Sum of all spillage streams (${spillageStats.count} entries)` },
+              { step: 4, label: 'PPT Recycle', sub: 'Spillage Re-feeded', val: accountingSummary.totalPPT.toFixed(1), unit: 'MT Recycled', accent: 'border-purple-200 bg-purple-50', num: 'bg-purple-500', text: 'text-purple-700', cap: 'text-purple-500', logic: `Sum of recycled spillage (${pptStats.count} entries)` },
+            ].map((node, i, arr) => (
+>>>>>>> 8b46b2f (Initial commit)
               <div key={node.step} className="relative">
                 <div className={`border-2 ${node.accent} rounded-2xl p-4 text-center`}>
                   <div className={`w-7 h-7 ${node.num} rounded-lg flex items-center justify-center mx-auto mb-2`}>
@@ -1756,8 +1972,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <p className="text-[9px] text-slate-400 font-bold">{node.unit}</p>
                   <p className="text-[8px] text-slate-500 italic font-medium mt-1">Logic: {node.logic}</p>
                 </div>
+<<<<<<< HEAD
                 {i < 4 && (
                   <div className="absolute right-0 top-1/2 translate-x-[60%] -translate-y-1/2 text-slate-300 font-black text-lg z-10 select-none">â†’</div>
+=======
+                {i < arr.length - 1 && (
+                  <div className="absolute right-0 top-1/2 translate-x-[60%] -translate-y-1/2 text-slate-300 font-black text-lg z-10 select-none">→</div>
+>>>>>>> 8b46b2f (Initial commit)
                 )}
               </div>
             ))}
@@ -1776,11 +1997,17 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </thead>
               <tbody className="bg-white">
                 {[
+<<<<<<< HEAD
                   { label: 'Total Input (RM Used for Prod.)', qty: accountingSummary.totalInput.toFixed(1), pct: '100%', color: 'text-blue-700', dot: 'bg-blue-500', sign: '', bg: 'bg-blue-50/20', logic: `Sum of Used RM1+RM2+RM3 cols (${hopperStats.count} entries)` },
                   { label: `LOI (${accountingSummary.avgLOI.toFixed(2)}%)`, qty: accountingSummary.loiLossMT.toFixed(1), pct: `${accountingSummary.totalInput > 0 ? ((accountingSummary.loiLossMT / accountingSummary.totalInput) * 100).toFixed(1) : '0'}%`, color: 'text-zinc-600', dot: 'bg-zinc-400', sign: '- ', bg: '', logic: 'From Composition Records LOI (%) x Total Input' },
                   { label: 'Balance ', qty: accountingSummary.balance1.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Input - LOI' },
                   { label: `Ground Loss (${accountingSummary.avgGroundLoss.toFixed(1)}%)`, qty: accountingSummary.groundLossMT.toFixed(1), pct: `${accountingSummary.totalInput > 0 ? ((accountingSummary.groundLossMT / accountingSummary.totalInput) * 100).toFixed(1) : '0'}%`, color: 'text-zinc-600', dot: 'bg-zinc-400', sign: '- ', bg: '', logic: `From Composition Records - Ground Loss (AC column) x Total Input` },
                   { label: 'Balance ', qty: accountingSummary.balance2.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Prev Balance - Ground Loss' },
+=======
+                  { label: 'Total Input (RM Used for Prod.)', qty: accountingSummary.totalInput.toFixed(1), pct: '100%', color: 'text-blue-700', dot: 'bg-blue-500', sign: '', bg: 'bg-blue-50/20', logic: accountingSummary.consumptionLogic },
+                  { label: `LOI (${accountingSummary.avgLOI.toFixed(2)}%)`, qty: accountingSummary.loiLossMT.toFixed(1), pct: `${accountingSummary.totalInput > 0 ? ((accountingSummary.loiLossMT / accountingSummary.totalInput) * 100).toFixed(1) : '0'}%`, color: 'text-zinc-600', dot: 'bg-zinc-400', sign: '- ', bg: '', logic: 'From Composition Records LOI (%) x Total Input' },
+                  { label: 'Balance ', qty: accountingSummary.balance1.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Input - LOI' },
+>>>>>>> 8b46b2f (Initial commit)
                   { label: 'Net Operational Spillage (Spillage - PPT)', qty: accountingSummary.netSpillage.toFixed(1), pct: `${accountingSummary.balance2 > 0 ? ((accountingSummary.netSpillage / accountingSummary.balance2) * 100).toFixed(1) : '0'}%`, color: 'text-rose-700', dot: 'bg-rose-500', sign: '- ', bg: '', logic: `Accounted Spillage (${accountingSummary.totalSpillage.toFixed(1)}) - Recycled (${accountingSummary.totalPPT.toFixed(1)})` },
                   { label: 'Balance (Operational)', qty: accountingSummary.balance3.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Prev Balance - Net Spillage' },
                   { label: 'In-Process Material (Campaign Closing)', qty: accountingSummary.wipStatsOutput.toFixed(1), pct: `${accountingSummary.balance3 > 0 ? ((accountingSummary.wipStatsOutput / accountingSummary.balance3) * 100).toFixed(1) : '0'}%`, color: 'text-amber-700', dot: 'bg-amber-500', sign: '- ', bg: '', logic: wipStats.logicStr },
@@ -1813,13 +2040,21 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ MATERIAL INTELLIGENCE */}
+=======
+      {/* -- MATERIAL INTELLIGENCE */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-8">
         {/* SB3 Ground */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
+<<<<<<< HEAD
               <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Material â†’ Total Input</p>
+=======
+              <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Material Total Input</p>
+>>>>>>> 8b46b2f (Initial commit)
               <h3 className="text-sm font-black text-slate-900 mt-0.5">SB3 Ground</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Input minus hopper usage</p>
             </div>
@@ -1843,7 +2078,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                     </div>
                     <div className="flex justify-between items-center text-[9px] mb-2 pl-2 border-l-2 border-slate-100">
                       <span className="text-slate-500 font-bold">
+<<<<<<< HEAD
                         <span className="text-red-400 mr-1">â†“</span>To Hopper: {hopperQty.toFixed(1)} MT
+=======
+                        <span className="text-red-400 mr-1">↓</span>To Hopper: {hopperQty.toFixed(1)} MT
+>>>>>>> 8b46b2f (Initial commit)
                       </span>
                       <span className="text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm">
                         Stock: {stock.toFixed(1)} MT
@@ -1861,7 +2100,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
+<<<<<<< HEAD
               <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Raw Material â†’ Hopper</p>
+=======
+              <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Raw Material Hopper</p>
+>>>>>>> 8b46b2f (Initial commit)
               <h3 className="text-sm font-black text-slate-900 mt-0.5">SB3 Hopper</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of RM fed to hopper</p>
             </div>
@@ -1997,7 +2240,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ MATERIAL CONSUMPTION ANALYSIS */}
+=======
+      {/* -- MATERIAL CONSUMPTION ANALYSIS */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="bg-white rounded-[2rem] border border-blue-100 shadow-sm overflow-hidden mb-8">
         <div className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -2046,7 +2293,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ PRODUCTION COST ANALYSIS */}
+=======
+      {/* -- PRODUCTION COST ANALYSIS */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden mb-8">
         <div className="bg-gradient-to-r from-emerald-50 to-white border-b border-emerald-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -2055,13 +2306,21 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             </div>
             <div>
               <h3 className="text-sm font-black text-emerald-950 uppercase tracking-widest leading-none mb-1">Production Cost Analysis</h3>
+<<<<<<< HEAD
               <p className="text-[9px] text-emerald-600/70 font-medium italic">Logic: (Sum of Hopper RM Usage Ã— Material Rate) / Total Output</p>
+=======
+              <p className="text-[9px] text-emerald-600/70 font-medium italic">Logic: (Sum of Hopper RM Usage Material Rate) / Total Output</p>
+>>>>>>> 8b46b2f (Initial commit)
             </div>
           </div>
           <div className="text-left sm:text-right">
             <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1.5">Raw Material Cost / MT</p>
             <p className="text-2xl font-black text-emerald-900 leading-none tracking-tight">
+<<<<<<< HEAD
               <span className="text-[16px] text-emerald-600 mr-0.5">â‚¹</span>{productionCost.costPerMt.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+=======
+              <span className="text-[16px] text-emerald-600 mr-0.5"></span>{productionCost.costPerMt.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+>>>>>>> 8b46b2f (Initial commit)
             </p>
           </div>
         </div>
@@ -2076,7 +2335,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2">Total Production Cost (RM)</p>
               <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-2">
+<<<<<<< HEAD
                 â‚¹ {productionCost.totalRmCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+=======
+                {productionCost.totalRmCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+>>>>>>> 8b46b2f (Initial commit)
               </h2>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[11px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-lg border border-emerald-100 shadow-sm">
@@ -2089,16 +2352,26 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <div className="grid grid-cols-4 gap-4 px-6 mb-2">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Material</span>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Usage (MT)</span>
+<<<<<<< HEAD
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Rate (â‚¹)</span>
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Subtotal (â‚¹)</span>
+=======
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Rate ()</span>
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Subtotal ()</span>
+>>>>>>> 8b46b2f (Initial commit)
               </div>
               {productionCost.breakdown.map((item, idx) => (
                 <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between hover:shadow-md hover:border-emerald-200 transition-all duration-300">
                   <div className="grid grid-cols-4 gap-4 w-full items-center">
                     <span className="text-xs font-black text-slate-900 uppercase tracking-wider">{item.name}</span>
                     <span className="text-sm font-bold text-slate-600 text-right">{item.qty.toFixed(1)}</span>
+<<<<<<< HEAD
                     <span className="text-[11px] font-bold text-slate-400 text-right">â‚¹ {item.rate.toLocaleString('en-IN')}</span>
                     <span className="text-sm font-black text-emerald-700 text-right">â‚¹ {item.cost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+=======
+                    <span className="text-[11px] font-bold text-slate-400 text-right"> {item.rate.toLocaleString('en-IN')}</span>
+                    <span className="text-sm font-black text-emerald-700 text-right"> {item.cost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+>>>>>>> 8b46b2f (Initial commit)
                   </div>
                 </div>
               ))}
@@ -2112,7 +2385,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ KPI CARDS */}
+=======
+      {/* -- KPI CARDS */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {[
           {
@@ -2127,12 +2404,20 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             sparkData: [45, 52, 48, 61, 55, 67, stats.total].slice(-7)
           },
           {
+<<<<<<< HEAD
             label: 'Avg Alâ‚‚Oâ‚ƒ Purity',
+=======
+            label: 'Avg Al2O3 Purity',
+>>>>>>> 8b46b2f (Initial commit)
             value: qualityStats.avgAl2O3,
             suffix: '%',
             icon: Zap,
             color: 'violet',
+<<<<<<< HEAD
             trend: trend.al2o3 ? `${parseFloat(trend.al2o3 as string) > 0 ? 'â†‘' : 'â†“'} ${Math.abs(parseFloat(trend.al2o3 as string))}%` : 'Stable',
+=======
+            trend: trend.al2o3 ? `${parseFloat(trend.al2o3 as string) > 0 ? '↑' : '↓'} ${Math.abs(parseFloat(trend.al2o3 as string))}%` : 'Stable',
+>>>>>>> 8b46b2f (Initial commit)
             trendColor: parseFloat((trend.al2o3 as string) || '0') > 0 ? 'text-emerald-500' : 'text-rose-500',
             sub: 'Main chemical constraint',
             sparkData: [81.2, 81.4, 81.3, 81.6, 81.5, parseFloat(qualityStats.avgAl2O3)].slice(-7)
@@ -2154,7 +2439,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             suffix: ' MT',
             icon: Database,
             color: 'orange',
+<<<<<<< HEAD
             trend: trend.ground ? `${parseFloat(trend.ground as string) > 0 ? 'â†‘' : 'â†“'} ${Math.abs(parseFloat(trend.ground as string))}%` : 'Record',
+=======
+            trend: trend.ground ? `${parseFloat(trend.ground as string) > 0 ? '↑' : '↓'} ${Math.abs(parseFloat(trend.ground as string))}%` : 'Record',
+>>>>>>> 8b46b2f (Initial commit)
             trendColor: parseFloat((trend.ground as string) || '0') > 0 ? 'text-emerald-500' : 'text-rose-500',
             sub: 'Raw material processed',
             sparkData: [2100, 2400, 2800, parseFloat(accountingSummary.totalGround.toFixed(0))].slice(-7)
@@ -2202,7 +2491,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         ))}
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ PERFORMANCE INSIGHTS */}
+=======
+      {/* -- PERFORMANCE INSIGHTS */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Yield Performance (Donut Chart) */}
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
@@ -2273,7 +2566,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <div className="mt-4 flex items-center gap-2">
                 <span className="text-[11px] font-black text-slate-900 leading-none">{accountingSummary.dailyAvg} MT</span>
+<<<<<<< HEAD
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Avg per day</span>
+=======
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight"></span>
+>>>>>>> 8b46b2f (Initial commit)
               </div>
             </div>
           </div>
@@ -2315,7 +2612,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             <div className="space-y-4 pt-2">
               {[
                 { label: 'Critical Alumina', status: 'High' },
+<<<<<<< HEAD
                 { label: 'Feâ‚‚Oâ‚ƒ Impurities', status: 'Moderate' },
+=======
+                { label: 'Fe2O3 Impurities', status: 'Moderate' },
+>>>>>>> 8b46b2f (Initial commit)
                 { label: 'Fineness Target', status: 'Active' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center justify-between">
@@ -2328,7 +2629,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* â”€â”€ COMPOSITION ARCHIVES */}
+=======
+      {/* -- COMPOSITION ARCHIVES */}
+>>>>>>> 8b46b2f (Initial commit)
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">

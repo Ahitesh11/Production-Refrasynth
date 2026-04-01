@@ -8,15 +8,18 @@ interface Props {
   department: Department;
   onClose: () => void;
   onSuccess: (data: Record<string, any>) => void | Promise<void>;
+  initialData?: Record<string, any>;
 }
 
-export default function DepartmentForm({ department, onClose, onSuccess }: Props) {
+export default function DepartmentForm({ department, onClose, onSuccess, initialData = {} }: Props) {
   const [formData, setFormData] = useState<Record<string, any>>(() => {
     const initial: Record<string, any> = {};
     department.fields.forEach(f => {
       if (f.name === 'shift') initial[f.name] = getCurrentShift();
       if (f.name === 'date') initial[f.name] = format(new Date(), 'yyyy-MM-dd');
       if (f.name === 'entry_type') initial[f.name] = 'Shift';
+      // Merge initialData for things like pre-selected products/materials
+      if (initialData[f.name] !== undefined) initial[f.name] = initialData[f.name];
     });
     return initial;
   });
@@ -184,7 +187,7 @@ export default function DepartmentForm({ department, onClose, onSuccess }: Props
                       </select>
                     ) : field.type === 'time' ? (
                       <div className="flex gap-1 w-full">
-                        <select 
+                        <select
                           value={((formData[field.name] || '12:00 AM').split(' ')[0] || '12:00').split(':')[0] || '12'}
                           onChange={(e) => {
                             const currentVal = formData[field.name] || '12:00 AM';
@@ -197,7 +200,7 @@ export default function DepartmentForm({ department, onClose, onSuccess }: Props
                           {Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
                         <span className="flex items-center text-slate-300 font-bold">:</span>
-                        <select 
+                        <select
                           value={((formData[field.name] || '12:00 AM').split(' ')[0] || '12:00').split(':')[1] || '00'}
                           onChange={(e) => {
                             const currentVal = formData[field.name] || '12:00 AM';
@@ -209,7 +212,7 @@ export default function DepartmentForm({ department, onClose, onSuccess }: Props
                         >
                           {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
-                        <select 
+                        <select
                           value={(formData[field.name] || '12:00 AM').split(' ')[1] || 'AM'}
                           onChange={(e) => {
                             const currentTime = (formData[field.name] || '12:00 AM').split(' ')[0] || '12:00';

@@ -5,7 +5,9 @@ import Sidebar from './components/Sidebar';
 import Login from './components/Login';
 import RMWorkflowView from './components/RMWorkflowView';
 import ProductionStopWorkflowView from './components/ProductionStopWorkflowView';
+import InventoryView from './components/InventoryView';
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
+import { format } from 'date-fns';
 import { AlertCircle, Database, X } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -30,6 +32,10 @@ export default function App() {
     campaigns: [],
     products: [],
     materials: []
+  });
+  const [inventoryData, setInventoryData] = useState<any[]>(() => {
+    const saved = localStorage.getItem('erp_inventory');
+    return saved ? JSON.parse(saved) : [];
   });
   const [parameterRanges, setParameterRanges] = useState<Record<string, string>>({});
   const [scriptUrl, setScriptUrl] = useState(localStorage.getItem('erp_script_url') || '');
@@ -89,11 +95,12 @@ export default function App() {
     try {
       const urlParam = scriptUrl ? `&url=${encodeURIComponent(scriptUrl)}` : '';
 
-      const [masterRes, entriesRes, rangesRes, compositionRes] = await Promise.all([
+      const [masterRes, entriesRes, rangesRes, compositionRes, inventoryRes] = await Promise.all([
         fetch(`/api/proxy?action=getMaster${urlParam}`).catch(e => ({ ok: false, error: e })),
         fetch(`/api/proxy?action=getAllEntries${urlParam}`).catch(e => ({ ok: false, error: e })),
         fetch(`/api/proxy?action=getParameterRanges${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getComposition${urlParam}`).catch(e => ({ ok: false, error: e }))
+        fetch(`/api/proxy?action=getComposition${urlParam}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getInventory${urlParam}`).catch(e => ({ ok: false, error: e }))
       ]);
 
       if ('ok' in masterRes && masterRes.ok) {
@@ -132,6 +139,13 @@ export default function App() {
         }
       }
 
+      if ('ok' in inventoryRes && inventoryRes.ok) {
+        const invData = await (inventoryRes as Response).json().catch(() => []);
+        if (Array.isArray(invData)) {
+          setInventoryData(invData);
+          localStorage.setItem('erp_inventory', JSON.stringify(invData));
+        }
+      }
     } catch (err: any) {
       console.error('Data Fetch Failed:', err);
     } finally {
@@ -320,6 +334,66 @@ export default function App() {
                 onAddEntry={handleAddEntry}
                 onUpdateEntry={handleUpdateEntry}
                 scriptUrl={scriptUrl}
+              />
+            ) : activeId === 'inventory' ? (
+              <InventoryView
+                inventoryData={inventoryData}
+                sb3GroundDepartment={departmentsWithMaster.find(d => d.id === 'sb3_ground')!}
+                entries={entries.filter(e => e.departmentId === 'sb3_ground')}
+                onSuccess={async (data) => {
+                  const timestamp = new Date().toLocaleString();
+                  const newEntry: Entry = {
+                    id: `sb3_ground_${Date.now()}`,
+                    departmentId: 'sb3_ground',
+                    timestamp,
+                    data
+                  };
+
+                  // Construct the values array for Google Sheets
+                  const dept = departmentsWithMaster.find(d => d.id === 'sb3_ground')!;
+                  const values = [
+                    timestamp,
+                    ...dept.fields
+                      .filter(f => f.name !== 'entry_type' && !f.readonly)
+                      .map(f => {
+                        let val = data[f.label] || data[f.name] || '';
+                        if (f.type === 'date' && val && !/^\d{2}\/\d{2}\/\d{4}/.test(String(val))) {
+                          try {
+                            val = format(new Date(String(val)), 'MM/dd/yyyy');
+                          } catch (e) { }
+                        }
+                        return val;
+                      })
+                  ];
+
+                  // POST to Google Sheets
+                  try {
+                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
+                    const response = await fetch(proxyUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                      body: JSON.stringify({
+                        sheetName: 'SB3 Ground',
+                        entryId: timestamp,
+                        values: values
+                      }),
+                    });
+
+                    const resData = await response.json().catch(() => ({}));
+                    if (response.ok && resData.result === 'success') {
+                      alert('✅ Data saved successfully to Google Sheets!');
+                      handleAddEntry(newEntry);
+                      fetchData(true); // Refresh inventory stats
+                    } else {
+                      throw new Error(resData.error || 'Failed to sync with Google Sheets');
+                    }
+                  } catch (error: any) {
+                    console.error('Inventory live sync failed:', error);
+                    alert(`❌ Sync Failed: ${error.message}\n\nData is saved locally but not in Google Sheets.`);
+                    // Still add locally so user doesn't lose it, but they know it failed sync
+                    handleAddEntry(newEntry);
+                  }
+                }}
               />
             ) : (
               <DepartmentView

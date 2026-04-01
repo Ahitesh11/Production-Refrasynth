@@ -12,7 +12,9 @@ export type DepartmentId =
   | 'rm'
   | 'drop_test'
   | 'spillage'
-  | 'production_stop';
+  | 'production_stop'
+  | 'opening_closing'
+  | 'inventory';
 
 export interface User {
   username: string;
@@ -162,6 +164,12 @@ export const DEPARTMENTS: Department[] = [
       { name: 'qty2', label: 'Qty2', type: 'number' },
       { name: 'mat3', label: 'Material 3', type: 'select', options: [] },
       { name: 'qty3', label: 'Qty3', type: 'number' },
+      { name: 'mat4', label: 'Material 4', type: 'select', options: [] },
+      { name: 'qty4', label: 'Qty4', type: 'number' },
+      { name: 'mat5', label: 'Material 5', type: 'select', options: [] },
+      { name: 'qty5', label: 'Qty5', type: 'number' },
+      { name: 'mat6', label: 'Material 6', type: 'select', options: [] },
+      { name: 'qty6', label: 'Qty6', type: 'number' },
     ]
   },
   {
@@ -175,13 +183,16 @@ export const DEPARTMENTS: Department[] = [
       { name: 'date', label: 'Date', type: 'date' },
       { name: 'rm1', label: 'RM1', type: 'select', options: [] },
       { name: 'hopper3', label: 'Hopper 3', type: 'number' },
-      { name: 'gr1', label: 'GR1', type: 'number' },
       { name: 'rm2', label: 'RM2', type: 'select', options: [] },
       { name: 'hopper4', label: 'Hopper 4', type: 'number' },
-      { name: 'gr2', label: 'GR2', type: 'number' },
       { name: 'rm3', label: 'RM3', type: 'select', options: [] },
       { name: 'hopper5', label: 'Hopper 5', type: 'number' },
-      { name: 'gr3', label: 'GR3', type: 'number' },
+      { name: 'rm4', label: 'RM4', type: 'select', options: [] },
+      { name: 'hopper6', label: 'Hopper 6', type: 'number' },
+      { name: 'rm5', label: 'RM5', type: 'select', options: [] },
+      { name: 'hopper7', label: 'Hopper 7', type: 'number' },
+      { name: 'rm6', label: 'RM6', type: 'select', options: [] },
+      { name: 'hopper8', label: 'Hopper 8', type: 'number' },
       { name: 'note', label: 'Note', type: 'text' },
     ]
   },
@@ -382,6 +393,38 @@ export const DEPARTMENTS: Department[] = [
       { name: 'fix_date', label: 'Fix Date', type: 'date' },
       { name: 'fix_shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'fix_time', label: 'Time', type: 'time' }
+    ]
+  },
+  {
+    id: 'opening_closing',
+    name: 'Opning Closing',
+    category: 'Stock',
+    fields: [
+      { name: 'campaign_no', label: 'Campaign No.', type: 'select', options: [] },
+      { name: 'type', label: 'Type', type: 'select', options: ['Opening', 'Closing'] },
+      { name: 'main_tank', label: 'Main Tank', type: 'number' },
+      { name: 'day_tank_kiln', label: 'Day Tank Kiln', type: 'number' },
+      { name: 'day_tank_tg', label: 'Day Tank TG', type: 'number' },
+      { name: 'note', label: 'Note', type: 'text' },
+    ]
+  },
+  {
+    id: 'inventory',
+    name: 'SB3 Ground',
+    category: 'Stock',
+    fields: [
+      { name: 'material_name', label: 'Raw Material Name', type: 'select', options: [] },
+      { name: 'material_4', label: 'Material 4', type: 'select', options: [] },
+      { name: 'qty_4', label: 'Qty 4', type: 'number' },
+      { name: 'material_5', label: 'Material 5', type: 'select', options: [] },
+      { name: 'qty_5', label: 'Qty 5', type: 'number' },
+      { name: 'material_6', label: 'Material 6', type: 'select', options: [] },
+      { name: 'qty_6', label: 'Qty 6', type: 'number' },
+      { name: 'opening_stock', label: 'Opening Stock', type: 'number', readonly: true },
+      { name: 'purchase_qty', label: 'Purchase Qty', type: 'number', readonly: true },
+      { name: 'use_stock', label: 'Use Stock', type: 'number', readonly: true },
+      { name: 'issue_qty', label: 'Issue Qty', type: 'number', readonly: true },
+      { name: 'actual_stock', label: 'Actual Stock', type: 'number', readonly: true },
     ]
   }
 ];

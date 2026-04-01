@@ -94,9 +94,9 @@ export default function Sidebar({
   const [isOpen, setIsOpen] = React.useState(false);
 
   const categories = [
-    { name: 'Main', depts: [], items: [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }, { id: 'rm', name: 'RM', icon: Zap }] },
+    { name: 'Main', depts: [], items: [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }, { id: 'rm', name: 'RM', icon: Zap }, { id: 'inventory', name: 'Issue To SB3', icon: Database }] },
     { name: 'Lab', depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm'), icon: FlaskConical },
-    { name: 'Stock', depts: departments.filter(d => d.category === 'Stock'), icon: Package },
+    { name: 'Stock', depts: departments.filter(d => d.category === 'Stock' && d.id !== 'inventory' && d.id !== 'sb3_ground'), icon: Package },
     { name: 'Operations', depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'), icon: Gauge }
   ];
 
