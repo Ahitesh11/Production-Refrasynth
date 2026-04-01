@@ -196,8 +196,6 @@ function doGet(e) {
     return createJsonResponse(ranges);
   }
 
-<<<<<<< HEAD
-=======
   // 6. Fetch Inventory Data summary
   if (action === "getInventory") {
     var sheet = ss.getSheetByName("Inventory");
@@ -222,7 +220,6 @@ function doGet(e) {
     return createJsonResponse(jsonData);
   }
 
->>>>>>> 8b46b2f (Initial commit)
   return ContentService.createTextOutput("Error: Invalid or missing action parameter").setMimeType(ContentService.MimeType.TEXT);
 }
 
@@ -401,17 +398,10 @@ function getHeadersForDepartment(name) {
       midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Al2O3", "Fe2O3", "SiO2", "TiO2", "CaO", "MgO", "AP", "BD", "Note"];
       break;
     case "SB3 Ground":
-<<<<<<< HEAD
-      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Material 1", "Qty1", "Material 2", "Qty2", "Material 3", "Qty3"];
-      break;
-    case "SB3 Hopper":
-      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "RM1", "Hopper 3", "GR1", "RM2", "Hopper 4", "GR2", "RM3", "Hopper 5", "GR3", "Note"];
-=======
       midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Material 1", "Qty1", "Material 2", "Qty2", "Material 3", "Qty3", "Material 4", "Qty4", "Material 5", "Qty5", "Material 6", "Qty6"];
       break;
     case "SB3 Hopper":
       midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "RM1", "Hopper 3", "RM2", "Hopper 4", "RM3", "Hopper 5", "RM4", "Hopper 6", "RM5", "Hopper 7", "RM6", "Hopper 8", "Note"];
->>>>>>> 8b46b2f (Initial commit)
       break;
     case "PPT":
       midHeaders = ["Campaign No.", "Date", "Semi Finished Product Name", "Ispileg Re-feeded Qty"];
@@ -447,13 +437,10 @@ function getHeadersForDepartment(name) {
     case "Why Production Stop":
       midHeaders = ["Campaign No.", "Date", "Shift", "Time Stop", "Department", "Problem Description", "Machine Name", "Reported By", "Planned", "Actual", "Delay", "Date", "Shift", "Time", "Duration"];
       break;
-<<<<<<< HEAD
-=======
     case "Campaign Opening Closing":
     case "Opning Closing":
       midHeaders = ["Campaign No.", "Type", "Main Tank", "Day Tank Kiln", "Day Tank TG", "Note"];
       break;
->>>>>>> 8b46b2f (Initial commit)
     default:
       midHeaders = ["Data 1", "Data 2", "Data 3"];
   }
