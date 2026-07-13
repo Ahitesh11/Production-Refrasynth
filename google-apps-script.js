@@ -196,6 +196,38 @@ function doGet(e) {
     return createJsonResponse(ranges);
   }
 
+  // 6.5 Fetch Users (for the Manage Users admin panel) — passwords are never returned
+  if (action === "getUsers") {
+    var loginSheetUsers = ss.getSheetByName("Login");
+    if (!loginSheetUsers) return createJsonResponse({ headers: [], users: [] });
+
+    var userData = loginSheetUsers.getDataRange().getValues();
+    if (userData.length < 1) return createJsonResponse({ headers: [], users: [] });
+
+    var userHeaders = userData[0];
+    var userTypeIdx = userHeaders.indexOf("Type");
+    if (userTypeIdx === -1) userTypeIdx = userHeaders.length - 1;
+
+    var users = [];
+    for (var u = 1; u < userData.length; u++) {
+      var uRow = userData[u];
+      if (!uRow[0]) continue; // skip blank rows
+
+      var uPermissions = {};
+      for (var p = 2; p < userTypeIdx; p++) {
+        uPermissions[userHeaders[p]] = (uRow[p] === "Yes");
+      }
+
+      users.push({
+        username: uRow[0],
+        type: uRow[userTypeIdx] || "",
+        permissions: uPermissions
+      });
+    }
+
+    return createJsonResponse({ headers: userHeaders, users: users });
+  }
+
   // 6. Fetch Inventory Data summary
   if (action === "getInventory") {
     var sheet = ss.getSheetByName("Inventory");
@@ -243,9 +275,14 @@ function doPost(e) {
     var values = data.values; // Array [Timestamp, Data1, Data2...]
     var partialData = data.partialData; // Object { "Field Name": value }
     var uniqueId = data.uniqueId; // For finding rows by something other than Timestamp
+    var isDelete = data.action === "deleteUser";
 
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(sheetName);
+
+    if (!sheet && isDelete) {
+      return createJsonResponse({ result: "error", error: "Sheet '" + sheetName + "' not found" });
+    }
 
     if (!sheet) {
       // Robust sheet lookup
@@ -269,6 +306,22 @@ function doPost(e) {
     }
 
     var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+
+    // Batch insert: append many rows in a single call (used for recurring task generation)
+    var batchValues = data.batchValues;
+    if (batchValues && Array.isArray(batchValues) && batchValues.length > 0) {
+      var numCols = headers.length;
+      var rows = batchValues.map(function (row) {
+        var r = row.slice(0, numCols);
+        while (r.length < numCols) r.push('');
+        return r;
+      });
+      var startRow = sheet.getLastRow() + 1;
+      if (startRow < 2) startRow = 2;
+      sheet.getRange(startRow, 1, rows.length, numCols).setValues(rows);
+      return createJsonResponse({ result: "success", message: "Batch added", count: rows.length });
+    }
+
     var dataRange = sheet.getDataRange();
     var sheetData = dataRange.getValues();
     var rowIndex = -1;
@@ -294,6 +347,14 @@ function doPost(e) {
         rowIndex = i + 1;
         break;
       }
+    }
+
+    if (isDelete) {
+      if (rowIndex > -1) {
+        sheet.deleteRow(rowIndex);
+        return createJsonResponse({ result: "success", message: "Deleted" });
+      }
+      return createJsonResponse({ result: "error", error: "Row not found for '" + searchQuery + "'" });
     }
 
     if (rowIndex > -1) {
@@ -388,11 +449,17 @@ function getHeadersForDepartment(name) {
     case "DGU":
       midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note", "Fineness %1", "Fineness %2", "Fineness %3", "Fineness %4", "Fineness %5", "Fineness %6", "Fineness %7", "Fineness %8"];
       break;
+    case "Mixer":
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Temperature", "Viscosity", "Moisture"];
+      break;
     case "Balling Disc":
       midHeaders = ["Campaign", "Shift", "Date", "Name", "GBM H1", "GBM H2", "GBM H3", "GBM H4", "GBM H5", "GBM H6", "GBM H7", "GBM H8", "Drop Test", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note"];
       break;
     case "Kiln":
       midHeaders = ["Campaign No.", "Shift", "Date", "Name", "LBD H1", "LBD H2", "LBD H3", "LBD H4", "LBD H5", "LBD H6", "LBD H7", "LBD H8", "AP H2", "AP H4", "AP H6", "AP H8", "BD H2", "BD H4", "BD H6", "BD H8", "AP Composite (24hr)", "BD Composite (24hr)", "LBD AP Composite (24hr)", "LBD BD Composite (24hr)", "Note"];
+      break;
+    case "Cooler":
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "AP", "BD"];
       break;
     case "Product House":
       midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Al2O3", "Fe2O3", "SiO2", "TiO2", "CaO", "MgO", "AP", "BD", "Note"];
@@ -440,6 +507,9 @@ function getHeadersForDepartment(name) {
     case "Campaign Opening Closing":
     case "Opning Closing":
       midHeaders = ["Campaign No.", "Type", "Main Tank", "Day Tank Kiln", "Day Tank TG", "Note"];
+      break;
+    case "Check List":
+      midHeaders = ["Task ID", "Given By", "Name", "Task Description", "Task Start Date", "Freq", "Planned1", "Actual1", "Delay1", "Status1", "Planned2", "Actual2", "Delay2", "Status2"];
       break;
     default:
       midHeaders = ["Data 1", "Data 2", "Data 3"];

@@ -1,16 +1,28 @@
 import React, { useState } from 'react';
 import { User } from '../types';
-import { Lock, User as UserIcon, Loader2, AlertCircle, ShieldCheck } from 'lucide-react';
-import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { Lock, User as UserIcon, Loader2, AlertCircle, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
   onLogin: (user: User) => void;
 }
 
+const containerVariants = {
+  hidden: {},
+  show: {
+    transition: { staggerChildren: 0.07, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] as const } },
+};
+
 export default function Login({ onLogin }: Props) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,111 +48,143 @@ export default function Login({ onLogin }: Props) {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Soft Background Accents */}
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden font-sans">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-blue-50 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-slate-50 rounded-full blur-[120px]" />
+        <motion.div
+          animate={{ x: [0, 20, 0], y: [0, -15, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-[-15%] right-[-10%] w-[55%] h-[55%] bg-brand-100/40 rounded-full blur-[120px]"
+        />
+        <motion.div
+          animate={{ x: [0, -20, 0], y: [0, 15, 0] }}
+          transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute bottom-[-15%] left-[-10%] w-[55%] h-[55%] bg-brand-200/30 rounded-full blur-[120px]"
+        />
+        <motion.div
+          animate={{ x: [0, 10, 0], y: [0, -10, 0] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40%] h-[40%] bg-brand-300/20 rounded-full blur-[140px]"
+        />
       </div>
 
-      <div className="w-full max-w-[400px] relative z-10">
-        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden transition-all duration-500">
-          {/* Header */}
-          <div className="px-10 pt-12 pb-6 text-center">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="show"
+        className="w-full max-w-[400px] relative z-10"
+      >
+        <motion.div
+          variants={itemVariants}
+          className="bg-white/90 backdrop-blur-sm rounded-2xl overflow-hidden border border-slate-200/80 shadow-2xl shadow-brand-100/30"
+        >
+          <div className="px-10 pt-12 pb-8 text-center">
             <motion.div
-              initial={{ y: -20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-sm border border-slate-100 overflow-hidden"
+              variants={itemVariants}
+              className="w-20 h-20 mx-auto mb-6"
             >
               <img
-                src="https://lh3.googleusercontent.com/d/1JIgrmv3JkmGICyFT2vsi38n3hLW6H92Y"
+                src="/logo.svg"
                 alt="Logo"
-                className="w-full h-full object-cover scale-110"
+                className="w-full h-full object-contain"
               />
             </motion.div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Refrasynth</h1>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 leading-none"></p>
+            <motion.h1 variants={itemVariants} className="text-2xl font-semibold tracking-tight text-slate-900">
+              Refrasynth
+            </motion.h1>
+            <motion.p variants={itemVariants} className="text-sm text-slate-500 font-normal mt-1.5">
+              Production Management System
+            </motion.p>
           </div>
 
-          <form onSubmit={handleSubmit} className="px-10 py-6 space-y-5">
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-rose-50 border border-rose-100 text-rose-600 px-4 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center gap-3"
-              >
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                {error}
-              </motion.div>
-            )}
+          <form onSubmit={handleSubmit} className="px-10 pb-10 space-y-5">
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8, height: 0 }}
+                  animate={{ opacity: 1, y: 0, height: 'auto' }}
+                  exit={{ opacity: 0, y: -8, height: 0 }}
+                  transition={{ duration: 0.25 }}
+                  className="bg-rose-50/80 border border-rose-200 text-rose-700 px-4 py-3.5 rounded-xl text-sm font-medium flex items-center gap-3 overflow-hidden"
+                >
+                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-500" />
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700 ml-1">
                   Username
                 </label>
                 <div className="relative group">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                  <UserIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-600 transition-colors" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     required
-                    className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
-                    placeholder="Enter username"
+                    autoComplete="username"
+                    className="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-800 placeholder:text-slate-400"
+                    placeholder="Enter your username"
                   />
                 </div>
-              </div>
+              </motion.div>
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">
+              <motion.div variants={itemVariants} className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700 ml-1">
                   Password
                 </label>
                 <div className="relative group">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 group-focus-within:text-blue-600 transition-colors" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-brand-600 transition-colors" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-50 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
-                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    className="w-full h-12 pl-10 pr-12 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-800 placeholder:text-slate-400"
+                    placeholder="Enter your password"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            <button
+            <motion.button
+              variants={itemVariants}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 flex items-center justify-center bg-slate-900 text-white rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-blue-600 active:scale-[0.98] disabled:opacity-50 transition-all shadow-lg shadow-slate-200 mt-2"
+              className="w-full h-12 flex items-center justify-center bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold tracking-wide disabled:opacity-50 transition-all shadow-lg shadow-brand-200/50 hover:shadow-brand-300/50 mt-2"
             >
               {isLoading ? (
-                <div className="flex items-center space-x-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
-                  <span>Verifying...</span>
+                <div className="flex items-center space-x-2.5">
+                  <Loader2 className="w-5 h-5 animate-spin text-brand-200" />
+                  <span>Login...</span>
                 </div>
               ) : (
-                <div className="flex items-center space-x-2">
-                  <ShieldCheck className="w-4 h-4" />
-                  <span>Login</span>
+                <div className="flex items-center space-x-2.5">
+                  <ShieldCheck className="w-5 h-5" />
+                  <span>Sign In</span>
                 </div>
               )}
-            </button>
+            </motion.button>
           </form>
+        </motion.div>
 
-          <div className="px-10 pb-10">
-            <div className="flex items-center justify-center pt-6 border-t border-slate-50 gap-2">
-              <div className="w-1 h-1 rounded-full bg-blue-600 animate-pulse" />
-              <span className="text-[10px] font-bold text-slate-300 uppercase tracking-widest leading-none">Secure Access Only</span>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-center mt-8 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
-          © 2026 Refrasynth Solutions
-        </p>
-      </div>
+        <motion.p variants={itemVariants} className="text-center mt-8 text-[11px] font-medium text-slate-400">
+          © {new Date().getFullYear()}  Passary Refractories. All Rights Reserved.
+        </motion.p>
+      </motion.div>
     </div>
   );
 }

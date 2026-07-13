@@ -294,7 +294,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
               onClick={() => setIsAdminLimitOpen(true)}
               className="flex items-center px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-zinc-50 transition-all shadow-sm"
             >
-              <Settings className="w-4 h-4 mr-2 text-[#03A9F4]" />
+              <Settings className="w-4 h-4 mr-2 text-[#5B6B2E]" />
               Configure Limits
             </button>
           )}
@@ -353,7 +353,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
             {([
               { id: 'all', label: 'All Entries', color: 'bg-zinc-900 text-white' },
               { id: 'fineness', label: '📊 Fineness Report', color: 'bg-emerald-600 text-white' },
-              { id: 'lab', label: '🧪 Lab Report', color: 'bg-blue-600 text-white' },
+              { id: 'lab', label: '🧪 Lab Report', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -383,7 +383,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
             {([
               { id: 'all', label: 'All Entries', color: 'bg-zinc-900 text-white' },
               { id: 'moisture', label: '💧 Moisture Report', color: 'bg-cyan-600 text-white' },
-              { id: 'lab', label: '🧪 Lab Report', color: 'bg-blue-600 text-white' },
+              { id: 'lab', label: '🧪 Lab Report', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -408,8 +408,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
         <div className="overflow-x-auto max-h-[600px] custom-scrollbar">
           <table className="w-full text-left border-separate border-spacing-0">
             <thead>
-              <tr className="bg-zinc-50">
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky left-0 top-0 bg-zinc-50 z-30 border-b border-zinc-200 align-bottom">
+              <tr className="bg-brand-50">
+                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky left-0 top-0 bg-brand-50 z-30 border-b border-zinc-200 align-bottom">
                   Timestamp
                 </th>
                 {visibleFields.map(field => {
@@ -428,10 +428,10 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   }
 
                   return (
-                    <th key={field.name} className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200 align-bottom">
+                    <th key={field.name} className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap sticky top-0 bg-brand-50 z-20 border-b border-zinc-200 align-bottom">
                       {avgStr !== null && (
                         <div className="mb-2">
-                          <span className="text-[#03A9F4] font-black text-xs mr-1">{avgStr}</span>
+                          <span className="text-[#5B6B2E] font-black text-xs mr-1">{avgStr}</span>
                           <span className="text-[8px] text-zinc-400 uppercase opacity-70">Avg</span>
                         </div>
                       )}
@@ -732,7 +732,7 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
       <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-zinc-200">
         <div className="px-8 py-6 bg-zinc-900 text-white flex items-center justify-between">
           <div>
-            <p className="text-[#03A9F4] text-[10px] font-bold uppercase tracking-widest mb-1">Quality Control</p>
+            <p className="text-[#5B6B2E] text-[10px] font-bold uppercase tracking-widest mb-1">Quality Control</p>
             <h2 className="text-xl font-bold tracking-tight">Limit Configuration</h2>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
@@ -749,7 +749,7 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
                   value={localRanges[key] || ''}
                   placeholder={['Fineness', 'Drop Test', 'Moisture'].includes(key) ? 'e.g. 95' : 'e.g. 82.5 to 83.5'}
                   onChange={(e) => setLocalRanges({ ...localRanges, [key]: e.target.value })}
-                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#03A9F4] focus:border-transparent outline-none text-sm font-bold text-zinc-700"
+                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#5B6B2E] focus:border-transparent outline-none text-sm font-bold text-zinc-700"
                 />
                 <p className="text-[9px] text-zinc-400 italic ml-1">
                   {['Drop Test', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Fineness'].includes(key) ? 'Value BELOW this will be RED, above will be GREEN.' : ['Moisture'].includes(key) ? 'Value ABOVE this will be RED, below will be GREEN.' : 'Standard Min to Max format.'}
@@ -769,7 +769,7 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
               disabled={isSaving}
               className="px-8 py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all flex items-center"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2 text-[#03A9F4]" />}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2 text-[#5B6B2E]" />}
               Apply & Sync
             </button>
           </div>

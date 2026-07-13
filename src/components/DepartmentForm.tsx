@@ -88,11 +88,11 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
       labelPrefixes: ['Fineness %'],
       accent: 'bg-emerald-500'
     },
-    { fields: gbmFields, title: 'Moisture Data', labelPrefixes: ['GBM ', 'Green Ball Moisture '], accent: 'bg-orange-500' },
-    { fields: dropFields, title: 'Drop Test Data', labelPrefixes: ['Drop ', 'Drop Test '], accent: 'bg-orange-600' },
-    { fields: lbdFields, title: 'LBD Readings', labelPrefixes: ['LBD '], accent: 'bg-orange-400' },
+    { fields: gbmFields, title: 'Moisture Data', labelPrefixes: ['GBM ', 'Green Ball Moisture '], accent: 'bg-brand-500' },
+    { fields: dropFields, title: 'Drop Test Data', labelPrefixes: ['Drop ', 'Drop Test '], accent: 'bg-brand-600' },
+    { fields: lbdFields, title: 'LBD Readings', labelPrefixes: ['LBD '], accent: 'bg-brand-400' },
     { fields: apFields, title: 'AP Measurements', labelPrefixes: ['AP '], accent: 'bg-emerald-600' },
-    { fields: bdFields, title: 'BD Measurements', labelPrefixes: ['BD '], accent: 'bg-orange-700' }
+    { fields: bdFields, title: 'BD Measurements', labelPrefixes: ['BD '], accent: 'bg-brand-700' }
   ].filter(grid => {
     if (grid.fields.length === 0) return false;
     const mode = formData.entry_type || 'Shift';
@@ -111,7 +111,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
       {/* Refined Header */}
       <div className="px-8 py-6 bg-white border-b border-slate-200 flex items-center justify-between relative">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center shadow-lg shadow-orange-100 transition-transform hover:scale-105">
+          <div className="w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-100 transition-transform hover:scale-105">
             <Database className="w-6 h-6 text-white" />
           </div>
           <div>
@@ -148,7 +148,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                     className={cn(
                       "px-8 py-2.5 rounded-xl text-xs font-bold transition-all duration-300",
                       (formData.entry_type || 'Shift') === mode
-                        ? "bg-orange-500 text-white shadow-md shadow-orange-100"
+                        ? "bg-brand-500 text-white shadow-md shadow-brand-100"
                         : "text-slate-400 hover:text-slate-600"
                     )}
                   >
@@ -168,7 +168,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {otherFields.map((field) => (
                 <div key={field.name} className="space-y-2 group">
-                  <label className="text-[11px] font-semibold text-slate-500 ml-1">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
                     {field.label}
                   </label>
                   <div className="relative">
@@ -178,7 +178,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         value={formData[field.name] || ''}
                         onChange={handleChange}
                         required={['date', 'shift'].includes(field.name)}
-                        className="w-full h-11 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/5 transition-all outline-none text-sm font-medium text-slate-700 appearance-none"
+                        className="w-full h-11 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all outline-none text-sm font-medium text-slate-700 appearance-none"
                       >
                         <option value="">Select...</option>
                         {field.options?.map(opt => (
@@ -195,7 +195,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const mStr = (currentVal.split(' ')[0] || '12:00').split(':')[1] || '00';
                             setFormData(prev => ({ ...prev, [field.name]: `${e.target.value}:${mStr} ${ampmStr}` }));
                           }}
-                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-orange-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
+                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
                         >
                           {Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -208,7 +208,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const hStr = (currentVal.split(' ')[0] || '12:00').split(':')[0] || '12';
                             setFormData(prev => ({ ...prev, [field.name]: `${hStr}:${e.target.value} ${ampmStr}` }));
                           }}
-                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-orange-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
+                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
                         >
                           {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
@@ -218,7 +218,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const currentTime = (formData[field.name] || '12:00 AM').split(' ')[0] || '12:00';
                             setFormData(prev => ({ ...prev, [field.name]: `${currentTime} ${e.target.value}` }));
                           }}
-                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-orange-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
+                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
                         >
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
@@ -233,7 +233,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         onChange={handleChange}
                         required={['date', 'shift'].includes(field.name)}
                         placeholder={field.type === 'number' ? '0.00' : 'Enter value...'}
-                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-orange-500 focus:ring-4 focus:ring-orange-500/5 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
+                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
                       />
                     )}
                     {field.type === 'select' && (
@@ -260,7 +260,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                     {grid.fields.map((field) => (
                       <div key={field.name} className="space-y-1.5">
-                        <label className="text-[10px] font-semibold text-slate-400 text-center block">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center block">
                           {grid.labelPrefixes.reduce((acc, prefix) => acc.replace(prefix, ''), field.label)}
                         </label>
                         <input
@@ -270,7 +270,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                           value={formData[field.name] || ''}
                           onChange={handleChange}
                           placeholder="0.0"
-                          className="w-full h-10 px-0 bg-slate-50 border border-slate-100 rounded-lg focus:bg-white focus:border-orange-500 transition-all outline-none text-sm font-bold text-slate-700 text-center"
+                          className="w-full h-10 px-0 bg-slate-50 border border-slate-100 rounded-lg focus:bg-white focus:border-brand-500 transition-all outline-none text-sm font-bold text-slate-700 text-center"
                         />
                       </div>
                     ))}
@@ -297,12 +297,12 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
             >
               {isSubmitting ? (
                 <div className="flex items-center space-x-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-orange-500" />
+                  <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
                   <span>Transmitting...</span>
                 </div>
               ) : (
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-4 h-4 text-orange-500 group-hover:scale-110 transition-transform" />
+                  <FileText className="w-4 h-4 text-brand-500 group-hover:scale-110 transition-transform" />
                   <span>Submit Records</span>
                 </div>
               )}

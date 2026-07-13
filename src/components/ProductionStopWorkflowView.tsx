@@ -515,7 +515,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                     : "text-zinc-400 hover:text-zinc-600"
                             )}
                         >
-                            <tab.icon className={cn("w-3.5 h-3.5 mr-2", activeTab === tab.id ? "text-orange-500" : "text-zinc-300")} />
+                            <tab.icon className={cn("w-3.5 h-3.5 mr-2", activeTab === tab.id ? "text-brand-500" : "text-zinc-300")} />
                             {tab.label}
                         </button>
                     ))}
@@ -599,26 +599,26 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                         <div className="overflow-x-auto max-h-[600px] custom-scrollbar relative">
                             <table className="w-full text-left border-separate border-spacing-0">
                                 <thead>
-                                    <tr className="bg-zinc-50">
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Timestamp</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Date/Shift</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Campaign</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Department</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Machine</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Problem</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Time Stop</th>
+                                    <tr className="bg-brand-50">
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Timestamp</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Date/Shift</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Campaign</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Department</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Machine</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Problem</th>
+                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Time Stop</th>
 
                                         {activeTab === 'history' && (
                                             <>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fix Date/Shift</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fix Time</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Duration</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Status</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fix Date/Shift</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fix Time</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Duration</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Status</th>
                                             </>
                                         )}
 
                                         {activeTab === 'step1' && (
-                                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 right-0 bg-zinc-50 z-30 border-b border-zinc-200 text-right">Action</th>
+                                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 right-0 bg-brand-50 z-30 border-b border-zinc-200 text-right">Action</th>
                                         )}
                                     </tr>
                                 </thead>
@@ -665,7 +665,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                                 <td className="px-6 py-4 text-xs text-zinc-600 max-w-sm truncate">
                                                     {getData(entry, 'problem_description')}
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-zinc-900 font-bold bg-orange-50/50 rounded-lg">
+                                                <td className="px-6 py-4 text-xs text-zinc-900 font-bold bg-brand-50/50 rounded-lg">
                                                     {formatTime12h(getData(entry, 'time_stop'))}
                                                 </td>
 

@@ -6,6 +6,8 @@ import Login from './components/Login';
 import RMWorkflowView from './components/RMWorkflowView';
 import ProductionStopWorkflowView from './components/ProductionStopWorkflowView';
 import InventoryView from './components/InventoryView';
+import ManageUsers from './components/ManageUsers';
+import ChecklistWorkflowView from './components/ChecklistWorkflowView';
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
 import { AlertCircle, Database, X } from 'lucide-react';
@@ -16,7 +18,7 @@ export default function App() {
     const saved = localStorage.getItem('erp_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard'>('dashboard');
+  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users'>('dashboard');
   const [entries, setEntries] = useState<Entry[]>(() => {
     const saved = localStorage.getItem('erp_entries');
     return saved ? JSON.parse(saved) : [];
@@ -117,9 +119,16 @@ export default function App() {
         const entriesData = await (entriesRes as Response).json().catch(() => []);
         if (Array.isArray(entriesData)) {
           const validEntries = entriesData.filter((e: any) => e.timestamp && String(e.timestamp).trim() !== '');
+          // Some sheet tab names don't literally match our department ids once
+          // spaces are replaced with underscores (typos, abbreviations, etc.) —
+          // remap those here so their entries aren't silently dropped.
+          const departmentIdRemap: Record<string, string> = {
+            'why_production_stop': 'production_stop',
+            'opning_closing': 'opening_closing',
+          };
           const mappedEntries = validEntries.map((e: any) => ({
              ...e,
-             departmentId: e.departmentId === 'why_production_stop' ? 'production_stop' : e.departmentId
+             departmentId: departmentIdRemap[e.departmentId] || e.departmentId
           }));
           setEntries(mappedEntries);
           localStorage.setItem('erp_entries', JSON.stringify(mappedEntries));
@@ -310,7 +319,22 @@ export default function App() {
           </div>
         )}
         <div className="py-12 px-8">
-          {activeId === 'dashboard' ? (
+          {activeId === 'manage_users' ? (
+            user.type === 'Admin' ? (
+              <ManageUsers scriptUrl={scriptUrl} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-400">
+                <AlertCircle className="w-12 h-12 mb-4 opacity-20" />
+                <p className="text-sm font-medium">You don't have permission to view this page.</p>
+                <button
+                  onClick={() => setActiveId('dashboard')}
+                  className="mt-4 text-xs font-bold text-zinc-900 underline underline-offset-4"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
+            )
+          ) : activeId === 'dashboard' ? (
             <Dashboard
               entries={entries}
               compositionData={compositionData}
@@ -331,6 +355,14 @@ export default function App() {
               <ProductionStopWorkflowView
                 department={departmentsWithMaster.find(d => d.id === 'production_stop')!}
                 entries={entries.filter(e => e.departmentId === 'production_stop')}
+                onAddEntry={handleAddEntry}
+                onUpdateEntry={handleUpdateEntry}
+                scriptUrl={scriptUrl}
+              />
+            ) : activeId === 'check_list' ? (
+              <ChecklistWorkflowView
+                department={departmentsWithMaster.find(d => d.id === 'check_list')!}
+                entries={entries.filter(e => e.departmentId === 'check_list')}
                 onAddEntry={handleAddEntry}
                 onUpdateEntry={handleUpdateEntry}
                 scriptUrl={scriptUrl}

@@ -80,7 +80,9 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         mgo: 'MgO',
         tio2: 'TiO2',
         cao: 'CaO',
-        remarks_chemical: 'Remarks'
+        // "Remarks" appears twice in the RM sheet (Physical + Chemical). The server
+        // auto-suffixes the second occurrence with "_1" to avoid a key collision.
+        remarks_chemical: 'Remarks_1'
     };
 
     const getData = (entry: Entry, name: string) => {
@@ -259,7 +261,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                     : "text-zinc-400 hover:text-zinc-600"
                             )}
                         >
-                            <tab.icon className={cn("w-3.5 h-3.5 mr-2", activeTab === tab.id ? "text-orange-500" : "text-zinc-300")} />
+                            <tab.icon className={cn("w-3.5 h-3.5 mr-2", activeTab === tab.id ? "text-brand-500" : "text-zinc-300")} />
                             {tab.label}
                         </button>
                     ))}
@@ -341,63 +343,63 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                         <div className="overflow-x-auto max-h-[600px] custom-scrollbar relative">
                             <table className="w-full text-left border-separate border-spacing-0">
                                 <thead>
-                                    <tr className="bg-zinc-50">
+                                    <tr className="bg-brand-50">
                                         {activeTab === 'history' ? (
                                             <>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Timestamp</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 left-0 bg-zinc-50 z-30 border-b border-zinc-200">Unique No.</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Party Name</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Truck No.</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Invoice No.</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">RM Name</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Truck Qty</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Chemist</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Testing Date</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Planned (Phy)</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Actual (Phy)</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Delay (Phy)</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">AD</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">BD</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fineness</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Loi</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Moisture</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Phy Remarks</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Planned (Chem)</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Actual (Chem)</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Delay (Chem)</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Al2O3</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fe2O3</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">SiO2</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">MgO</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">TiO2</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">CaO</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Chem Remarks</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Status</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Timestamp</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 left-0 bg-brand-50 z-30 border-b border-zinc-200">Unique No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Party Name</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Truck No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Invoice No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">RM Name</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Truck Qty</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Chemist</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Testing Date</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Planned (Phy)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Actual (Phy)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Delay (Phy)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">AD</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">BD</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fineness</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Loi</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Moisture</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Phy Remarks</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Planned (Chem)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Actual (Chem)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Delay (Chem)</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Al2O3</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fe2O3</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">SiO2</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">MgO</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">TiO2</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">CaO</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Chem Remarks</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Status</th>
                                             </>
                                         ) : (
                                             <>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 left-0 bg-zinc-50 z-30 border-b border-zinc-200">Unique No.</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Party Name</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Truck No.</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Invoice No.</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">RM Name</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Testing Date</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 left-0 bg-brand-50 z-30 border-b border-zinc-200">Unique No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Party Name</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Truck No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Invoice No.</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">RM Name</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Testing Date</th>
                                                 {activeTab === 'step1' ? (
                                                     <>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Planned</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Qty</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Planned</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Qty</th>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">AD</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">BD</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Fineness</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Loi</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Moisture</th>
-                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-zinc-50 z-20 border-b border-zinc-200">Planned1</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">AD</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">BD</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fineness</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Loi</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Moisture</th>
+                                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Planned1</th>
                                                     </>
                                                 )}
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 right-0 bg-zinc-50 z-30 border-b border-zinc-200 text-right">Action</th>
+                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 right-0 bg-brand-50 z-30 border-b border-zinc-200 text-right">Action</th>
                                             </>
                                         )}
                                     </tr>
@@ -444,7 +446,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'truck_qty')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'chemist_name')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'date_of_testing')}</td>
-                                                            <td className="px-6 py-4 text-[10px] text-blue-600 font-bold">{getData(entry, 'planned')}</td>
+                                                            <td className="px-6 py-4 text-[10px] text-brand-600 font-bold">{getData(entry, 'planned')}</td>
                                                             <td className="px-6 py-4 text-[10px] text-zinc-500">{getData(entry, 'actual')}</td>
                                                             <td className="px-6 py-4 text-[10px] text-zinc-500">{getData(entry, 'delay')}</td>
                                                             <td className="px-6 py-4 text-xs text-zinc-500">{getData(entry, 'ad')}</td>
@@ -484,7 +486,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                             {activeTab === 'step1' ? (
                                                                 <>
                                                                     <td className="px-6 py-4">
-                                                                        <span className="px-2 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold border border-blue-100 italic">
+                                                                        <span className="px-2 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-bold border border-brand-100 italic">
                                                                             {getData(entry, 'planned')}
                                                                         </span>
                                                                     </td>

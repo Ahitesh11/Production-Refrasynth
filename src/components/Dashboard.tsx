@@ -71,7 +71,7 @@ const StatusBadge = ({ status }: { status: 'High' | 'Moderate' | 'Critical' | 'A
     High: 'bg-emerald-50 text-emerald-700 border-emerald-100',
     Moderate: 'bg-amber-50 text-amber-700 border-amber-100',
     Critical: 'bg-red-50 text-red-700 border-red-100',
-    Active: 'bg-blue-50 text-blue-700 border-blue-100',
+    Active: 'bg-brand-50 text-brand-700 border-brand-100',
   };
   return (
     <span className={`text-[10px] font-black px-2 py-0.5 rounded-lg border uppercase tracking-wider ${styles[status] || styles['Active']}`}>
@@ -701,7 +701,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const spillagePct = totalProduction > 0 ? ((totalSpillage / totalProduction) * 100).toFixed(1) : '0';
     const recycledPct = totalSpillage > 0 ? ((totalPPT / totalSpillage) * 100).toFixed(1) : '0';
 
-    const uniqueDays = new Set(filteredEntries.map(e => e.dateOfProduction)).size || 1;
+    const uniqueDays = new Set(filteredEntries.map(e => e.data.date_of_production || e.data['Date Of Production'] || e.data.date || e.data.Date || e.timestamp)).size || 1;
     const dailyTarget = 40.0;
     let periodTarget = dailyTarget;
     if (dateFilter === '7d') periodTarget = dailyTarget * 7;
@@ -713,7 +713,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
     const wipStatsOutput = wipStats.totalWIP;
 
-    const consumptionRows = filteredEntries.filter(e => e.departmentId === 'consumption');
+    const consumptionRows = filteredEntries.filter(e => (e.departmentId as string) === 'consumption');
     const totalConsumption = consumptionRows.reduce((sum, e) => sum + (parseFloat(e.data.Total || e.data.total) || 0), 0);
     const totalInput = totalConsumption > 0 ? totalConsumption : totalHopper;
     const consumptionLogic = totalConsumption > 0
@@ -1345,13 +1345,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 md:px-6 py-6 space-y-6 pb-32" style={{ fontFamily: "'DM Sans', 'Inter', sans-serif", background: '#f8f9fb' }}>
+    <div className="max-w-[1440px] mx-auto px-4 md:px-6 -mt-12 pb-32 space-y-6" style={{ background: '#f8f9fb' }}>
 
-      {/* -- TOP BAR */}
-      <div className="sticky top-0 z-50 bg-[#f8f9fb]/80 backdrop-blur-md -mx-4 md:-mx-6 px-4 md:px-6 py-4 mb-2 border-b border-transparent transition-all duration-300">
+      {/* -- TOP BAR (pinned: no scroll-through gap before it sticks) */}
+      <div className="sticky top-0 z-50 bg-[#f8f9fb]/95 backdrop-blur-md -mx-4 md:-mx-6 px-4 md:px-6 pt-6 pb-4 mb-2 border-b border-transparent transition-all duration-300">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
+            <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/20">
               <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -1374,12 +1374,12 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             </div>
 
             {selectedProducts.length > 0 && (
-              <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-100 px-3 py-2 rounded-xl">
-                <Package className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest mr-1">Produced:</span>
+              <div className="flex items-center gap-2 bg-brand-50/50 border border-brand-100 px-3 py-2 rounded-xl">
+                <Package className="w-3.5 h-3.5 text-brand-500" />
+                <span className="text-[10px] font-black text-brand-400 uppercase tracking-widest mr-1">Produced:</span>
                 <div className="flex gap-1.5 flex-wrap">
                   {selectedProducts.map(p => (
-                    <span key={p} className="text-[11px] font-black text-blue-700 bg-blue-100/50 px-2.5 py-0.5 rounded-lg border border-blue-200">
+                    <span key={p} className="text-[11px] font-black text-brand-700 bg-brand-100/50 px-2.5 py-0.5 rounded-lg border border-brand-200">
                       {p}
                     </span>
                   ))}
@@ -1394,7 +1394,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   onClick={() => setDateFilter(f)}
                   className={cn(
                     "px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all duration-200",
-                    dateFilter === f ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" : "text-slate-500 hover:text-indigo-600 hover:bg-slate-50"
+                    dateFilter === f ? "bg-brand-600 text-white shadow-md shadow-brand-600/20" : "text-slate-500 hover:text-brand-600 hover:bg-slate-50"
                   )}
                 >
                   {f === 'today' ? 'Today' : f === '7d' ? 'Week' : f === '30d' ? 'Month' : f === 'custom' ? 'Custom' : 'All'}
@@ -1439,7 +1439,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 </select>
                 <button
                   onClick={() => setAppliedCustomDateRange(customDateRange)}
-                  className="ml-1 px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm"
+                  className="ml-1 px-3 py-1 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-[10px] font-bold uppercase tracking-wider transition-colors shadow-sm"
                 >
                   Apply
                 </button>
@@ -1463,7 +1463,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center shadow-lg shadow-orange-500/20">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-brand-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
                 <Flame className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -1476,9 +1476,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               { label: 'Total Production', val: energyStats.totalQty.toFixed(1), unit: 'MT', accent: 'bg-slate-400', text: 'text-slate-800', logic: '' },
               { label: 'Total Fuel', val: energyStats.totalFuel.toFixed(1), unit: 'units', accent: 'bg-amber-500', text: 'text-amber-600', logic: '' },
               { label: 'Total Electric', val: energyStats.totalElec.toFixed(1), unit: 'units', accent: 'bg-yellow-500', text: 'text-yellow-600', logic: '' },
-              { label: 'Fuel / MT', val: energyStats.fuelPerMT, unit: 'u/MT', accent: 'bg-orange-500', text: 'text-orange-600', logic: '' },
+              { label: 'Fuel / MT', val: energyStats.fuelPerMT, unit: 'u/MT', accent: 'bg-brand-500', text: 'text-brand-600', logic: '' },
               { label: 'Electric / MT', val: energyStats.elecPerMT, unit: 'u/MT', accent: 'bg-rose-500', text: 'text-rose-600', logic: '' },
-              { label: 'Running Hours', val: String(energyStats.totalHours.toFixed(1)), unit: 'hours', accent: 'bg-indigo-500', text: 'text-indigo-600', logic: '' },
+              { label: 'Running Hours', val: String(energyStats.totalHours.toFixed(1)), unit: 'hours', accent: 'bg-brand-500', text: 'text-brand-600', logic: '' },
               { label: 'Total Stop Dur.', val: String(energyStats.totalStopDuration), unit: 'hours', accent: 'bg-emerald-500', text: 'text-emerald-600', logic: '' },
             ].map((card) => (
               <div key={card.label} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:border-slate-200 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col group">
@@ -1555,7 +1555,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                   { label: dropTestAvg.rm1Name, stat: dropTestAvg.rm1, color: 'text-red-600' },
-                  { label: dropTestAvg.rm2Name, stat: dropTestAvg.rm2, color: 'text-orange-600' },
+                  { label: dropTestAvg.rm2Name, stat: dropTestAvg.rm2, color: 'text-brand-600' },
                   { label: dropTestAvg.rm3Name, stat: dropTestAvg.rm3, color: 'text-yellow-600' },
                 ].map(row => (
                   <div key={row.label} className="bg-slate-50 rounded-2xl p-5 border border-slate-100/50 flex items-center justify-between">
@@ -1661,10 +1661,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             component: (
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {labAvgStats.kiln.map((row) => (
-                  <div key={row.label} className="bg-orange-50/50 border border-orange-100/50 rounded-2xl p-5 hover:border-orange-200 transition-all">
-                    <p className="text-[10px] font-black text-orange-400 uppercase tracking-widest mb-3">{row.label}</p>
+                  <div key={row.label} className="bg-brand-50/50 border border-brand-100/50 rounded-2xl p-5 hover:border-brand-200 transition-all">
+                    <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-3">{row.label}</p>
                     <div className="flex items-baseline gap-2 mb-4 justify-center">
-                      <span className={`text-3xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-orange-700'}`}>
+                      <span className={`text-3xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-brand-700'}`}>
                         {row.avg}
                       </span>
                     </div>
@@ -1674,8 +1674,8 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                         <p className="text-[10px] font-bold text-slate-700">{row.count}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-[8px] font-black text-orange-400 uppercase tracking-tighter">Out</p>
-                        <p className="text-[10px] font-bold text-orange-600">{row.outOfLimit}</p>
+                        <p className="text-[8px] font-black text-brand-400 uppercase tracking-tighter">Out</p>
+                        <p className="text-[10px] font-bold text-brand-600">{row.outOfLimit}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter">Eff.</p>
@@ -1694,10 +1694,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             component: (
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-4 gap-4">
                 {labAvgStats.product_house.map((row) => (
-                  <div key={row.label} className="bg-indigo-50/50 border border-indigo-100/50 rounded-2xl p-5 hover:border-indigo-200 transition-all">
-                    <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-3">{row.label}</p>
+                  <div key={row.label} className="bg-brand-50/50 border border-brand-100/50 rounded-2xl p-5 hover:border-brand-200 transition-all">
+                    <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-3">{row.label}</p>
                     <div className="flex items-baseline gap-2 mb-4 justify-center">
-                      <span className={`text-3xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-indigo-700'}`}>
+                      <span className={`text-3xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-brand-700'}`}>
                         {row.avg}
                       </span>
                     </div>
@@ -1707,8 +1707,8 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                         <p className="text-[10px] font-bold text-slate-700">{row.count}</p>
                       </div>
                       <div className="text-center">
-                        <p className="text-[8px] font-black text-indigo-400 uppercase tracking-tighter">Fail</p>
-                        <p className="text-[10px] font-bold text-indigo-600">{row.outOfLimit}</p>
+                        <p className="text-[8px] font-black text-brand-400 uppercase tracking-tighter">Fail</p>
+                        <p className="text-[10px] font-bold text-brand-600">{row.outOfLimit}</p>
                       </div>
                       <div className="text-center">
                         <p className="text-[8px] font-black text-emerald-400 uppercase tracking-tighter">Eff.</p>
@@ -1739,18 +1739,18 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- PRODUCTION ACCOUNTING */}
-      <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm overflow-hidden mb-8">
-        <div className="px-5 sm:px-7 py-5 bg-gradient-to-r from-indigo-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-indigo-100">
+      <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden mb-8">
+        <div className="px-5 sm:px-7 py-5 bg-gradient-to-r from-brand-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-100">
           <div>
-            <h2 className="text-xl font-black text-indigo-900 tracking-tight">Consumption Report</h2>
+            <h2 className="text-xl font-black text-brand-900 tracking-tight">Consumption Report</h2>
           </div>
-          <span className="text-[10px] text-indigo-600 font-bold bg-white border border-indigo-200 px-3 py-1.5 rounded-lg shadow-sm self-start sm:self-auto">{filterLabel}</span>
+          <span className="text-[10px] text-brand-600 font-bold bg-white border border-brand-200 px-3 py-1.5 rounded-lg shadow-sm self-start sm:self-auto">{filterLabel}</span>
         </div>
 
         <div className="p-4 sm:p-6 overflow-x-auto">
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 min-w-[600px] lg:min-w-0">
             {[
-              { step: 1, label: 'SB3 Hopper', sub: 'Used for Production', val: accountingSummary.totalInput.toFixed(1), unit: 'MT Used', accent: 'border-blue-200 bg-blue-50', num: 'bg-blue-500', text: 'text-blue-700', cap: 'text-blue-500', logic: accountingSummary.consumptionLogic },
+              { step: 1, label: 'SB3 Hopper', sub: 'Used for Production', val: accountingSummary.totalInput.toFixed(1), unit: 'MT Used', accent: 'border-brand-200 bg-brand-50', num: 'bg-brand-500', text: 'text-brand-700', cap: 'text-brand-500', logic: accountingSummary.consumptionLogic },
               { step: 2, label: 'Production', sub: 'Actual Output', val: accountingSummary.totalProduction.toFixed(1), unit: 'MT Output', accent: 'border-emerald-200 bg-emerald-50', num: 'bg-emerald-500', text: 'text-emerald-700', cap: 'text-emerald-500', logic: `Sum of all finished product (${productStats.count} entries)` },
               { step: 3, label: 'Spillage', sub: 'All Sources', val: accountingSummary.totalSpillage.toFixed(1), unit: 'MT Spillage', accent: 'border-red-200 bg-red-50', num: 'bg-red-500', text: 'text-red-700', cap: 'text-red-500', logic: `Sum of all spillage streams (${spillageStats.count} entries)` },
               { step: 4, label: 'PPT Recycle', sub: 'Spillage Re-feeded', val: accountingSummary.totalPPT.toFixed(1), unit: 'MT Recycled', accent: 'border-purple-200 bg-purple-50', num: 'bg-purple-500', text: 'text-purple-700', cap: 'text-purple-500', logic: `Sum of recycled spillage (${pptStats.count} entries)` },
@@ -1775,10 +1775,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-          <div className="rounded-2xl border border-indigo-100 overflow-hidden shadow-sm overflow-x-auto">
+          <div className="rounded-2xl border border-brand-100 overflow-hidden shadow-sm overflow-x-auto">
             <table className="w-full text-left border-separate border-spacing-0 min-w-[600px] bg-white">
               <thead>
-                <tr className="bg-slate-50/80">
+                <tr className="bg-brand-50">
                   <th className="px-4 sm:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pl-4 sm:pl-6">Actual</th>
                   <th className="px-4 sm:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100">Qty (MT)</th>
                   <th className="px-4 sm:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100 pr-4 sm:pr-6">%</th>
@@ -1786,7 +1786,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </thead>
               <tbody className="bg-white">
                 {[
-                  { label: 'Total Input (RM Used for Prod.)', qty: accountingSummary.totalInput.toFixed(1), pct: '100%', color: 'text-blue-700', dot: 'bg-blue-500', sign: '', bg: 'bg-blue-50/20', logic: accountingSummary.consumptionLogic },
+                  { label: 'Total Input (RM Used for Prod.)', qty: accountingSummary.totalInput.toFixed(1), pct: '100%', color: 'text-brand-700', dot: 'bg-brand-500', sign: '', bg: 'bg-brand-50/20', logic: accountingSummary.consumptionLogic },
                   { label: `LOI (${accountingSummary.avgLOI.toFixed(2)}%)`, qty: accountingSummary.loiLossMT.toFixed(1), pct: `${accountingSummary.totalInput > 0 ? ((accountingSummary.loiLossMT / accountingSummary.totalInput) * 100).toFixed(1) : '0'}%`, color: 'text-zinc-600', dot: 'bg-zinc-400', sign: '- ', bg: '', logic: 'From Composition Records LOI (%) x Total Input' },
                   { label: 'Balance ', qty: accountingSummary.balance1.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Input - LOI' },
                   { label: 'Net Operational Spillage (Spillage - PPT)', qty: accountingSummary.netSpillage.toFixed(1), pct: `${accountingSummary.balance2 > 0 ? ((accountingSummary.netSpillage / accountingSummary.balance2) * 100).toFixed(1) : '0'}%`, color: 'text-rose-700', dot: 'bg-rose-500', sign: '- ', bg: '', logic: `Accounted Spillage (${accountingSummary.totalSpillage.toFixed(1)}) - Recycled (${accountingSummary.totalPPT.toFixed(1)})` },
@@ -1827,12 +1827,12 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <p className="text-[9px] font-black text-orange-400 uppercase tracking-widest">Material Total Input</p>
+              <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Material Total Input</p>
               <h3 className="text-sm font-black text-slate-900 mt-0.5">SB3 Ground</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Input minus hopper usage</p>
             </div>
-            <div className="w-7 h-7 bg-orange-50 rounded-lg flex items-center justify-center">
-              <Layers className="w-3.5 h-3.5 text-orange-500" />
+            <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
+              <Layers className="w-3.5 h-3.5 text-brand-500" />
             </div>
           </div>
           {materialStats.totals.length === 0 ? (
@@ -1847,7 +1847,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div key={name}>
                     <div className="flex justify-between text-xs font-semibold mb-1">
                       <span className="text-slate-800 font-black truncate max-w-[140px] uppercase text-[10px] tracking-wider">{name}</span>
-                      <span className="text-orange-600 font-black text-[11px]">{qty.toFixed(1)} MT In</span>
+                      <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT In</span>
                     </div>
                     <div className="flex justify-between items-center text-[9px] mb-2 pl-2 border-l-2 border-slate-100">
                       <span className="text-slate-500 font-bold">
@@ -1857,7 +1857,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                         Stock: {stock.toFixed(1)} MT
                       </span>
                     </div>
-                    <ProgressBar pct={pct} color="bg-orange-400" />
+                    <ProgressBar pct={pct} color="bg-brand-400" />
                   </div>
                 );
               })}
@@ -1869,12 +1869,12 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Raw Material Hopper</p>
+              <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Raw Material Hopper</p>
               <h3 className="text-sm font-black text-slate-900 mt-0.5">SB3 Hopper</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of RM fed to hopper</p>
             </div>
-            <div className="w-7 h-7 bg-blue-50 rounded-lg flex items-center justify-center">
-              <Box className="w-3.5 h-3.5 text-blue-500" />
+            <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
+              <Box className="w-3.5 h-3.5 text-brand-500" />
             </div>
           </div>
           {hopperStats.totals.length === 0 ? (
@@ -1887,9 +1887,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div key={name}>
                     <div className="flex justify-between text-[10px] tracking-wider uppercase font-semibold mb-1.5">
                       <span className="text-slate-800 font-black truncate max-w-[140px]">{name}</span>
-                      <span className="text-blue-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
+                      <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
                     </div>
-                    <ProgressBar pct={pct} color="bg-blue-400" />
+                    <ProgressBar pct={pct} color="bg-brand-400" />
                   </div>
                 );
               })}
@@ -1933,22 +1933,22 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{pptStats.count} entries</p>
+              <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest">{pptStats.count} entries</p>
               <h3 className="text-sm font-black text-slate-900 mt-0.5">PPT (Re-feed)</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of Ispileg re-feeded qty</p>
             </div>
-            <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center">
-              <RotateCw className="w-3.5 h-3.5 text-indigo-500" />
+            <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
+              <RotateCw className="w-3.5 h-3.5 text-brand-500" />
             </div>
           </div>
           {pptStats.count === 0 ? (
             <p className="text-center text-xs text-slate-300 italic py-8">No PPT data</p>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-xl bg-indigo-50/50 border border-indigo-100 p-4">
-                <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest mb-1">Total Ispileg</p>
-                <p className="text-2xl font-black text-indigo-700 tracking-tight">{pptStats.totalQty.toFixed(1)}</p>
-                <p className="text-[9px] text-indigo-400 font-bold mt-0.5">Total MT</p>
+              <div className="rounded-xl bg-brand-50/50 border border-brand-100 p-4">
+                <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">Total Ispileg</p>
+                <p className="text-2xl font-black text-brand-700 tracking-tight">{pptStats.totalQty.toFixed(1)}</p>
+                <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Re-feed Ratio</span>
@@ -1986,15 +1986,15 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 <p className="text-2xl font-black text-rose-700 tracking-tight">{spillageStats.multiCyclone.toFixed(1)}</p>
                 <p className="text-[9px] text-rose-400 font-bold mt-0.5">Total MT</p>
               </div>
-              <div className="rounded-xl bg-orange-50 border border-orange-100 p-4">
-                <p className="text-[9px] font-black text-orange-500 uppercase tracking-widest mb-1">House Keeping</p>
-                <p className="text-2xl font-black text-orange-700 tracking-tight">{spillageStats.houseKeeping.toFixed(1)}</p>
-                <p className="text-[9px] text-orange-400 font-bold mt-0.5">Total MT</p>
+              <div className="rounded-xl bg-brand-50 border border-brand-100 p-4">
+                <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">House Keeping</p>
+                <p className="text-2xl font-black text-brand-700 tracking-tight">{spillageStats.houseKeeping.toFixed(1)}</p>
+                <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
               </div>
-              <div className="rounded-xl bg-blue-50 border border-blue-100 p-4">
-                <p className="text-[9px] font-black text-blue-500 uppercase tracking-widest mb-1">Road Side</p>
-                <p className="text-2xl font-black text-blue-700 tracking-tight">{spillageStats.roadSide.toFixed(1)}</p>
-                <p className="text-[9px] text-blue-400 font-bold mt-0.5">Total MT</p>
+              <div className="rounded-xl bg-brand-50 border border-brand-100 p-4">
+                <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">Road Side</p>
+                <p className="text-2xl font-black text-brand-700 tracking-tight">{spillageStats.roadSide.toFixed(1)}</p>
+                <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Total Spillage</span>
@@ -2006,19 +2006,19 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- MATERIAL CONSUMPTION ANALYSIS */}
-      <div className="bg-white rounded-[2rem] border border-blue-100 shadow-sm overflow-hidden mb-8">
-        <div className="bg-gradient-to-r from-blue-50 to-white border-b border-blue-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-white rounded-[2rem] border border-brand-100 shadow-sm overflow-hidden mb-8">
+        <div className="bg-gradient-to-r from-brand-50 to-white border-b border-brand-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center border border-blue-200">
-              <PieChartIcon className="w-4 h-4 text-blue-600" />
+            <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center border border-brand-200">
+              <PieChartIcon className="w-4 h-4 text-brand-600" />
             </div>
             <div>
-              <h3 className="text-sm font-black text-blue-950 uppercase tracking-widest">RM Consumption per 1 MT Production</h3>
+              <h3 className="text-sm font-black text-brand-900 uppercase tracking-widest">RM Consumption per 1 MT Production</h3>
             </div>
           </div>
           <div className="text-left sm:text-right">
-            <p className="text-[9px] font-black text-blue-500 uppercase tracking-wider">Total Output</p>
-            <p className="text-base font-black text-blue-900 leading-none">{accountingSummary.totalProduction.toFixed(1)} <span className="text-[9px] text-blue-400 ml-0.5">MT</span></p>
+            <p className="text-[9px] font-black text-brand-500 uppercase tracking-wider">Total Output</p>
+            <p className="text-base font-black text-brand-900 leading-none">{accountingSummary.totalProduction.toFixed(1)} <span className="text-[9px] text-brand-400 ml-0.5">MT</span></p>
           </div>
         </div>
 
@@ -2030,18 +2030,18 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {consumptionStats.map((item, idx) => (
-                <div key={idx} className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 group hover:border-blue-200 transition-all duration-300">
+                <div key={idx} className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 group hover:border-brand-200 transition-all duration-300">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{item.name}</span>
-                      <h4 className="text-2xl font-black text-slate-900 tracking-tight">{item.consumption} <span className="text-[10px] text-blue-500 uppercase">MT</span></h4>
+                      <h4 className="text-2xl font-black text-slate-900 tracking-tight">{item.consumption} <span className="text-[10px] text-brand-500 uppercase">MT</span></h4>
                     </div>
-                    <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 group-hover:bg-blue-600 transition-colors duration-300">
-                      <Activity className="w-3.5 h-3.5 text-blue-500 group-hover:text-white" />
+                    <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 group-hover:bg-brand-600 transition-colors duration-300">
+                      <Activity className="w-3.5 h-3.5 text-brand-500 group-hover:text-white" />
                     </div>
                   </div>
                   <div className="space-y-3">
-                    <ProgressBar pct={Math.min(parseFloat(item.consumption) * 100, 100)} color="bg-blue-500" />
+                    <ProgressBar pct={Math.min(parseFloat(item.consumption) * 100, 100)} color="bg-brand-500" />
                     <div className="flex items-center justify-between">
                       <p className="text-[8px] font-bold text-slate-400 uppercase">Ratio per 1 MT</p>
                       <p className="text-[10px] font-black text-slate-900">Total: {item.totalUsed} MT</p>
@@ -2130,7 +2130,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             icon: Layers,
             color: 'blue',
             trend: 'Active',
-            trendColor: 'text-blue-500',
+            trendColor: 'text-brand-500',
             sub: 'Total department records',
             sparkData: [45, 52, 48, 61, 55, 67, stats.total].slice(-7)
           },
@@ -2173,7 +2173,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group relative bg-white border border-slate-100/80 rounded-[2.5rem] p-7 shadow-sm hover:shadow-2xl hover:border-indigo-100 transition-all duration-500 overflow-hidden"
+            className="group relative bg-white border border-slate-100/80 rounded-[2.5rem] p-7 shadow-sm hover:shadow-2xl hover:border-brand-100 transition-all duration-500 overflow-hidden"
           >
             {/* Background Glow */}
             <div className={`absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 rounded-full opacity-[0.03] group-hover:scale-[2.5] transition-all duration-1000 bg-${kpi.color}-500`} />
@@ -2288,8 +2288,8 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
           <div className="space-y-6 md:border-l md:border-slate-50 md:pl-10">
             <div className="flex items-center gap-4">
-              <div className="w-11 h-11 bg-orange-50 rounded-2xl flex items-center justify-center border border-orange-100">
-                <Flame className="w-5 h-5 text-orange-500" />
+              <div className="w-11 h-11 bg-brand-50 rounded-2xl flex items-center justify-center border border-brand-100">
+                <Flame className="w-5 h-5 text-brand-500" />
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Efficiency Metrics</p>
@@ -2297,7 +2297,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="p-4 bg-orange-50/20 rounded-2xl border border-orange-100/50">
+              <div className="p-4 bg-brand-50/20 rounded-2xl border border-brand-100/50">
                 <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Fuel / MT</p>
                 <p className="text-2xl font-black text-slate-900 leading-none">{energyStats.fuelPerMT}</p>
                 <p className="text-[9px] font-bold text-slate-400 uppercase mt-2">U/MT</p>
@@ -2340,7 +2340,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
         <div className="px-6 py-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center shadow-sm">
+            <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-sm">
               <FileSpreadsheet className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -2357,7 +2357,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 value={compositionSearch}
                 onChange={e => setCompositionSearch(e.target.value)}
                 placeholder="Search by campaign or product..."
-                className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-300 outline-none w-52 transition-all"
+                className="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-300 outline-none w-52 transition-all"
               />
             </div>
             <button
@@ -2379,7 +2379,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             <thead>
               <tr className="bg-white sticky top-0 z-20 shadow-sm">
                 {compositionHeaders.map((header, idx) => (
-                  <th key={idx} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap border-b border-slate-100/80 bg-slate-50">
+                  <th key={idx} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap border-b border-slate-100/80 bg-brand-50">
                     {header}
                   </th>
                 ))}
@@ -2392,16 +2392,16 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 </tr>
               ) : (
                 filteredCompositionData.slice(0, 50).map((row, idx) => (
-                  <tr key={idx} className="hover:bg-blue-50/40 transition-colors group">
+                  <tr key={idx} className="hover:bg-brand-50/40 transition-colors group">
                     <td className="px-6 py-4 whitespace-nowrap text-[13px] font-bold text-slate-600 border-b border-slate-100/50 group-last:border-0">{formatDisplayDate(row.timestamp)}</td>
                     <td className="px-6 py-4 whitespace-nowrap border-b border-slate-100/50 group-last:border-0">
-                      <span className="text-[11px] font-black text-orange-600 bg-orange-50 border border-orange-100 px-2.5 py-1 rounded-lg">{row.campaign_no || '-'}</span>
+                      <span className="text-[11px] font-black text-brand-600 bg-brand-50 border border-brand-100 px-2.5 py-1 rounded-lg">{row.campaign_no || '-'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-[13px] font-bold text-slate-700 border-b border-slate-100/50 group-last:border-0">{row.product_name || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-[14px] font-black text-slate-900 border-b border-slate-100/50 group-last:border-0">{row.qty || '0'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-500 border-b border-slate-100/50 group-last:border-0">{row.loi_pct || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-[13px] font-bold text-slate-700 border-b border-slate-100/50 group-last:border-0">{row.rm_req || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-black text-blue-600 border-b border-slate-100/50 group-last:border-0">{row.al2o3 || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-black text-brand-600 border-b border-slate-100/50 group-last:border-0">{row.al2o3 || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-600 border-b border-slate-100/50 group-last:border-0">{row.fe2o3 || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-600 border-b border-slate-100/50 group-last:border-0">{row.sio2 || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap border-b border-slate-100/50 group-last:border-0">
@@ -2417,7 +2417,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="px-6 py-4 bg-slate-50/40 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />
               <span className="text-[10px] font-bold text-slate-400">Active Sync</span>
             </div>
             <div className="flex items-center gap-1.5">

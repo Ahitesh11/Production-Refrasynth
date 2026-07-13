@@ -1,7 +1,9 @@
 export type DepartmentId =
   | 'dgu'
+  | 'mixer'
   | 'balling_disc'
   | 'kiln'
+  | 'cooler'
   | 'product_house'
   | 'sb3_ground'
   | 'sb3_hopper'
@@ -14,7 +16,8 @@ export type DepartmentId =
   | 'spillage'
   | 'production_stop'
   | 'opening_closing'
-  | 'inventory';
+  | 'inventory'
+  | 'check_list';
 
 export interface User {
   username: string;
@@ -69,6 +72,20 @@ export const DEPARTMENTS: Department[] = [
       { name: 'fineness_6', label: 'Fineness %6', type: 'number' },
       { name: 'fineness_7', label: 'Fineness %7', type: 'number' },
       { name: 'fineness_8', label: 'Fineness %8', type: 'number' },
+    ]
+  },
+  {
+    id: 'mixer',
+    name: 'Mixer',
+    category: 'Lab',
+    fields: [
+      { name: 'campaign_no', label: 'Campaign No.', type: 'select', options: [] },
+      { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
+      { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
+      { name: 'date', label: 'Date', type: 'date' },
+      { name: 'temperature', label: 'Temperature', type: 'number' },
+      { name: 'viscosity', label: 'Viscosity', type: 'number' },
+      { name: 'moisture', label: 'Moisture', type: 'number' },
     ]
   },
   {
@@ -127,6 +144,19 @@ export const DEPARTMENTS: Department[] = [
       { name: 'lbd_ap_composite', label: 'LBD AP Composite (24hr)', type: 'number' },
       { name: 'lbd_bd_composite', label: 'LBD BD Composite (24hr)', type: 'number' },
       { name: 'note', label: 'Note', type: 'text' },
+    ]
+  },
+  {
+    id: 'cooler',
+    name: 'Cooler',
+    category: 'Lab',
+    fields: [
+      { name: 'campaign_no', label: 'Campaign No.', type: 'select', options: [] },
+      { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
+      { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
+      { name: 'date', label: 'Date', type: 'date' },
+      { name: 'ap', label: 'AP', type: 'number' },
+      { name: 'bd', label: 'BD', type: 'number' },
     ]
   },
   {
@@ -425,6 +455,27 @@ export const DEPARTMENTS: Department[] = [
       { name: 'use_stock', label: 'Use Stock', type: 'number', readonly: true },
       { name: 'issue_qty', label: 'Issue Qty', type: 'number', readonly: true },
       { name: 'actual_stock', label: 'Actual Stock', type: 'number', readonly: true },
+    ]
+  },
+  {
+    id: 'check_list',
+    name: 'Check List',
+    category: 'Process',
+    fields: [
+      { name: 'task_id', label: 'Task ID', type: 'text', readonly: true },
+      { name: 'given_by', label: 'Given By', type: 'text' },
+      { name: 'name', label: 'Name', type: 'text' },
+      { name: 'task_description', label: 'Task Description', type: 'text' },
+      { name: 'task_start_date', label: 'Task Start Date', type: 'date' },
+      { name: 'freq', label: 'Freq', type: 'select', options: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'] },
+      { name: 'planned1', label: 'Planned1', type: 'date', readonly: true },
+      { name: 'actual1', label: 'Actual1', type: 'datetime-local', readonly: true },
+      { name: 'delay1', label: 'Delay1', type: 'text', readonly: true },
+      { name: 'status1', label: 'Status1', type: 'select', options: ['Pending', 'Completed', 'Delayed'] },
+      { name: 'planned2', label: 'Planned2', type: 'date', readonly: true },
+      { name: 'actual2', label: 'Actual2', type: 'datetime-local', readonly: true },
+      { name: 'delay2', label: 'Delay2', type: 'text', readonly: true },
+      { name: 'status2', label: 'Status2', type: 'select', options: ['Pending', 'Completed', 'Delayed'] },
     ]
   }
 ];

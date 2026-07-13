@@ -17,15 +17,16 @@ import {
   ChevronRight,
   ShieldCheck,
   Zap,
-  Globe
+  Globe,
+  Users
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Department, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
-  activeId: DepartmentId | 'dashboard' | null;
-  onSelect: (id: DepartmentId | 'dashboard') => void;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | null;
+  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users') => void;
   departments: Department[];
   user: User | null;
   onLogout: () => void;
@@ -37,10 +38,10 @@ interface Props {
 }
 
 interface NavItemProps {
-  id: DepartmentId | 'dashboard' | 'rm';
+  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users';
   name: string;
   icon: any;
-  activeId: DepartmentId | 'dashboard' | null;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | null;
   onSelect: (id: any) => void;
   isCollapsed: boolean;
   key?: React.Key;
@@ -56,21 +57,21 @@ const NavItem = ({ id, name, icon: Icon, activeId, onSelect, isCollapsed }: NavI
         "group relative flex items-center w-full transition-all duration-300 rounded-xl mb-1",
         isCollapsed ? "justify-center p-2.5" : "px-4 py-2",
         isActive
-          ? "bg-blue-50 text-blue-700"
+          ? "bg-brand-50 text-brand-700"
           : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
       )}
     >
       {isActive && (
         <motion.div
           layoutId="activeBar"
-          className="absolute left-0 w-0.5 h-4 bg-blue-600 rounded-full"
+          className="absolute left-0 w-0.5 h-4 bg-brand-600 rounded-full"
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
       <Icon className={cn(
         "transition-colors shrink-0",
         isCollapsed ? "w-5 h-5" : "w-4 h-4 mr-3",
-        isActive ? "text-blue-600" : "group-hover:text-slate-900"
+        isActive ? "text-brand-600" : "group-hover:text-slate-900"
       )} />
       {!isCollapsed && (
         <span className="text-sm font-medium tracking-tight truncate">{name}</span>
@@ -94,13 +95,20 @@ export default function Sidebar({
   const [isOpen, setIsOpen] = React.useState(false);
 
   const categories = [
-    { name: 'Main', depts: [], items: [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }, { id: 'rm', name: 'RM', icon: Zap }, { id: 'inventory', name: 'Issue To SB3', icon: Database }] },
+    {
+      name: 'Main', depts: [], items: [
+        { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
+        { id: 'rm', name: 'RM', icon: Zap },
+        { id: 'inventory', name: 'Issue To SB3', icon: Database },
+      ]
+    },
     { name: 'Lab', depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm'), icon: FlaskConical },
     { name: 'Stock', depts: departments.filter(d => d.category === 'Stock' && d.id !== 'inventory' && d.id !== 'sb3_ground'), icon: Package },
-    { name: 'Operations', depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'), icon: Gauge }
+    { name: 'Operations', depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'), icon: Gauge },
+    ...(user?.type === 'Admin' ? [{ name: 'Admin', depts: [], items: [{ id: 'manage_users', name: 'Manage Users', icon: Users }] }] : []),
   ];
 
-  const handleSelect = (id: DepartmentId | 'dashboard') => {
+  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users') => {
     onSelect(id);
     setIsOpen(false);
   };
@@ -136,20 +144,20 @@ export default function Sidebar({
           onClick={onToggleCollapse}
           className="hidden lg:flex absolute -right-3.5 top-12 w-7 h-7 bg-white border border-slate-100 rounded-lg items-center justify-center shadow-lg hover:bg-slate-50 transition-all z-[60] group/toggle group"
         >
-          {isCollapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600" /> : <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600" />}
+          {isCollapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" /> : <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" />}
         </button>
 
         {/* Branding */}
         <div className={cn("p-6", isCollapsed && "px-4")}>
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => handleSelect('dashboard')}>
             <div className={cn(
-              "bg-slate-900 rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition-all duration-300 overflow-hidden shrink-0 border border-slate-800",
+              "flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0",
               isCollapsed ? "w-10 h-10" : "w-9 h-9"
             )}>
               <img
-                src="https://lh3.googleusercontent.com/d/1JIgrmv3JkmGICyFT2vsi38n3hLW6H92Y"
+                src="/logo.svg"
                 alt="Logo"
-                className="w-full h-full object-cover scale-110"
+                className="w-full h-full object-contain"
               />
             </div>
             {!isCollapsed && (
@@ -195,8 +203,8 @@ export default function Sidebar({
         <div className={cn("p-6 border-t border-slate-50", isCollapsed && "p-3")}>
           <div className={cn("flex items-center bg-slate-50 p-3 rounded-2xl border border-slate-100", isCollapsed ? "flex-col space-y-3 px-1" : "justify-between")}>
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center text-white shrink-0">
-                {user?.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-blue-400" /> : <UserIcon className="w-4 h-4" />}
+              <div className="w-8 h-8 bg-brand-800 rounded-lg flex items-center justify-center text-white shrink-0">
+                {user?.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-brand-300" /> : <UserIcon className="w-4 h-4" />}
               </div>
               {!isCollapsed && (
                 <div className="truncate max-w-[100px]">
@@ -209,7 +217,7 @@ export default function Sidebar({
               {user?.type === 'Admin' && (
                 <button
                   onClick={() => { onOpenSettings(); setIsOpen(false); }}
-                  className="p-1.5 hover:bg-white rounded-lg transition-colors text-slate-400 hover:text-blue-600"
+                  className="p-1.5 hover:bg-white rounded-lg transition-colors text-slate-400 hover:text-brand-600"
                   title="Settings"
                 >
                   <Settings className="w-3.5 h-3.5" />
@@ -229,7 +237,7 @@ export default function Sidebar({
             <div className="flex items-center space-x-2">
               <div className={cn(
                 "w-1.5 h-1.5 rounded-full",
-                isRefreshing ? "bg-blue-500 animate-spin" : "bg-emerald-500"
+                isRefreshing ? "bg-brand-500 animate-spin" : "bg-emerald-500"
               )} />
               {!isCollapsed && <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{isRefreshing ? 'Syncing...' : 'Connected'}</span>}
             </div>
@@ -238,7 +246,7 @@ export default function Sidebar({
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 className={cn(
-                  "p-1.5 hover:bg-slate-50 rounded-lg transition-all text-slate-400 hover:text-blue-600",
+                  "p-1.5 hover:bg-slate-50 rounded-lg transition-all text-slate-400 hover:text-brand-600",
                   isRefreshing && "animate-spin cursor-not-allowed"
                 )}
               >

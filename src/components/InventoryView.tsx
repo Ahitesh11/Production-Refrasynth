@@ -57,7 +57,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm ring-1 ring-slate-100/50">
         <div className="flex items-center gap-5">
-          <div className="w-14 h-14 bg-blue-600 rounded-3xl flex items-center justify-center shadow-xl shadow-blue-600/20 ring-4 ring-blue-50">
+          <div className="w-14 h-14 bg-brand-600 rounded-3xl flex items-center justify-center shadow-xl shadow-brand-600/20 ring-4 ring-brand-50">
             <Database className="w-7 h-7 text-white" />
           </div>
           <div>
@@ -74,7 +74,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Materials</p>
             <p className="text-lg font-black text-slate-900">{inventoryData.length}</p>
           </div>
-          <div className="px-4 py-2 bg-blue-600 rounded-xl shadow-lg shadow-blue-200 border border-blue-500">
+          <div className="px-4 py-2 bg-brand-600 rounded-xl shadow-lg shadow-brand-200 border border-brand-500">
             <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest">History Count</p>
             <p className="text-lg font-black text-white">{entries.length}</p>
           </div>
@@ -88,7 +88,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
           className={cn(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
             activeTab === 'overview'
-              ? "bg-white text-blue-600 shadow-sm border border-slate-200"
+              ? "bg-white text-brand-600 shadow-sm border border-slate-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           )}
         >
@@ -100,7 +100,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
           className={cn(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
             activeTab === 'history'
-              ? "bg-white text-blue-600 shadow-sm border border-slate-200"
+              ? "bg-white text-brand-600 shadow-sm border border-slate-200"
               : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           )}
         >
@@ -123,7 +123,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-separate border-spacing-0">
                   <thead>
-                    <tr className="bg-slate-50/50">
+                    <tr className="bg-brand-50">
                       <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">S.No.</th>
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">Raw Material Name</th>
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100">Opening Stock</th>
@@ -131,7 +131,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100">Use Stock</th>
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100">Issue Qty</th>
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100 border-r border-slate-50">Actual Stock</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border-b border-slate-100 bg-slate-50/30">Action</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center border-b border-slate-100 bg-brand-50">Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
@@ -152,7 +152,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                           <tr key={idx} className="group hover:bg-slate-50/50 transition-all duration-300">
                             <td className="px-8 py-5 text-xs font-bold text-slate-400">{item['S. No.'] || idx + 1}</td>
                             <td className="px-6 py-5">
-                              <span className="text-sm font-black text-slate-900 group-hover:text-blue-600 transition-colors uppercase tracking-tight">
+                              <span className="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tight">
                                 {materialName}
                               </span>
                             </td>
@@ -178,10 +178,10 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                                 {actualStock.toLocaleString()}
                               </span>
                             </td>
-                            <td className="px-8 py-5 text-center bg-slate-50/10 active:bg-blue-50/50 transition-colors">
+                            <td className="px-8 py-5 text-center bg-slate-50/10 active:bg-brand-50/50 transition-colors">
                               <button
                                 onClick={() => handleOpenForm(materialName)}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-blue-200 border border-blue-500"
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-600 text-white rounded-xl hover:bg-brand-700 transition-all transform hover:scale-105 active:scale-95 shadow-lg shadow-brand-200 border border-brand-500"
                               >
                                 <PlusCircle className="w-4 h-4" />
                                 <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">Issue</span>
@@ -195,10 +195,10 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                 </table>
               </div>
             </div>
-            <div className="bg-blue-50/50 p-6 rounded-[2rem] border border-blue-100/50 mt-4">
+            <div className="bg-brand-50/50 p-6 rounded-[2rem] border border-brand-100/50 mt-4">
               <div className="flex items-center gap-3">
-                <Package className="w-5 h-5 text-blue-600" />
-                <p className="text-sm text-blue-900 font-medium">To update this inventory list, submit an entry using the "Issue" button. Your stock levels sync instantly.</p>
+                <Package className="w-5 h-5 text-brand-600" />
+                <p className="text-sm text-brand-900 font-medium">To update this inventory list, submit an entry using the "Issue" button. Your stock levels sync instantly.</p>
               </div>
             </div>
           </motion.div>
@@ -220,13 +220,13 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                   <h2 className="text-lg font-black text-slate-800 tracking-tight">Issue Records (Material 1-6)</h2>
                 </div>
                 <div className="relative group max-w-sm w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-brand-500 transition-colors" />
                   <input
                     type="text"
                     placeholder="Search records..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all shadow-sm"
+                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm"
                   />
                 </div>
               </div>
@@ -234,15 +234,15 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-separate border-spacing-0 min-w-[1600px]">
                   <thead>
-                    <tr className="bg-slate-50/50">
+                    <tr className="bg-brand-50">
                       <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 sticky left-0 bg-white shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-10 w-[180px]">Timestamp</th>
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 whitespace-nowrap">Campaign / Product</th>
                       <th className="px-6 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 text-center">Shift / Date</th>
-                      <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center bg-slate-50/20">Mat 1</th>
+                      <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center bg-brand-50/40">Mat 1</th>
                       <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center">Mat 2</th>
-                      <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center bg-slate-50/20">Mat 3</th>
+                      <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center bg-brand-50/40">Mat 3</th>
                       <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center">Mat 4</th>
-                      <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center bg-slate-50/20">Mat 5</th>
+                      <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center bg-brand-50/40">Mat 5</th>
                       <th className="px-4 py-5 text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-100 text-center">Mat 6</th>
                     </tr>
                   </thead>
@@ -256,7 +256,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                     ) : (
                       filteredHistory.map((entry) => (
                         <tr key={entry.id} className="hover:bg-slate-50/50 transition-colors group">
-                          <td className="px-8 py-5 sticky left-0 bg-white group-hover:bg-blue-50/30 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-10">
+                          <td className="px-8 py-5 sticky left-0 bg-white group-hover:bg-brand-50/30 transition-colors shadow-[2px_0_5px_rgba(0,0,0,0.02)] z-10">
                             <div className="flex items-center gap-3">
                               <Calendar className="w-3.5 h-3.5 text-slate-400" />
                               <span className="text-[11px] font-bold text-slate-900">{entry.timestamp}</span>
@@ -265,7 +265,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                           <td className="px-6 py-5">
                             <div className="flex flex-col">
                               <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{entry.data['Campaign No.'] || entry.data.campaign_no || '-'}</span>
-                              <span className="text-[10px] text-blue-600 font-bold uppercase truncate max-w-[200px]">{entry.data['Product Name'] || entry.data.product_name || '-'}</span>
+                              <span className="text-[10px] text-brand-600 font-bold uppercase truncate max-w-[200px]">{entry.data['Product Name'] || entry.data.product_name || '-'}</span>
                             </div>
                           </td>
                           <td className="px-6 py-5 text-center">
@@ -349,13 +349,13 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
             >
               <div className="px-8 py-7 bg-slate-900 text-white flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-600/30 ring-4 ring-white/10">
+                  <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-600/30 ring-4 ring-white/10">
                     <ClipboardList className="w-6 h-6 text-white" />
                   </div>
                   <div>
                     <h2 className="text-2xl font-bold tracking-tight">Issue Material</h2>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[10px] text-blue-400 font-black uppercase tracking-widest">Selected Material: {selectedMaterial}</p>
+                      <p className="text-[10px] text-brand-400 font-black uppercase tracking-widest">Selected Material: {selectedMaterial}</p>
                     </div>
                   </div>
                 </div>
