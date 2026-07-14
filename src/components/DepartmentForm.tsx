@@ -44,6 +44,11 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     }
   };
 
+  // Every field must be filled before submitting, except free-text notes/remarks —
+  // those are genuinely optional annotations, not core data.
+  const OPTIONAL_FIELD_NAMES = ['note', 'remarks_physical', 'remarks_chemical'];
+  const isRequiredField = (name: string) => !OPTIONAL_FIELD_NAMES.includes(name);
+
   const finenessFields = department.fields.filter(f => f.name.startsWith('fineness_'));
   const gbmFields = department.fields.filter(f => f.name.startsWith('gbm_'));
   const dropFields = department.fields.filter(f => f.name.startsWith('drop_'));
@@ -177,7 +182,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         name={field.name}
                         value={formData[field.name] || ''}
                         onChange={handleChange}
-                        required={['date', 'shift'].includes(field.name)}
+                        required={isRequiredField(field.name)}
                         className="w-full h-11 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all outline-none text-sm font-medium text-slate-700 appearance-none"
                       >
                         <option value="">Select...</option>
@@ -231,7 +236,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         name={field.name}
                         value={formData[field.name] || ''}
                         onChange={handleChange}
-                        required={['date', 'shift'].includes(field.name)}
+                        required={isRequiredField(field.name)}
                         placeholder={field.type === 'number' ? '0.00' : 'Enter value...'}
                         className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
                       />
@@ -293,7 +298,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
             <button
               type="submit"
               disabled={isSubmitting}
-              className="relative px-10 py-3.5 bg-slate-900 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-slate-800 disabled:opacity-50 transition-all shadow-xl shadow-slate-200 group"
+              className="relative px-10 py-3.5 bg-brand-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50 transition-all shadow-xl shadow-brand-600/20 group"
             >
               {isSubmitting ? (
                 <div className="flex items-center space-x-3">

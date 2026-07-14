@@ -83,7 +83,7 @@ export default function Login({ onLogin }: Props) {
               className="w-20 h-20 mx-auto mb-6"
             >
               <img
-                src="/logo.svg"
+                src="/logo.png"
                 alt="Logo"
                 className="w-full h-full object-contain"
               />

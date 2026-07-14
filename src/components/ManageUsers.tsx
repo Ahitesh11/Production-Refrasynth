@@ -194,7 +194,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
     <div className="max-w-[1000px] mx-auto space-y-6">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center shadow-lg shadow-brand-600/20 shrink-0">
             <Users className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -204,7 +204,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
         </div>
         <button
           onClick={() => { setShowAdd(v => !v); setError(null); }}
-          className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-600 transition-all shadow-lg shadow-slate-200"
+          className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 transition-all shadow-lg shadow-brand-600/20"
         >
           {showAdd ? <X className="w-3.5 h-3.5" /> : <Plus className="w-3.5 h-3.5" />}
           {showAdd ? 'Cancel' : 'Add User'}
@@ -303,7 +303,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
                 <button
                   onClick={handleAdd}
                   disabled={busyKey === '__new__' || !sheetReady}
-                  className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-600 disabled:opacity-50 transition-all"
+                  className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50 transition-all"
                 >
                   {busyKey === '__new__' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
                   Create User
@@ -325,18 +325,22 @@ export default function ManageUsers({ scriptUrl }: Props) {
           <p className="text-sm font-medium text-slate-400">No users yet.</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
+          <div className="hidden sm:flex items-center justify-between gap-4 px-4 py-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-16">Actions</span>
+          </div>
           {users.map(user => {
             const isExpanded = expanded === user.username;
             const grantedCount = Object.values(user.permissions).filter(Boolean).length;
             return (
-              <div key={user.username} className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+              <div key={user.username} className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">
                 <button
                   onClick={() => toggleExpand(user)}
-                  className="w-full flex items-center justify-between gap-4 px-5 py-4 hover:bg-slate-50/60 transition-colors"
+                  className="w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50/60 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
                       {user.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-brand-600" /> : <UserIcon className="w-4 h-4 text-slate-400" />}
                     </div>
                     <div className="min-w-0 text-left">
@@ -421,7 +425,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
                           <button
                             onClick={() => handleSave(user.username)}
                             disabled={busyKey === user.username}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-600 disabled:opacity-50 transition-all"
+                            className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50 transition-all"
                           >
                             {busyKey === user.username ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                             Save

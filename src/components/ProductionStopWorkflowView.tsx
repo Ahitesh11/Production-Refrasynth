@@ -9,7 +9,8 @@ import {
     X,
     ClipboardList,
     History,
-    Search
+    Search,
+    AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
@@ -90,6 +91,23 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
 
         return val;
     };
+
+    const visibleEntries = useMemo(() => {
+        const term = searchTerm.toLowerCase();
+        return sortedEntries.filter(e => {
+            const matchesSearch =
+                String(getData(e, 'machine_name')).toLowerCase().includes(term) ||
+                String(getData(e, 'department')).toLowerCase().includes(term) ||
+                String(getData(e, 'problem_description')).toLowerCase().includes(term);
+            if (!matchesSearch) return false;
+
+            const isFixed = getData(e, 'actual') || getData(e, 'actual_date');
+            if (activeTab === 'step1') return !isFixed;
+            if (activeTab === 'history') return !!isFixed;
+            return true;
+        });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sortedEntries, searchTerm, activeTab]);
 
     const formatDuration = (val: any) => {
         if (!val) return '';
@@ -330,9 +348,12 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
             if (result.result !== 'success') {
                 throw new Error(result.error || 'Server error');
             }
-            console.log("✅ Step synchronized successfully in background");
+            if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
+                alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
+            }
         } catch (err: any) {
             console.error(`❌ Background sync failed: ${err.message}`);
+            alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
         } finally {
             setIsSyncing(false);
         }
@@ -382,21 +403,21 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
         };
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md text-zinc-900">
-                <div className="bg-white w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-zinc-100">
-                    <div className="px-8 py-6 bg-zinc-900 text-white flex items-center justify-between">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md text-slate-900">
+                <div className="bg-white w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
+                    <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-emerald-500">
                                 <Activity className="w-5 h-5 text-white" />
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold tracking-tight">Fix Issue</h3>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
                                     {getData(selectedEntry, 'machine_name') || 'Machine'} - {getData(selectedEntry, 'department') || 'Dept'}
                                 </p>
                             </div>
                         </div>
-                        <button onClick={() => setIsActionModalOpen(false)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
+                        <button onClick={() => setIsActionModalOpen(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
                             <X className="w-5 h-5 text-white" />
                         </button>
                     </div>
@@ -404,12 +425,12 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                         <div className="grid grid-cols-2 gap-4">
                             {fields.map(field => (
                                 <div key={field.name} className={cn("space-y-1.5 text-left", field.type === 'text' ? "col-span-2" : "")}>
-                                    <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">{field.label}</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{field.label}</label>
                                     {field.type === 'select' ? (
                                         <select
                                             name={field.name}
                                             defaultValue={getData(selectedEntry, field.name) || ''}
-                                            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all outline-none text-sm font-medium cursor-pointer"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none text-sm font-medium cursor-pointer"
                                             required
                                         >
                                             <option value="">Select...</option>
@@ -420,17 +441,17 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             <select
                                                 name={`${field.name}_hour`}
                                                 defaultValue={((getData(selectedEntry, field.name) || '12:00 AM').split(' ')[0] || '12:00').split(':')[0] || '12'}
-                                                className="w-full px-2 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
+                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
                                             >
                                                 {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
                                                     <option key={h} value={h}>{h}</option>
                                                 ))}
                                             </select>
-                                            <span className="flex items-center text-zinc-400 font-bold">:</span>
+                                            <span className="flex items-center text-slate-400 font-bold">:</span>
                                             <select
                                                 name={`${field.name}_minute`}
                                                 defaultValue={((getData(selectedEntry, field.name) || '12:00 AM').split(' ')[0] || '12:00').split(':')[1] || '00'}
-                                                className="w-full px-2 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
+                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
                                             >
                                                 {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                                                     <option key={m} value={m}>{m}</option>
@@ -439,7 +460,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             <select
                                                 name={`${field.name}_ampm`}
                                                 defaultValue={(getData(selectedEntry, field.name) || '12:00 AM').split(' ')[1] || 'AM'}
-                                                className="w-full px-2 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
+                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
                                             >
                                                 <option value="AM">AM</option>
                                                 <option value="PM">PM</option>
@@ -451,18 +472,18 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             type={field.type}
                                             step="any"
                                             defaultValue={getData(selectedEntry, field.name) || ''}
-                                            className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all outline-none text-sm font-medium"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none text-sm font-medium"
                                             required
                                         />
                                     )}
                                 </div>
                             ))}
                         </div>
-                        <div className="flex items-center justify-end pt-4 border-t border-zinc-100">
+                        <div className="flex items-center justify-end pt-4 border-t border-slate-100">
                             <button
                                 type="button"
                                 onClick={() => setIsActionModalOpen(false)}
-                                className="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-900 transition-colors"
+                                className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
                                 disabled={isSyncing}
                             >
                                 Cancel
@@ -490,16 +511,16 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
         <div className="max-w-7xl mx-auto p-6 space-y-12">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div className="flex items-center space-x-4">
-                    <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center shadow-xl">
+                    <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-xl">
                         <Wrench className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-zinc-900">Production Stop</h1>
-                        <p className="text-zinc-500 text-xs font-medium mt-1 uppercase tracking-widest"></p>
+                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Production Stop</h1>
+                        <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-widest"></p>
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-2 bg-zinc-100 p-1 rounded-2xl border border-zinc-200 shadow-sm">
+                <div className="flex items-center space-x-2 bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-sm">
                     {[
                         { id: 'form', label: '1 Logs', icon: ClipboardList },
                         { id: 'step1', label: '2 Action', icon: Activity },
@@ -511,11 +532,11 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                             className={cn(
                                 "flex items-center px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
                                 activeTab === tab.id
-                                    ? "bg-white text-zinc-900 shadow-md border border-zinc-100 scale-[1.02]"
-                                    : "text-zinc-400 hover:text-zinc-600"
+                                    ? "bg-white text-slate-900 shadow-md border border-slate-100 scale-[1.02]"
+                                    : "text-slate-400 hover:text-slate-600"
                             )}
                         >
-                            <tab.icon className={cn("w-3.5 h-3.5 mr-2", activeTab === tab.id ? "text-brand-500" : "text-zinc-300")} />
+                            <tab.icon className={cn("w-3.5 h-3.5 mr-2", activeTab === tab.id ? "text-brand-500" : "text-slate-300")} />
                             {tab.label}
                         </button>
                     ))}
@@ -523,10 +544,10 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
             </header>
 
             {activeTab === 'form' ? (
-                <div className="bg-white rounded-[32px] border border-zinc-200 shadow-sm overflow-hidden p-8 animate-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden p-8 animate-in slide-in-from-bottom-4 duration-500">
                     <div className="max-w-2xl mx-auto">
-                        <div className="mb-8 flex items-center space-x-3 text-zinc-400">
-                            <div className="w-8 h-8 rounded-lg bg-zinc-50 flex items-center justify-center">
+                        <div className="mb-8 flex items-center space-x-3 text-slate-400">
+                            <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center">
                                 <Plus className="w-4 h-4" />
                             </div>
                             <h3 className="text-xs font-bold uppercase tracking-widest">Initial Incident Report</h3>
@@ -561,7 +582,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
 
                                 try {
                                     const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
-                                    await fetch(proxyUrl, {
+                                    const response = await fetch(proxyUrl, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({
@@ -570,9 +591,16 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             values: values
                                         })
                                     });
-                                    console.log('✅ Background submission successful!');
-                                } catch (err) {
+                                    const resData = await response.json().catch(() => ({}));
+                                    if (!response.ok || resData.result === 'error') {
+                                        throw new Error(resData.error || 'Failed to sync with Google Sheets');
+                                    }
+                                    if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
+                                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
+                                    }
+                                } catch (err: any) {
                                     console.error('❌ Background submission failed:', err);
+                                    alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
                                 }
                             }}
                         />
@@ -580,117 +608,125 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                 </div>
             ) : (
                 <div className="grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-white rounded-3xl border border-zinc-200 shadow-sm overflow-hidden text-nowrap">
-                        <div className="p-6 border-b border-zinc-100 flex items-center justify-between">
+                    <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-nowrap">
+                        <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                             <div className="relative max-w-sm w-full">
-                                <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 <input
                                     type="text"
                                     placeholder="Search entries..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-zinc-50 border border-zinc-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-zinc-900/5 transition-all"
+                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-slate-900/5 transition-all"
                                 />
                             </div>
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
-                                {activeTab === 'step1' ? 'Pending Action' : 'Resolved Logs'}
-                            </p>
+                            <div className="flex items-center gap-3">
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                    {activeTab === 'step1' ? 'Pending Action' : 'Resolved Logs'}
+                                </p>
+                                <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
+                                    {visibleEntries.length} result{visibleEntries.length !== 1 ? 's' : ''}
+                                </span>
+                            </div>
                         </div>
-                        <div className="overflow-x-auto max-h-[600px] custom-scrollbar relative">
-                            <table className="w-full text-left border-separate border-spacing-0">
+                        <div className="premium-table-wrap">
+                        <div className="premium-table-scroll">
+                            <table className="premium-table">
                                 <thead>
-                                    <tr className="bg-brand-50">
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Timestamp</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Date/Shift</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Campaign</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Department</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Machine</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Problem</th>
-                                        <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Time Stop</th>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Date/Shift</th>
+                                        <th>Campaign</th>
+                                        <th>Department</th>
+                                        <th>Machine</th>
+                                        <th>Problem</th>
+                                        <th>Time Stop</th>
 
                                         {activeTab === 'history' && (
                                             <>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fix Date/Shift</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Fix Time</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Duration</th>
-                                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 bg-brand-50 z-20 border-b border-zinc-200">Status</th>
+                                                <th>Fix Date/Shift</th>
+                                                <th>Fix Time</th>
+                                                <th>Duration</th>
+                                                <th>Status</th>
                                             </>
                                         )}
 
                                         {activeTab === 'step1' && (
-                                            <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky top-0 right-0 bg-brand-50 z-30 border-b border-zinc-200 text-right">Action</th>
+                                            <th className="col-sticky-right text-right">Action</th>
                                         )}
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-zinc-100">
+                                <tbody>
                                     {(() => {
-                                        const filtered = sortedEntries.filter(e => {
-                                            const matchesSearch =
-                                                getData(e, 'machine_name').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                getData(e, 'department').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                                getData(e, 'problem_description').toLowerCase().includes(searchTerm.toLowerCase());
-                                            if (!matchesSearch) return false;
-
-                                            const isFixed = getData(e, 'actual') || getData(e, 'actual_date');
-                                            if (activeTab === 'step1') return !isFixed;
-                                            if (activeTab === 'history') return !!isFixed;
-                                            return true;
-                                        });
+                                        const filtered = visibleEntries;
 
                                         if (filtered.length === 0) {
+                                            const colCount = 7 + (activeTab === 'history' ? 4 : activeTab === 'step1' ? 1 : 0);
                                             return (
-                                                <tr>
-                                                    <td colSpan={12} className="px-6 py-12 text-center text-zinc-400 italic">
-                                                        No entries found.
+                                                <tr className="tbl-empty">
+                                                    <td colSpan={colCount}>
+                                                        <div className="flex flex-col items-center gap-3">
+                                                            <AlertCircle className="w-10 h-10" style={{color:'oklch(0.78 0.05 145)'}} />
+                                                            <p>No entries found for this stage.</p>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             );
                                         }
 
                                         return filtered.map((entry) => (
-                                            <tr key={entry.id} className="group hover:bg-zinc-50/50 transition-colors">
-                                                <td className="px-6 py-4 text-xs text-zinc-500">{entry.timestamp}</td>
-                                                <td className="px-6 py-4 text-xs font-bold text-zinc-900">
-                                                    {getData(entry, 'date')} / {getData(entry, 'shift')}
+                                            <tr key={entry.id}>
+                                                <td className="tbl-ts">{entry.timestamp}</td>
+                                                <td>
+                                                    <span className="font-bold" style={{fontSize:'12px', color:'oklch(0.25 0.04 145)'}}>
+                                                        {getData(entry, 'date')} / {getData(entry, 'shift')}
+                                                    </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-zinc-600 font-mono bg-zinc-100/50 rounded-lg">
-                                                    {getData(entry, 'campaign_no')}
+                                                <td>
+                                                    <span className="tbl-badge tbl-badge-slate">
+                                                        {getData(entry, 'campaign_no')}
+                                                    </span>
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-zinc-600 font-medium">
+                                                <td style={{fontSize:'12px', fontWeight:500, color:'oklch(0.35 0.04 240)'}}>
                                                     {getData(entry, 'department')}
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-zinc-800 font-bold">
+                                                <td style={{fontSize:'12px', fontWeight:700, color:'oklch(0.25 0.04 145)'}}>
                                                     {getData(entry, 'machine_name')}
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-zinc-600 max-w-sm truncate">
+                                                <td style={{fontSize:'11px', color:'oklch(0.40 0.03 240)', maxWidth:'220px', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
                                                     {getData(entry, 'problem_description')}
                                                 </td>
-                                                <td className="px-6 py-4 text-xs text-zinc-900 font-bold bg-brand-50/50 rounded-lg">
-                                                    {formatTime12h(getData(entry, 'time_stop'))}
+                                                <td>
+                                                    <span className="tbl-badge tbl-badge-amber">
+                                                        {formatTime12h(getData(entry, 'time_stop'))}
+                                                    </span>
                                                 </td>
 
                                                 {activeTab === 'history' && (
                                                     <>
-                                                        {/* ✅ FIXED: actual_date + actual_shift */}
-                                                        <td className="px-6 py-4 text-xs font-bold text-emerald-700 bg-emerald-50/50 rounded-lg">
-                                                            {getData(entry, 'actual_date')} / {getData(entry, 'actual_shift')}
+                                                        <td>
+                                                            <span className="tbl-badge tbl-badge-green">
+                                                                {getData(entry, 'actual_date')} / {getData(entry, 'actual_shift')}
+                                                            </span>
                                                         </td>
-                                                        {/* ✅ FIXED: actual_time */}
-                                                        <td className="px-6 py-4 text-xs font-bold text-emerald-700 bg-emerald-50/50 rounded-lg">
-                                                            {formatTime12h(getData(entry, 'actual_time'))}
+                                                        <td>
+                                                            <span className="tbl-badge tbl-badge-green">
+                                                                {formatTime12h(getData(entry, 'actual_time'))}
+                                                            </span>
                                                         </td>
-                                                        {/* ✅ FIXED: duration first tries 'Duration' from sheet, then fallback to local calculation */}
-                                                        <td className="px-6 py-4 text-xs font-black text-rose-600 bg-rose-50/50 rounded-lg">
-                                                            {formatDuration(getData(entry, 'Duration')) || calculateDuration(
-                                                                getData(entry, 'date'),
-                                                                getData(entry, 'time_stop'),
-                                                                getData(entry, 'actual_date'),
-                                                                getData(entry, 'actual_time')
-                                                            )}
+                                                        <td>
+                                                            <span className="tbl-badge tbl-badge-red">
+                                                                {formatDuration(getData(entry, 'Duration')) || calculateDuration(
+                                                                    getData(entry, 'date'),
+                                                                    getData(entry, 'time_stop'),
+                                                                    getData(entry, 'actual_date'),
+                                                                    getData(entry, 'actual_time')
+                                                                )}
+                                                            </span>
                                                         </td>
-                                                        <td className="px-6 py-4">
-                                                            <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[10px] font-bold border border-emerald-100 inline-flex items-center">
-                                                                <CheckCircle2 className="w-3 h-3 mr-1" />
+                                                        <td>
+                                                            <span className="tbl-badge tbl-badge-green">
+                                                                <CheckCircle2 className="w-3 h-3" />
                                                                 FIXED
                                                             </span>
                                                         </td>
@@ -698,15 +734,15 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                                 )}
 
                                                 {activeTab === 'step1' && (
-                                                    <td className="px-6 py-4 text-right sticky right-0 bg-white group-hover:bg-zinc-50 transition-colors border-l border-zinc-100">
+                                                    <td className="col-sticky-right text-right">
                                                         <button
                                                             onClick={() => {
                                                                 setSelectedEntry(entry);
                                                                 setIsActionModalOpen(true);
                                                             }}
-                                                            className="bg-zinc-900 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-zinc-800 transition-all shadow-md active:scale-95 flex items-center ml-auto"
+                                                            className="tbl-action-btn"
                                                         >
-                                                            <Wrench className="w-3.5 h-3.5 mr-2" /> Action
+                                                            <Wrench className="w-3.5 h-3.5" /> Action
                                                         </button>
                                                     </td>
                                                 )}
@@ -715,6 +751,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                     })()}
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>

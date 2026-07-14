@@ -153,7 +153,7 @@ const getDetailedStat = (sourceRows: any[], patterns: string[], rangeKey: string
 
     let activeRange = (!isNaN(rowMin) && !isNaN(rowMax)) ? { min: rowMin, max: rowMax } : range;
     if (!activeRange) {
-      if (rangeKey === 'Fineness') activeRange = { min: 90, max: 1000 };
+      if (rangeKey === 'Fineness') activeRange = { min: 95, max: 1000 };
       if (rangeKey === 'Moisture') activeRange = { min: 0, max: 30 };
       if (rangeKey === 'Drop Test') activeRange = { min: 2.5, max: 1000 };
       if (rangeKey === 'Alumina (%)' || rangeKey === 'Al2O3') activeRange = { min: 82.5, max: 100 };
@@ -179,10 +179,25 @@ const getDetailedStat = (sourceRows: any[], patterns: string[], rangeKey: string
   return { avg: avgVal, count: nums.length, outOfLimit, efficiency };
 };
 
+// Matches the default QC bands baked into DepartmentView's live cell coloring, so the
+// Dashboard's fail-count agrees with what the actual entry table shows when nobody has
+// configured a custom limit via "Configure Limits" for this parameter yet.
+const CHEM_DEFAULT_RANGES: Record<string, { min: number; max: number }> = {
+  'Alumina (%)': { min: 82.5, max: 83.5 },
+  'Iron (%)': { min: 1.55, max: 1.7 },
+  'Titania (%)': { min: 1.25, max: 1.35 },
+  'LOI (%)': { min: 5, max: 6 },
+};
+
 const makeChemStat = (rows: any[], keys: string[], rangeKey: string, parameterRanges: Record<string, string>) => {
   let nums: number[] = [];
   let outOfLimit = 0;
-  const range = parseRange(parameterRanges[rangeKey] || '', rangeKey);
+  // Configured limits are saved under the plain chemical symbol (e.g. "Al2O3"), not the
+  // descriptive rangeKey (e.g. "Alumina (%)") — check both, then fall back to the same
+  // default band the entry table uses.
+  const range = parseRange(parameterRanges[rangeKey] || parameterRanges[keys[0]] || '', rangeKey)
+    || CHEM_DEFAULT_RANGES[rangeKey]
+    || null;
   rows.forEach(e => {
     const matched = Object.keys(e.data).find(dk =>
       keys.some(p => dk.toLowerCase() === p.toLowerCase() ||
@@ -206,6 +221,18 @@ const getNum = (d: Record<string, any>, ...keys: string[]) => {
     const v = parseFloat(d[k]);
     if (!isNaN(v)) return v;
   }
+  // Fallback: case/whitespace-insensitive match, since rows added locally (field names,
+  // e.g. "al2o3") and rows synced from the sheet (column headers, e.g. "Al2O3") don't always
+  // share identical casing, and hand-edited sheet headers can carry stray whitespace.
+  const dataKeys = Object.keys(d);
+  for (const k of keys) {
+    const target = k.toLowerCase().trim();
+    const found = dataKeys.find(dk => dk.toLowerCase().trim() === target);
+    if (found) {
+      const v = parseFloat(d[found]);
+      if (!isNaN(v)) return v;
+    }
+  }
   return NaN;
 };
 
@@ -213,7 +240,6 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   const [dateFilter, setDateFilter] = useState<'today' | '7d' | '30d' | 'all' | 'custom'>('today');
   const [customDateRange, setCustomDateRange] = useState({ start: '', startShift: 'All', end: '', endShift: 'All' });
   const [appliedCustomDateRange, setAppliedCustomDateRange] = useState({ start: '', startShift: 'All', end: '', endShift: 'All' });
-  const [activeReportTab, setActiveReportTab] = useState<'production' | 'quality' | 'activity'>('production');
   const [activeRmTab, setActiveRmTab] = useState<string>('');
   const [campaignFilter, setCampaignFilter] = useState<string>('All');
   const [compositionSearch, setCompositionSearch] = useState('');
@@ -724,13 +750,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
     // FIXED: Enhanced function to extract Ground Loss and LOI from composition records
     const getCampaignKyc = () => {
-      const sources: any[][] = [];
-      if (Array.isArray(compositionData)) sources.push(compositionData);
-      if (masterData && typeof masterData === 'object') {
-        Object.entries(masterData).forEach(([key, val]) => {
-          if (Array.isArray(val)) sources.push(val);
-        });
-      }
+      // Only compositionData holds real row objects (campaign_no, Ground Loss, LOI columns).
+      // masterData is just flat string[] lookups (campaigns/products/materials), so it can
+      // never contribute anything here — including it as a "source" was dead weight.
+      const sources: any[][] = Array.isArray(compositionData) ? [compositionData] : [];
 
       // Helper to extract numeric value from a row by trying multiple column name patterns
       const extractValue = (row: any, patterns: string[]): number => {
@@ -1032,7 +1055,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const gbmStat = (() => {
       let nums: number[] = [];
       let outOfLimit = 0;
-      const range = parseRange(parameterRanges['GBM (%)'] || parameterRanges['Moisture (%)'] || parameterRanges['Moisture'] || '', 'Moisture');
+      // Matches DepartmentView's live cell rule: GBM defaults to a max of 25 regardless of the
+      // generic Moisture limit, unless a specific GBM/Moisture range has been configured.
+      const range = parseRange(parameterRanges['GBM (%)'] || parameterRanges['Moisture (%)'] || parameterRanges['Moisture'] || '', 'Moisture')
+        || { min: 0, max: 25 };
 
       rows.forEach(e => {
         const hopperVals: number[] = [];
@@ -1090,24 +1116,30 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
   const rmLabAvg = useMemo(() => {
     const rows = filteredEntries.filter(e => e.departmentId === 'rm');
-    const names = new Set<string>();
+    // Group by a normalized (trimmed, case-folded) key so the same material spelled with
+    // different casing in the sheet (e.g. "RBX" vs "Rbx") doesn't get split into separate rows.
+    const groups = new Map<string, { display: string; rows: typeof rows }>();
     rows.forEach(e => {
-      const n = e.data.rm_name || e.data['Raw Material Name'];
-      if (n && typeof n === 'string') names.add(n);
+      const raw = e.data.rm_name || e.data['Raw Material Name'];
+      if (!raw || typeof raw !== 'string' || !raw.trim()) return;
+      const norm = raw.trim().toLowerCase();
+      if (!groups.has(norm)) groups.set(norm, { display: raw.trim(), rows: [] });
+      groups.get(norm)!.rows.push(e);
     });
-    const uniqueNames = Array.from(names).sort();
-    if (uniqueNames.length === 0) return [];
+    if (groups.size === 0) return [];
 
     const getParamRange = (mat: string, label: string) => {
       if (!parameterRanges) return null;
       let rangeName = label === 'Al2O3' ? 'Alumina (%)' : label === 'Fe2O3' ? 'Iron (%)' : label === 'SiO2' ? 'Silica (%)' : label === 'TiO2' ? 'Titania (%)' : label === 'MgO' ? 'Magnesia (%)' : label === 'CaO' ? 'Lime (%)' : label === 'Loi' ? 'LOI (%)' : label === 'Moisture' ? 'Moisture (%)' : label;
-      return parseRange(parameterRanges[rangeName]);
+      // "Configure Limits" saves under the plain label (e.g. "Al2O3"); check that first.
+      return parseRange(parameterRanges[label] || parameterRanges[rangeName]);
     };
 
-    return uniqueNames.map(rmName => {
-      const matRows = rows.filter(e => (e.data.rm_name || e.data['Raw Material Name']) === rmName);
+    const sortedGroups = Array.from(groups.values()).sort((a, b) => a.display.localeCompare(b.display));
+
+    return sortedGroups.map(({ display: rmName, rows: matRows }) => {
       const makeStat = (k1: string, k2: string, label: string) => {
-        const nums = matRows.map(e => parseFloat(e.data[k1] || e.data[k2])).filter(v => !isNaN(v));
+        const nums = matRows.map(e => getNum(e.data, k1, k2)).filter(v => !isNaN(v));
         const range = getParamRange(rmName, k1);
         let outOfLimit = 0;
         if (range) {
@@ -1133,8 +1165,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       return row ? (row.data[k1] || row.data[k2]) : null;
     };
     const getLimitRange = (name: string) => {
-      if (!parameterRanges) return null;
-      return parseRange(parameterRanges[name] || parameterRanges['Drop Test (%)']);
+      const configured = parameterRanges ? parseRange(parameterRanges[name] || parameterRanges['Drop Test']) : null;
+      // Matches DepartmentView's live cell default when no limit has been configured.
+      return configured || { min: 2.5, max: 1000 };
     };
     const makeStat = (k1: string, k2: string, rmNum: number, name: string) => {
       let entriesWithData = 0;
@@ -1181,7 +1214,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         'Loi': 'LOI (%)', 'Moisture': 'Moisture (%)', 'GBM Avg (H1-H8)': 'GBM (%)',
         'Overall Fineness Avg': 'Fineness (%)'
       };
-      return parseRange(parameterRanges[keyMap[label] || label]);
+      // "Configure Limits" saves under the plain label (e.g. "Al2O3"); check that first,
+      // then the descriptive name (e.g. "Alumina (%)") in case it was set that way instead.
+      return parseRange(parameterRanges[label] || parameterRanges[keyMap[label]] || '');
     };
 
     const makeStatInfo = (rows: any[], label: string, deptId: string, ...keys: string[]) => {
@@ -1201,7 +1236,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           let rowMax = parseFloat(e.data[`${label} Max`] || e.data[`${label.toLowerCase()} max`]);
 
           if (isNaN(rowMin)) {
-            const cleanLabel = label.replace(/2/g, '2').replace(/3/g, '3').replace(/[(%)]/g, '').trim();
+            const cleanLabel = label.replace(/₂/g, '2').replace(/₃/g, '3').replace(/[(%)]/g, '').trim();
             rowMin = parseFloat(e.data[`${cleanLabel} Min`] || e.data[`${cleanLabel.toLowerCase()} min`]);
             rowMax = parseFloat(e.data[`${cleanLabel} Max`] || e.data[`${cleanLabel.toLowerCase()} max`]);
           }
@@ -1237,24 +1272,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       return { label, avg: avg(nums), count: entriesWithData, outOfLimit, efficiency };
     };
 
-    const dguRows = filteredEntries.filter(e => e.departmentId === 'dgu');
-    const ballingRows = filteredEntries.filter(e => e.departmentId === 'balling_disc');
     const phRows = filteredEntries.filter(e => e.departmentId === 'product_house');
     const kilnRows = filteredEntries.filter(e => e.departmentId === 'kiln');
 
     return {
-      dgu: [
-        makeStatInfo(dguRows, 'Al2O3', 'dgu', 'Al2O3', 'al2o3'),
-        makeStatInfo(dguRows, 'Fe2O3', 'dgu', 'Fe2O3', 'fe2o3'),
-        makeStatInfo(dguRows, 'TiO2', 'dgu', 'TiO2', 'tio2'),
-        makeStatInfo(dguRows, 'Loi', 'dgu', 'Loi', 'loi')
-      ],
-      balling: [
-        makeStatInfo(ballingRows, 'Al2O3', 'balling_disc', 'Al2O3', 'al2o3'),
-        makeStatInfo(ballingRows, 'Fe2O3', 'balling_disc', 'Fe2O3', 'fe2o3'),
-        makeStatInfo(ballingRows, 'TiO2', 'balling_disc', 'TiO2', 'tio2'),
-        makeStatInfo(ballingRows, 'Loi', 'balling_disc', 'Loi', 'loi')
-      ],
       product_house: [
         makeStatInfo(phRows, 'Al2O3', 'product_house', 'Al2O3', 'al2o3'),
         makeStatInfo(phRows, 'Fe2O3', 'product_house', 'Fe2O3', 'fe2o3'),
@@ -1272,21 +1293,6 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         makeStatInfo(kilnRows, 'LBD BD', 'kiln', 'LBD BD Composite (24hr)', 'LBD BD Composite', 'lbd_bd_composite', 'LBD BD')
       ],
     };
-  }, [filteredEntries, parameterRanges]);
-
-  const productHouseApBdAvg = useMemo(() => {
-    const rows = filteredEntries.filter(e => e.departmentId === 'product_house');
-    const getAvg = (k1: string, k2: string, rangeKey: string) => {
-      const nums = rows.map(e => parseFloat(e.data[k1] || e.data[k2])).filter(v => !isNaN(v));
-      const range = parameterRanges ? parseRange(parameterRanges[rangeKey]) : null;
-      let outOfLimit = 0;
-      if (range) outOfLimit = nums.filter(v => v < range.min || v > range.max).length;
-      return { avg: nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : '-', count: nums.length, outOfLimit, efficiency: nums.length ? (((nums.length - outOfLimit) / nums.length) * 100).toFixed(1) : '0.0' };
-    };
-    return [
-      { label: 'AP Avg', ...getAvg('AP', 'ap', 'AP Composite') },
-      { label: 'BD Avg', ...getAvg('BD', 'bd', 'BD Composite') },
-    ];
   }, [filteredEntries, parameterRanges]);
 
   const handleExportExcel = () => {
@@ -1458,20 +1464,20 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- ENERGY STATS */}
-      <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 mb-8 group overflow-hidden relative">
+      <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 mb-6 group overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-20 group-hover:opacity-60 transition-all duration-700 z-0" />
         <div className="relative z-10">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-brand-500 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-                <Flame className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
+                <Flame className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-3xl font-black text-slate-900 tracking-tight">Production Report</h2>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Production Report</h2>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[
               { label: 'Total Production', val: energyStats.totalQty.toFixed(1), unit: 'MT', accent: 'bg-slate-400', text: 'text-slate-800', logic: '' },
               { label: 'Total Fuel', val: energyStats.totalFuel.toFixed(1), unit: 'units', accent: 'bg-amber-500', text: 'text-amber-600', logic: '' },
@@ -1485,7 +1491,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${card.accent} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
                 <div className="flex-1 mt-1">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-3">{card.label}</p>
-                  <p className={`text-4xl font-black tracking-tighter ${card.text}`}>{card.val}</p>
+                  <p className={`text-3xl font-black tracking-tighter ${card.text}`}>{card.val}</p>
                   <p className="text-[10px] text-slate-400 font-bold mt-1.5 uppercase tracking-widest">{card.unit}</p>
                 </div>
                 <div className="mt-5 pt-4 border-t border-slate-50/80">
@@ -1498,7 +1504,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- RM LAB + DROP TEST + FINENESS + BALLING UPDATES + KILN + PRODUCT HOUSE */}
-      <div className="flex flex-col gap-6 mb-8">
+      <div className="flex flex-col gap-4 mb-6">
         {[
           {
             title: 'RM Lab Averages',
@@ -1552,7 +1558,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             icon: Droplets,
             color: 'rose',
             component: (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                   { label: dropTestAvg.rm1Name, stat: dropTestAvg.rm1, color: 'text-red-600' },
                   { label: dropTestAvg.rm2Name, stat: dropTestAvg.rm2, color: 'text-brand-600' },
@@ -1589,7 +1595,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div key={item.label} className="bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-5 hover:border-emerald-200 transition-all">
                     <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-3">{item.label}</p>
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className={`text-3xl font-black tracking-tight ${item.data.avg === '-' ? 'text-slate-300' : 'text-emerald-700'}`}>
+                      <span className={`text-2xl font-black tracking-tight ${item.data.avg === '-' ? 'text-slate-300' : 'text-emerald-700'}`}>
                         {item.data.avg}
                       </span>
                       <span className="text-xs font-bold text-slate-400 capitalize">{item.unit}</span>
@@ -1618,7 +1624,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             icon: Activity,
             color: 'cyan',
             component: (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[
                   { label: 'AL2O3', data: ballingUpdatesAvg.al2o3, unit: '%' },
                   { label: 'FE2O3', data: ballingUpdatesAvg.fe2o3, unit: '%' },
@@ -1630,7 +1636,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div key={item.label} className="bg-cyan-50/50 border border-cyan-100/50 rounded-2xl p-5 hover:border-cyan-200 transition-all group">
                     <p className="text-[10px] font-black text-cyan-600 uppercase tracking-widest mb-3 group-hover:text-cyan-700 transition-colors">{item.label}</p>
                     <div className="flex items-baseline gap-2 mb-4">
-                      <span className={`text-3xl font-black tracking-tight ${item.data.avg === '-' ? 'text-slate-300' : 'text-cyan-900'}`}>
+                      <span className={`text-2xl font-black tracking-tight ${item.data.avg === '-' ? 'text-slate-300' : 'text-cyan-900'}`}>
                         {item.data.avg}
                       </span>
                       <span className="text-xs font-bold text-slate-400 capitalize">{item.unit}</span>
@@ -1664,7 +1670,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div key={row.label} className="bg-brand-50/50 border border-brand-100/50 rounded-2xl p-5 hover:border-brand-200 transition-all">
                     <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-3">{row.label}</p>
                     <div className="flex items-baseline gap-2 mb-4 justify-center">
-                      <span className={`text-3xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-brand-700'}`}>
+                      <span className={`text-2xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-brand-700'}`}>
                         {row.avg}
                       </span>
                     </div>
@@ -1697,7 +1703,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div key={row.label} className="bg-brand-50/50 border border-brand-100/50 rounded-2xl p-5 hover:border-brand-200 transition-all">
                     <p className="text-[10px] font-black text-brand-400 uppercase tracking-widest mb-3">{row.label}</p>
                     <div className="flex items-baseline gap-2 mb-4 justify-center">
-                      <span className={`text-3xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-brand-700'}`}>
+                      <span className={`text-2xl font-black tracking-tight ${row.avg === '-' ? 'text-slate-300' : 'text-brand-700'}`}>
                         {row.avg}
                       </span>
                     </div>
@@ -1721,10 +1727,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             )
           }
         ].map((section, idx) => (
-          <div key={idx} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 group transition-all hover:shadow-xl">
-            <div className="flex items-center gap-4 mb-8">
-              <div className={`w-12 h-12 bg-${section.color}-50 rounded-2xl flex items-center justify-center shadow-sm`}>
-                <section.icon className={`w-6 h-6 text-${section.color}-600`} />
+          <div key={idx} className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 group transition-all hover:shadow-xl">
+            <div className="flex items-center gap-4 mb-6">
+              <div className={`w-10 h-10 bg-${section.color}-50 rounded-xl flex items-center justify-center shadow-sm`}>
+                <section.icon className={`w-5 h-5 text-${section.color}-600`} />
               </div>
               <div>
                 <h2 className="text-2xl font-black text-slate-900 tracking-tight">{section.title}</h2>
@@ -1739,7 +1745,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- PRODUCTION ACCOUNTING */}
-      <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden mb-8">
+      <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden mb-6">
         <div className="px-5 sm:px-7 py-5 bg-gradient-to-r from-brand-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-100">
           <div>
             <h2 className="text-xl font-black text-brand-900 tracking-tight">Consumption Report</h2>
@@ -1775,54 +1781,56 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         <div className="px-4 sm:px-6 pb-4 sm:pb-6">
-          <div className="rounded-2xl border border-brand-100 overflow-hidden shadow-sm overflow-x-auto">
-            <table className="w-full text-left border-separate border-spacing-0 min-w-[600px] bg-white">
+          <div className="premium-table-wrap">
+            <div className="premium-table-scroll" style={{maxHeight:'none'}}>
+            <table className="premium-table" style={{minWidth:'600px'}}>
               <thead>
-                <tr className="bg-brand-50">
-                  <th className="px-4 sm:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pl-4 sm:pl-6">Actual</th>
-                  <th className="px-4 sm:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100">Qty (MT)</th>
-                  <th className="px-4 sm:px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right border-b border-slate-100 pr-4 sm:pr-6">%</th>
+                <tr>
+                  <th style={{paddingLeft:'24px'}}>Actual</th>
+                  <th className="text-right">Qty (MT)</th>
+                  <th className="text-right" style={{paddingRight:'24px'}}>%</th>
                 </tr>
               </thead>
-              <tbody className="bg-white">
+              <tbody>
                 {[
-                  { label: 'Total Input (RM Used for Prod.)', qty: accountingSummary.totalInput.toFixed(1), pct: '100%', color: 'text-brand-700', dot: 'bg-brand-500', sign: '', bg: 'bg-brand-50/20', logic: accountingSummary.consumptionLogic },
-                  { label: `LOI (${accountingSummary.avgLOI.toFixed(2)}%)`, qty: accountingSummary.loiLossMT.toFixed(1), pct: `${accountingSummary.totalInput > 0 ? ((accountingSummary.loiLossMT / accountingSummary.totalInput) * 100).toFixed(1) : '0'}%`, color: 'text-zinc-600', dot: 'bg-zinc-400', sign: '- ', bg: '', logic: 'From Composition Records LOI (%) x Total Input' },
-                  { label: 'Balance ', qty: accountingSummary.balance1.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Input - LOI' },
-                  { label: 'Net Operational Spillage (Spillage - PPT)', qty: accountingSummary.netSpillage.toFixed(1), pct: `${accountingSummary.balance2 > 0 ? ((accountingSummary.netSpillage / accountingSummary.balance2) * 100).toFixed(1) : '0'}%`, color: 'text-rose-700', dot: 'bg-rose-500', sign: '- ', bg: '', logic: `Accounted Spillage (${accountingSummary.totalSpillage.toFixed(1)}) - Recycled (${accountingSummary.totalPPT.toFixed(1)})` },
-                  { label: 'Balance (Operational)', qty: accountingSummary.balance3.toFixed(1), pct: '', color: 'text-slate-500', dot: 'bg-slate-300', sign: '= ', bg: 'bg-slate-50/50', logic: 'Prev Balance - Net Spillage' },
-                  { label: 'In-Process Material (Campaign Closing)', qty: accountingSummary.wipStatsOutput.toFixed(1), pct: `${accountingSummary.balance3 > 0 ? ((accountingSummary.wipStatsOutput / accountingSummary.balance3) * 100).toFixed(1) : '0'}%`, color: 'text-amber-700', dot: 'bg-amber-500', sign: '- ', bg: '', logic: wipStats.logicStr },
-                  { label: 'Theoretical Production (Final Balance)', qty: accountingSummary.balance4.toFixed(1), pct: '', color: 'text-slate-800', dot: 'bg-slate-600', sign: '= ', bg: 'bg-slate-100 border-t border-slate-200', logic: 'Final calculated target based on process and chemical losses' },
-                  { label: 'Actual Production (Output)', qty: accountingSummary.totalProduction.toFixed(1), pct: `${accountingSummary.balance4 > 0 ? ((accountingSummary.totalProduction / accountingSummary.balance4) * 100).toFixed(1) : '0'}%`, color: 'text-emerald-700', dot: 'bg-emerald-500', sign: '- ', bg: '', logic: 'Actual output weighed by production site' },
-                  { label: 'Difference Qty (Actual vs Theoretical)', qty: Math.abs(accountingSummary.differenceQty).toFixed(1), pct: '-', color: accountingSummary.differenceQty > 0 ? 'text-rose-700' : 'text-emerald-700', dot: accountingSummary.differenceQty > 0 ? 'bg-rose-500' : 'bg-emerald-500', sign: accountingSummary.differenceQty > 0 ? '+ ' : '- ', bg: accountingSummary.differenceQty > 0 ? 'bg-rose-50/30' : 'bg-emerald-50/30', logic: 'Variance = Theoretical Target - Actual Production' },
+                  { label: 'Total Input (RM Used for Prod.)', qty: accountingSummary.totalInput.toFixed(1), pct: '100%', color: 'oklch(0.44 0.14 145)', dot: 'oklch(0.60 0.14 145)', sign: '', bg: 'oklch(0.97 0.015 145 / 0.4)', logic: accountingSummary.consumptionLogic },
+                  { label: `LOI (${accountingSummary.avgLOI.toFixed(2)}%)`, qty: accountingSummary.loiLossMT.toFixed(1), pct: `${accountingSummary.totalInput > 0 ? ((accountingSummary.loiLossMT / accountingSummary.totalInput) * 100).toFixed(1) : '0'}%`, color: 'oklch(0.40 0.03 240)', dot: 'oklch(0.62 0.03 240)', sign: '– ', bg: '', logic: 'From Composition Records LOI (%) x Total Input' },
+                  { label: 'Balance ', qty: accountingSummary.balance1.toFixed(1), pct: '', color: 'oklch(0.45 0.02 240)', dot: 'oklch(0.75 0.02 240)', sign: '= ', bg: 'oklch(0.97 0.01 240 / 0.3)', logic: 'Input - LOI' },
+                  { label: 'Net Operational Spillage (Spillage - PPT)', qty: accountingSummary.netSpillage.toFixed(1), pct: `${accountingSummary.balance2 > 0 ? ((accountingSummary.netSpillage / accountingSummary.balance2) * 100).toFixed(1) : '0'}%`, color: 'oklch(0.40 0.17 22)', dot: 'oklch(0.55 0.18 22)', sign: '– ', bg: '', logic: `Accounted Spillage (${accountingSummary.totalSpillage.toFixed(1)}) - Recycled (${accountingSummary.totalPPT.toFixed(1)})` },
+                  { label: 'Balance (Operational)', qty: accountingSummary.balance3.toFixed(1), pct: '', color: 'oklch(0.45 0.02 240)', dot: 'oklch(0.75 0.02 240)', sign: '= ', bg: 'oklch(0.97 0.01 240 / 0.3)', logic: 'Prev Balance - Net Spillage' },
+                  { label: 'In-Process Material (Campaign Closing)', qty: accountingSummary.wipStatsOutput.toFixed(1), pct: `${accountingSummary.balance3 > 0 ? ((accountingSummary.wipStatsOutput / accountingSummary.balance3) * 100).toFixed(1) : '0'}%`, color: 'oklch(0.42 0.13 75)', dot: 'oklch(0.60 0.15 75)', sign: '– ', bg: '', logic: wipStats.logicStr },
+                  { label: 'Theoretical Production (Final Balance)', qty: accountingSummary.balance4.toFixed(1), pct: '', color: 'oklch(0.25 0.04 145)', dot: 'oklch(0.40 0.06 240)', sign: '= ', bg: 'oklch(0.94 0.02 240 / 0.4)', logic: 'Final calculated target based on process and chemical losses' },
+                  { label: 'Actual Production (Output)', qty: accountingSummary.totalProduction.toFixed(1), pct: `${accountingSummary.balance4 > 0 ? ((accountingSummary.totalProduction / accountingSummary.balance4) * 100).toFixed(1) : '0'}%`, color: 'oklch(0.35 0.13 145)', dot: 'oklch(0.52 0.155 145)', sign: '– ', bg: '', logic: 'Actual output weighed by production site' },
+                  { label: 'Difference Qty (Actual vs Theoretical)', qty: Math.abs(accountingSummary.differenceQty).toFixed(1), pct: '–', color: accountingSummary.differenceQty > 0 ? 'oklch(0.40 0.17 22)' : 'oklch(0.35 0.13 145)', dot: accountingSummary.differenceQty > 0 ? 'oklch(0.55 0.18 22)' : 'oklch(0.52 0.155 145)', sign: accountingSummary.differenceQty > 0 ? '+ ' : '– ', bg: accountingSummary.differenceQty > 0 ? 'oklch(0.96 0.05 22 / 0.3)' : 'oklch(0.95 0.07 145 / 0.3)', logic: 'Variance = Theoretical Target - Actual Production' },
                 ].map((row, i) => (
-                  <tr key={i} className={`group hover:bg-slate-50/60 transition-colors ${row.bg}`}>
-                    <td className={`px-4 sm:px-6 py-4 text-xs font-bold ${row.color} border-b border-slate-50 group-last:border-0 pl-4 sm:pl-6`}>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-2.5 h-2.5 rounded-full ${row.dot} flex-shrink-0 shadow-sm`} />
+                  <tr key={i} style={{background: row.bg || undefined}}>
+                    <td style={{paddingLeft:'24px'}}>
+                      <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+                        <div style={{width:'9px', height:'9px', borderRadius:'50%', background:row.dot, flexShrink:0, boxShadow:`0 0 0 2px ${row.dot}30`}} />
                         <div>
-                          <span className="text-[13px] whitespace-normal sm:whitespace-nowrap">{row.label}</span>
-                          <p className="text-[9px] text-slate-400 italic font-medium mt-0.5 group-hover:text-slate-500 transition-colors whitespace-normal">Logic: {row.logic}</p>
+                          <span style={{fontSize:'13px', fontWeight:700, color:row.color, whiteSpace:'normal'}}>{row.sign}{row.label}</span>
+                          <p style={{fontSize:'9px', color:'oklch(0.62 0.03 240)', fontStyle:'italic', fontWeight:500, marginTop:'2px'}}>Logic: {row.logic}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-4 sm:px-6 py-4 text-[15px] font-black text-slate-900 text-right border-b border-slate-50 group-last:border-0 whitespace-nowrap">{row.sign}{row.qty}</td>
-                    <td className="px-4 sm:px-6 py-4 text-xs font-bold text-slate-500 text-right border-b border-slate-50 group-last:border-0 pr-4 sm:pr-6 whitespace-nowrap">{row.pct}</td>
+                    <td className="tbl-num" style={{fontSize:'15px', fontWeight:900, color:'oklch(0.18 0.04 145)'}}>{row.qty}</td>
+                    <td className="tbl-num" style={{paddingRight:'24px', fontSize:'12px', fontWeight:700, color:'oklch(0.52 0.04 240)'}}>{row.pct}</td>
                   </tr>
                 ))}
-                <tr className="bg-emerald-50">
-                  <td className="px-4 sm:px-6 py-5 text-[12px] font-black text-emerald-900 uppercase tracking-widest border-t border-emerald-200 pl-4 sm:pl-6">Plant Efficiency</td>
-                  <td className="px-4 sm:px-6 py-5 text-2xl font-black text-emerald-800 text-right border-t border-emerald-200">{accountingSummary.totalProduction.toFixed(1)} MT</td>
-                  <td className="px-4 sm:px-6 py-5 text-xs font-black text-emerald-600 text-right border-t border-emerald-200 pr-4 sm:pr-6">{accountingSummary.totalHopper > 0 ? ((accountingSummary.totalProduction / accountingSummary.totalHopper) * 100).toFixed(1) : '0'}% true yield</td>
+                <tr className="tbl-footer-row">
+                  <td style={{paddingLeft:'24px', fontSize:'12px', fontWeight:900, color:'oklch(0.28 0.09 145)', textTransform:'uppercase', letterSpacing:'0.1em'}}>Plant Efficiency</td>
+                  <td className="tbl-num" style={{fontSize:'22px', fontWeight:900, color:'oklch(0.35 0.12 145)'}}>{accountingSummary.totalProduction.toFixed(1)} MT</td>
+                  <td className="tbl-num" style={{paddingRight:'24px', fontWeight:900, color:'oklch(0.44 0.14 145)'}}>{accountingSummary.totalHopper > 0 ? ((accountingSummary.totalProduction / accountingSummary.totalHopper) * 100).toFixed(1) : '0'}% true yield</td>
                 </tr>
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
 
       {/* -- MATERIAL INTELLIGENCE */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-6">
         {/* SB3 Ground */}
         <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
           <div className="flex items-center justify-between mb-5">
@@ -2006,7 +2014,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- MATERIAL CONSUMPTION ANALYSIS */}
-      <div className="bg-white rounded-[2rem] border border-brand-100 shadow-sm overflow-hidden mb-8">
+      <div className="bg-white rounded-[2rem] border border-brand-100 shadow-sm overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-brand-50 to-white border-b border-brand-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center border border-brand-200">
@@ -2022,13 +2030,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-6">
           {consumptionStats.length === 0 ? (
             <div className="py-12 text-center text-slate-300 text-sm italic">
               Awaiting production data for analysis...
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {consumptionStats.map((item, idx) => (
                 <div key={idx} className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 group hover:border-brand-200 transition-all duration-300">
                   <div className="flex items-start justify-between mb-4">
@@ -2055,7 +2063,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- PRODUCTION COST ANALYSIS */}
-      <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden mb-8">
+      <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-emerald-50 to-white border-b border-emerald-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center border border-emerald-200">
@@ -2074,16 +2082,16 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           </div>
         </div>
 
-        <div className="p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <div className="lg:col-span-4 bg-emerald-50/50 rounded-3xl p-8 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group">
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            <div className="lg:col-span-4 bg-emerald-50/50 rounded-3xl p-6 border border-emerald-100 flex flex-col justify-center relative overflow-hidden group">
               <div className="absolute top-0 right-0 p-4 transform translate-x-4 -translate-y-4 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-500">
                 <div className="w-20 h-20 bg-emerald-500/5 rounded-full flex items-center justify-center">
                   <TrendingUp className="w-10 h-10 text-emerald-500/20" />
                 </div>
               </div>
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2">Total Production Cost (RM)</p>
-              <h2 className="text-4xl font-black text-slate-900 tracking-tighter mb-2">
+              <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">
                 {productionCost.totalRmCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </h2>
               <div className="flex items-center gap-2 mt-2">
@@ -2121,7 +2129,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- KPI CARDS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
             label: 'Total Activity',
@@ -2173,14 +2181,14 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
-            className="group relative bg-white border border-slate-100/80 rounded-[2.5rem] p-7 shadow-sm hover:shadow-2xl hover:border-brand-100 transition-all duration-500 overflow-hidden"
+            className="group relative bg-white border border-slate-100/80 rounded-[1.75rem] p-5 shadow-sm hover:shadow-2xl hover:border-brand-100 transition-all duration-500 overflow-hidden"
           >
             {/* Background Glow */}
             <div className={`absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 rounded-full opacity-[0.03] group-hover:scale-[2.5] transition-all duration-1000 bg-${kpi.color}-500`} />
 
             <div className="flex items-center justify-between mb-6 relative z-10">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center bg-${kpi.color}-50 text-${kpi.color}-600 group-hover:bg-${kpi.color}-600 group-hover:text-white transition-all duration-500 shadow-sm`}>
-                <kpi.icon className="w-6 h-6" />
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-${kpi.color}-50 text-${kpi.color}-600 group-hover:bg-${kpi.color}-600 group-hover:text-white transition-all duration-500 shadow-sm`}>
+                <kpi.icon className="w-5 h-5" />
               </div>
               <div className="flex flex-col items-end">
                 <span className={`text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-50 ${kpi.trendColor} uppercase tracking-widest border border-slate-100/50`}>
@@ -2194,7 +2202,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
             <div className="relative z-10">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{kpi.label}</p>
-              <h3 className="text-4xl font-black text-slate-900 tracking-tighter leading-none tabular-nums flex items-baseline gap-1">
+              <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-none tabular-nums flex items-baseline gap-1">
                 {kpi.value}
                 <span className="text-base text-slate-400 font-bold tracking-tight">{kpi.suffix}</span>
               </h3>
@@ -2211,9 +2219,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- PERFORMANCE INSIGHTS */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Yield Performance (Donut Chart) */}
-        <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
+        <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
           <div className="absolute top-6 left-8 text-center sm:text-left">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Process Yield</p>
             <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">Yield Efficiency</h3>
@@ -2240,7 +2248,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center mt-3">
-              <p className="text-4xl font-black text-slate-900 tracking-tighter">
+              <p className="text-3xl font-black text-slate-900 tracking-tighter">
                 {accountingSummary.totalGround > 0 ? ((accountingSummary.netOutput / accountingSummary.totalGround) * 100).toFixed(0) : '0'}%
               </p>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Efficiency</p>
@@ -2249,7 +2257,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         {/* Plant Health Summary */}
-        <div className="lg:col-span-3 bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 grid grid-cols-1 md:grid-cols-3 gap-10 hover:shadow-2xl transition-all duration-500 relative">
+        <div className="lg:col-span-3 bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 grid grid-cols-1 md:grid-cols-3 gap-4 hover:shadow-2xl transition-all duration-500 relative">
           <div className="space-y-6 relative overflow-hidden">
             {/* Animated Glow Dot */}
             <div className="flex items-center gap-4">
@@ -2338,7 +2346,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
       {/* -- COMPOSITION ARCHIVES */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-        <div className="px-6 py-5 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="px-4 py-3 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-sm">
               <FileSpreadsheet className="w-4 h-4 text-white" />
@@ -2374,38 +2382,36 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[500px] scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent rounded-b-xl border-t border-slate-100">
-          <table className="w-full text-left border-separate border-spacing-0">
+        <div className="premium-table-scroll" style={{maxHeight:'500px'}}>
+          <table className="premium-table">
             <thead>
-              <tr className="bg-white sticky top-0 z-20 shadow-sm">
+              <tr>
                 {compositionHeaders.map((header, idx) => (
-                  <th key={idx} className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-500 whitespace-nowrap border-b border-slate-100/80 bg-brand-50">
-                    {header}
-                  </th>
+                  <th key={idx}>{header}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white">
+            <tbody>
               {filteredCompositionData.length === 0 ? (
-                <tr>
-                  <td colSpan={10} className="px-6 py-20 text-center text-slate-400 text-sm font-semibold italic">No historical data found</td>
+                <tr className="tbl-empty">
+                  <td colSpan={10}>No historical data found</td>
                 </tr>
               ) : (
                 filteredCompositionData.slice(0, 50).map((row, idx) => (
-                  <tr key={idx} className="hover:bg-brand-50/40 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-bold text-slate-600 border-b border-slate-100/50 group-last:border-0">{formatDisplayDate(row.timestamp)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-slate-100/50 group-last:border-0">
-                      <span className="text-[11px] font-black text-brand-600 bg-brand-50 border border-brand-100 px-2.5 py-1 rounded-lg">{row.campaign_no || '-'}</span>
+                  <tr key={idx}>
+                    <td className="tbl-ts">{formatDisplayDate(row.timestamp)}</td>
+                    <td>
+                      <span className="tbl-badge tbl-badge-blue">{row.campaign_no || '—'}</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-bold text-slate-700 border-b border-slate-100/50 group-last:border-0">{row.product_name || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-[14px] font-black text-slate-900 border-b border-slate-100/50 group-last:border-0">{row.qty || '0'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-500 border-b border-slate-100/50 group-last:border-0">{row.loi_pct || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-bold text-slate-700 border-b border-slate-100/50 group-last:border-0">{row.rm_req || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-[13px] font-black text-brand-600 border-b border-slate-100/50 group-last:border-0">{row.al2o3 || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-600 border-b border-slate-100/50 group-last:border-0">{row.fe2o3 || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs font-medium text-slate-600 border-b border-slate-100/50 group-last:border-0">{row.sio2 || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap border-b border-slate-100/50 group-last:border-0">
-                      <span className="text-[11px] font-black bg-slate-900 text-white px-3 py-1.5 rounded-lg shadow-sm border border-slate-700">${row.total_cost || row.totalCost || '0.00'}</span>
+                    <td style={{fontSize:'13px', fontWeight:700, color:'oklch(0.30 0.05 145)'}}>{row.product_name || '—'}</td>
+                    <td className="tbl-num" style={{fontSize:'14px', fontWeight:900, color:'oklch(0.25 0.04 145)'}}>{row.qty || '0'}</td>
+                    <td style={{fontSize:'12px', color:'oklch(0.45 0.03 240)'}}>{row.loi_pct || '—'}</td>
+                    <td style={{fontSize:'13px', fontWeight:700, color:'oklch(0.30 0.04 240)'}}>{row.rm_req || '—'}</td>
+                    <td style={{fontSize:'13px', fontWeight:900, color:'oklch(0.44 0.14 145)'}}>{row.al2o3 || '—'}</td>
+                    <td style={{fontSize:'12px', color:'oklch(0.40 0.04 240)'}}>{row.fe2o3 || '—'}</td>
+                    <td style={{fontSize:'12px', color:'oklch(0.40 0.04 240)'}}>{row.sio2 || '—'}</td>
+                    <td>
+                      <span style={{fontSize:'11px', fontWeight:900, background:'oklch(0.18 0.04 145)', color:'#fff', padding:'3px 10px', borderRadius:'8px', display:'inline-block'}}>${row.total_cost || row.totalCost || '0.00'}</span>
                     </td>
                   </tr>
                 ))
@@ -2414,7 +2420,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           </table>
         </div>
 
-        <div className="px-6 py-4 bg-slate-50/40 border-t border-slate-100 flex items-center justify-between">
+        <div className="px-4 py-2.5 bg-slate-50/40 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 rounded-full bg-brand-500 animate-pulse" />

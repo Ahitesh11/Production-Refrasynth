@@ -11,14 +11,26 @@ import ChecklistWorkflowView from './components/ChecklistWorkflowView';
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
 import { AlertCircle, Database, X } from 'lucide-react';
-import { cn } from './lib/utils';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
     const saved = localStorage.getItem('erp_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users'>('dashboard');
+  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users'>(() => {
+    const saved = localStorage.getItem('erp_user');
+    const savedUser = saved ? JSON.parse(saved) : null;
+    if (!savedUser || savedUser.type === 'Admin') return 'dashboard';
+    if (savedUser.permissions) {
+      const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+      const firstAllowed = DEPARTMENTS.find(dept => {
+        const deptName = normalize(dept.name);
+        return Object.entries(savedUser.permissions).some(([name, allowed]) => allowed && normalize(name) === deptName);
+      });
+      if (firstAllowed) return firstAllowed.id;
+    }
+    return 'dashboard';
+  });
   const [entries, setEntries] = useState<Entry[]>(() => {
     const saved = localStorage.getItem('erp_entries');
     return saved ? JSON.parse(saved) : [];
@@ -39,6 +51,7 @@ export default function App() {
     const saved = localStorage.getItem('erp_inventory');
     return saved ? JSON.parse(saved) : [];
   });
+  const [userNames, setUserNames] = useState<string[]>([]);
   const [parameterRanges, setParameterRanges] = useState<Record<string, string>>({});
   const [scriptUrl, setScriptUrl] = useState(localStorage.getItem('erp_script_url') || '');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -80,6 +93,16 @@ export default function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     localStorage.setItem('erp_user', JSON.stringify(userData));
+    if (userData.type === 'Admin') {
+      setActiveId('dashboard');
+    } else {
+      const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+      const firstAllowed = DEPARTMENTS.find(dept => {
+        const deptName = normalize(dept.name);
+        return Object.entries(userData.permissions || {}).some(([name, allowed]) => allowed && normalize(name) === deptName);
+      });
+      setActiveId(firstAllowed ? firstAllowed.id : 'dashboard');
+    }
   };
 
   const handleLogout = () => {
@@ -97,12 +120,13 @@ export default function App() {
     try {
       const urlParam = scriptUrl ? `&url=${encodeURIComponent(scriptUrl)}` : '';
 
-      const [masterRes, entriesRes, rangesRes, compositionRes, inventoryRes] = await Promise.all([
+      const [masterRes, entriesRes, rangesRes, compositionRes, inventoryRes, usersRes] = await Promise.all([
         fetch(`/api/proxy?action=getMaster${urlParam}`).catch(e => ({ ok: false, error: e })),
         fetch(`/api/proxy?action=getAllEntries${urlParam}`).catch(e => ({ ok: false, error: e })),
         fetch(`/api/proxy?action=getParameterRanges${urlParam}`).catch(e => ({ ok: false, error: e })),
         fetch(`/api/proxy?action=getComposition${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getInventory${urlParam}`).catch(e => ({ ok: false, error: e }))
+        fetch(`/api/proxy?action=getInventory${urlParam}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getUsers${urlParam}`).catch(e => ({ ok: false, error: e }))
       ]);
 
       if ('ok' in masterRes && masterRes.ok) {
@@ -155,6 +179,13 @@ export default function App() {
           localStorage.setItem('erp_inventory', JSON.stringify(invData));
         }
       }
+
+      if ('ok' in usersRes && usersRes.ok) {
+        const usersData = await (usersRes as Response).json().catch(() => null);
+        if (usersData && Array.isArray(usersData.users)) {
+          setUserNames(usersData.users.map((u: any) => u.username).filter(Boolean));
+        }
+      }
     } catch (err: any) {
       console.error('Data Fetch Failed:', err);
     } finally {
@@ -205,10 +236,13 @@ export default function App() {
         if (field.name === 'rm_name' || field.name.startsWith('mat') || field.name.startsWith('rm')) {
           return { ...field, options: masterData.materials.length > 0 ? masterData.materials : field.options };
         }
+        if (dept.id === 'check_list' && field.name === 'name') {
+          return { ...field, options: userNames.length > 0 ? userNames : field.options };
+        }
         return field;
       })
     }));
-  }, [allowedDepartments, masterData]);
+  }, [allowedDepartments, masterData, userNames]);
 
   const handleAddEntry = (entry: Entry) => {
     setEntries(prev => [entry, ...prev]);
@@ -224,17 +258,17 @@ export default function App() {
 
   if (isLoading && entries.length === 0) {
     return (
-      <div className="min-h-screen bg-zinc-50 flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-4 animate-bounce">
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+        <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 animate-bounce">
           <Database className="w-8 h-8 text-white" />
         </div>
-        <p className="text-sm font-bold text-zinc-900 uppercase tracking-widest animate-pulse mb-8">Loading ERP Data...</p>
+        <p className="text-sm font-bold text-slate-900 uppercase tracking-widest animate-pulse mb-8">Loading ERP Data...</p>
 
         {/* Show retry after 10 seconds */}
         <div className="animate-in fade-in duration-1000 delay-10000 fill-mode-forwards opacity-0">
           <button
             onClick={() => fetchData(true)}
-            className="px-6 py-3 bg-zinc-900 text-white text-xs font-bold uppercase tracking-widest rounded-2xl hover:bg-zinc-800 transition-all shadow-lg"
+            className="px-6 py-3 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
           >
             Retry Connection
           </button>
@@ -244,7 +278,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-50 font-sans selection:bg-zinc-900 selection:text-white">
+    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans selection:bg-slate-900 selection:text-white">
       <Sidebar
         activeId={activeId}
         onSelect={setActiveId}
@@ -258,49 +292,46 @@ export default function App() {
         onToggleCollapse={toggleSidebar}
       />
 
-      <main className={cn(
-        "flex-1 overflow-y-auto relative transition-all duration-300",
-        isCollapsed ? "lg:ml-20" : "lg:ml-0"
-      )}>
+      <main className="flex-1 overflow-y-auto relative min-w-0">
 
         {isSettingsOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-              <div className="px-8 py-6 bg-zinc-900 text-white flex items-center justify-between">
+              <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
                 <div>
-                  <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">System Config</p>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">System Config</p>
                   <h2 className="text-xl font-bold tracking-tight text-white">Settings</h2>
                 </div>
-                <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
+                <button onClick={() => setIsSettingsOpen(false)} className="p-2 hover:bg-slate-800 rounded-full transition-colors">
                   <X className="w-5 h-5 text-white" />
                 </button>
               </div>
               <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh] custom-scrollbar">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest ml-1">Google Apps Script URL</label>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Google Apps Script URL</label>
                   <input
                     type="text"
                     value={tempUrl}
                     onChange={(e) => setTempUrl(e.target.value)}
                     placeholder="https://script.google.com/macros/s/.../exec"
-                    className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-zinc-900 focus:border-transparent transition-all outline-none text-xs font-mono"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none text-xs font-mono"
                   />
-                  <p className="text-[9px] text-zinc-400 italic mt-1 leading-relaxed">
+                  <p className="text-[9px] text-slate-400 italic mt-1 leading-relaxed">
                     Enter your deployed Web App URL from Google Apps Script.
-                    Leave empty to use the system default.
+                    <b className="text-amber-600 not-italic"> If left empty, the app falls back to a shared DEMO sheet — real entries will not be saved to your own data.</b>
                   </p>
                   <button
                     onClick={testConnection}
                     disabled={isTesting}
-                    className="mt-2 text-[10px] font-bold text-zinc-900 underline underline-offset-4 hover:text-zinc-600 disabled:opacity-50"
+                    className="mt-2 text-[10px] font-bold text-slate-900 underline underline-offset-4 hover:text-slate-600 disabled:opacity-50"
                   >
                     {isTesting ? 'Testing...' : 'Test Connection'}
                   </button>
                 </div>
-                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-zinc-100">
+                <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
                   <button
                     onClick={() => setIsSettingsOpen(false)}
-                    className="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-900 transition-colors"
+                    className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
                   >
                     Cancel
                   </button>
@@ -309,7 +340,7 @@ export default function App() {
                       handleUpdateUrl(tempUrl);
                       setIsSettingsOpen(false);
                     }}
-                    className="px-8 py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all shadow-lg shadow-zinc-200"
+                    className="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                   >
                     Save & Reload
                   </button>
@@ -323,12 +354,12 @@ export default function App() {
             user.type === 'Admin' ? (
               <ManageUsers scriptUrl={scriptUrl} />
             ) : (
-              <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-400">
+              <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
                 <AlertCircle className="w-12 h-12 mb-4 opacity-20" />
                 <p className="text-sm font-medium">You don't have permission to view this page.</p>
                 <button
                   onClick={() => setActiveId('dashboard')}
-                  className="mt-4 text-xs font-bold text-zinc-900 underline underline-offset-4"
+                  className="mt-4 text-xs font-bold text-slate-900 underline underline-offset-4"
                 >
                   Back to Dashboard
                 </button>
@@ -413,7 +444,11 @@ export default function App() {
 
                     const resData = await response.json().catch(() => ({}));
                     if (response.ok && resData.result === 'success') {
-                      alert('✅ Data saved successfully to Google Sheets!');
+                      if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
+                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
+                      } else {
+                        alert('✅ Data saved successfully to Google Sheets!');
+                      }
                       handleAddEntry(newEntry);
                       fetchData(true); // Refresh inventory stats
                     } else {
@@ -439,12 +474,12 @@ export default function App() {
               />
             )
           ) : (
-            <div className="flex flex-col items-center justify-center h-[60vh] text-zinc-400">
+            <div className="flex flex-col items-center justify-center h-[60vh] text-slate-400">
               <AlertCircle className="w-12 h-12 mb-4 opacity-20" />
               <p className="text-sm font-medium">You don't have permission to view this department.</p>
               <button
                 onClick={() => setActiveId('dashboard')}
-                className="mt-4 text-xs font-bold text-zinc-900 underline underline-offset-4"
+                className="mt-4 text-xs font-bold text-slate-900 underline underline-offset-4"
               >
                 Back to Dashboard
               </button>

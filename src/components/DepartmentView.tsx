@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Department, Entry } from '../types';
-import { Plus, CheckCircle2, AlertCircle, Loader2, Settings, X, Search } from 'lucide-react';
+import { Plus, CheckCircle2, AlertCircle, Loader2, Settings, X, Search, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import DepartmentForm from './DepartmentForm';
 import { cn } from '../lib/utils';
@@ -60,7 +60,6 @@ const formatDisplayDate = (dateStr: string) => {
   if (!dateStr) return '-';
   try {
     if (/^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}/.test(dateStr)) return dateStr;
-
     const date = new Date(dateStr);
     if (!isNaN(date.getTime())) {
       return format(date, 'MM/dd/yyyy HH:mm:ss');
@@ -79,7 +78,6 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
   const [searchTerm, setSearchTerm] = useState('');
   const [protocolFilter, setProtocolFilter] = useState<string>('All');
 
-  // Update local ranges when prop changes
   React.useEffect(() => {
     if (initialRanges) setLocalRanges(initialRanges);
   }, [initialRanges]);
@@ -122,28 +120,21 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
     });
   }, [safeEntries, department.fields]);
 
-  // Determine if this department has a protocol field (DGU, Kiln)
   const hasProtocol = department.fields.some(f => f.name === 'entry_type');
-  // DGU gets a dedicated report-view selector, Kiln gets Shift/Composite
   const protocolOptions = department.id === 'kiln' ? ['All', 'Shift', 'Composite'] : [];
 
-  // DGU Report view: 'all' | 'fineness' | 'lab'
   const [dguReport, setDguReport] = useState<'all' | 'fineness' | 'lab'>('all');
-  // Balling Disc Report view: 'all' | 'moisture' | 'lab'
   const [ballingReport, setBallingReport] = useState<'all' | 'moisture' | 'lab'>('all');
 
-  // Columns to show based on department and report view
   const visibleFields = useMemo(() => {
     const base = department.fields.filter(f => f.name !== 'entry_type');
 
-    // Drop Test: show only summary columns
     if (department.id === 'drop_test') {
       return base.filter(f =>
         ['campaign_no', 'product_name', 'shift', 'date', 'note', 'rm1_pct', 'rm2_pct', 'rm3_pct'].includes(f.name)
       );
     }
 
-    // Balling Disc report view
     if (department.id === 'balling_disc') {
       if (ballingReport === 'moisture') {
         return base.filter(f =>
@@ -158,7 +149,6 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       return base;
     }
 
-    // DGU report view
     if (department.id !== 'dgu') return base;
     if (dguReport === 'fineness') {
       return base.filter(f =>
@@ -176,26 +166,22 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
   const displayedEntries = useMemo(() => {
     let filtered = sortedEntries;
 
-    // DGU report filter — detect by actual data presence (entry_type is not saved to sheet)
     if (department.id === 'dgu' && dguReport !== 'all') {
       filtered = filtered.filter(e => {
         const d = e.data;
         if (dguReport === 'fineness') {
-          // Has at least one Fineness value
           return ['Fineness %1','Fineness %2','Fineness %3','Fineness %4',
                   'Fineness %5','Fineness %6','Fineness %7','Fineness %8',
                   'fineness_1','fineness_2','fineness_3','fineness_4',
                   'fineness_5','fineness_6','fineness_7','fineness_8']
             .some(k => d[k] !== undefined && d[k] !== '' && d[k] !== null);
         } else {
-          // Lab: has at least one of Al2O3, Fe2O3, TiO2, Loi
           return ['Al2O3','Fe2O3','TiO2','Loi','al2o3','fe2o3','tio2','loi']
             .some(k => d[k] !== undefined && d[k] !== '' && d[k] !== null);
         }
       });
     }
 
-    // Protocol filter (Kiln only)
     if (department.id !== 'dgu' && hasProtocol && protocolFilter !== 'All') {
       filtered = filtered.filter(e => {
         const proto = e.data['Entry Protocol'] || e.data['entry_type'] || e.data['Entry Type'] || 'Shift';
@@ -203,7 +189,6 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       });
     }
 
-    // Search filter — match any field value
     if (searchTerm.trim()) {
       const term = searchTerm.trim().toLowerCase();
       filtered = filtered.filter(e => {
@@ -218,90 +203,28 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
   const canAdd = userType === 'Entry' || userType === 'Admin';
   const canMarkDone = userType === 'Mark Done' || userType === 'Admin';
 
-  const handleSync = async (entry: Entry) => {
-    setSyncingId(entry.id);
-
-    const values = [
-      entry.timestamp,
-      ...department.fields
-        .filter(f => f.name !== 'entry_type')
-        .map(f => {
-          let val = entry.data[f.label] || entry.data[f.name] || '';
-          if (f.type === 'date' && val && !/^\d{2}\/\d{2}\/\d{4}/.test(val)) {
-            try {
-              val = format(new Date(val), 'MM/dd/yyyy');
-            } catch (e) { }
-          }
-          return val;
-        })
-    ];
-
-    try {
-      if (!scriptUrl) {
-        throw new Error('Google Apps Script URL is not configured in Settings.');
-      }
-
-      const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
-
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          sheetName: department.name,
-          entryId: entry.timestamp,
-          values: values
-        }),
-      });
-
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(`Server returned non-JSON response: ${text.substring(0, 100)}`);
-      }
-
-      if (!response.ok || data.result === 'error' || data.status === 'error') {
-        throw new Error(data.error || data.message || 'Failed to sync with Google Sheets');
-      }
-
-      if (scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-        alert('Data synced to DEMO SHEET. Please update the Script URL in Settings to save to YOUR sheet.');
-      } else {
-        alert('Data saved successfully to Google Sheets!');
-      }
-    } catch (error: any) {
-      console.error('Sync Error:', error);
-      alert(`Sync Failed: ${error.message}`);
-    } finally {
-      setSyncingId(null);
-    }
-  };
-
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-in fade-in duration-500 font-sans">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-900">{department.name}</h2>
-          <p className="text-zinc-500 mt-1">Manage and track {department.category.toLowerCase()} entries.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">{department.name}</h2>
+          <p className="text-sm text-slate-500 mt-1">Manage and track {department.category.toLowerCase()} entries.</p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {userType === 'Admin' && (department.id === 'dgu' || department.id === 'balling_disc' || department.id === 'product_house') && (
             <button
               onClick={() => setIsAdminLimitOpen(true)}
-              className="flex items-center px-4 py-2 bg-white border border-zinc-200 text-zinc-600 rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-zinc-50 transition-all shadow-sm"
+              className="flex items-center px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-medium text-xs uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm hover:shadow"
             >
-              <Settings className="w-4 h-4 mr-2 text-[#5B6B2E]" />
+              <Settings className="w-4 h-4 mr-2 text-brand-500" />
               Configure Limits
             </button>
           )}
           {canAdd && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center px-5 py-2.5 bg-zinc-900 text-white rounded-xl font-medium hover:bg-zinc-800 transition-all shadow-lg shadow-zinc-200 active:scale-95"
+              className="flex items-center px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-brand-200/50 active:scale-95"
             >
               <Plus className="w-4 h-4 mr-2" />
               Add New Entry
@@ -310,21 +233,22 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
         </div>
       </div>
 
-      <div className="bg-white border border-zinc-200 rounded-2xl shadow-sm overflow-hidden">
+      {/* Table Card */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
         {/* Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 px-5 py-4 border-b border-zinc-100">
+        <div className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 border-b border-slate-200/80 bg-slate-50/30">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Search entries..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-zinc-50 border border-zinc-200 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-zinc-900/10 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 transition-all placeholder:text-slate-400"
             />
           </div>
           {hasProtocol && protocolOptions.length > 0 && (
-            <div className="flex items-center gap-1 bg-zinc-100 p-1 rounded-xl border border-zinc-200 shrink-0">
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
               {protocolOptions.map(opt => (
                 <button
                   key={opt}
@@ -332,8 +256,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   className={cn(
                     "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                     protocolFilter === opt
-                      ? "bg-white text-zinc-900 shadow-sm"
-                      : "text-zinc-400 hover:text-zinc-600"
+                      ? "bg-white text-slate-900 shadow-sm"
+                      : "text-slate-400 hover:text-slate-600"
                   )}
                 >
                   {opt}
@@ -341,19 +265,19 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
               ))}
             </div>
           )}
-          <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest shrink-0">
+          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest shrink-0 whitespace-nowrap">
             {displayedEntries.length} result{displayedEntries.length !== 1 ? 's' : ''}
           </span>
         </div>
 
         {/* DGU Report View Tabs */}
         {department.id === 'dgu' && (
-          <div className="flex items-center gap-2 px-5 pb-3">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mr-1">Report View:</span>
+          <div className="flex flex-wrap items-center gap-2 px-6 py-3 bg-slate-50/20 border-b border-slate-200/60">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">View:</span>
             {([
-              { id: 'all', label: 'All Entries', color: 'bg-zinc-900 text-white' },
-              { id: 'fineness', label: '📊 Fineness Report', color: 'bg-emerald-600 text-white' },
-              { id: 'lab', label: '🧪 Lab Report', color: 'bg-brand-600 text-white' },
+              { id: 'all', label: 'All Entries', color: 'bg-slate-900 text-white' },
+              { id: 'fineness', label: 'Fineness', color: 'bg-emerald-600 text-white' },
+              { id: 'lab', label: 'Lab', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -362,28 +286,23 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   'px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border',
                   dguReport === tab.id
                     ? tab.color + ' border-transparent shadow-md'
-                    : 'bg-white text-zinc-400 border-zinc-200 hover:text-zinc-700'
+                    : 'bg-white text-slate-400 border-slate-200 hover:text-slate-700'
                 )}
               >
                 {tab.label}
               </button>
             ))}
-            {dguReport !== 'all' && (
-              <span className="ml-2 text-[10px] font-bold text-zinc-400">
-                — {dguReport === 'fineness' ? 'Showing Shift entries • Fineness columns only' : 'Showing Daily entries • Lab columns only'}
-              </span>
-            )}
           </div>
         )}
 
         {/* Balling Disc Report View Tabs */}
         {department.id === 'balling_disc' && (
-          <div className="flex items-center gap-2 px-5 pb-3">
-            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mr-1">Report View:</span>
+          <div className="flex flex-wrap items-center gap-2 px-6 py-3 bg-slate-50/20 border-b border-slate-200/60">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">View:</span>
             {([
-              { id: 'all', label: 'All Entries', color: 'bg-zinc-900 text-white' },
-              { id: 'moisture', label: '💧 Moisture Report', color: 'bg-cyan-600 text-white' },
-              { id: 'lab', label: '🧪 Lab Report', color: 'bg-brand-600 text-white' },
+              { id: 'all', label: 'All Entries', color: 'bg-slate-900 text-white' },
+              { id: 'moisture', label: 'Moisture', color: 'bg-cyan-600 text-white' },
+              { id: 'lab', label: 'Lab', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -392,30 +311,27 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   'px-4 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border',
                   ballingReport === tab.id
                     ? tab.color + ' border-transparent shadow-md'
-                    : 'bg-white text-zinc-400 border-zinc-200 hover:text-zinc-700'
+                    : 'bg-white text-slate-400 border-slate-200 hover:text-slate-700'
                 )}
               >
                 {tab.label}
               </button>
             ))}
-            {ballingReport !== 'all' && (
-              <span className="ml-2 text-[10px] font-bold text-zinc-400">
-                — {ballingReport === 'moisture' ? 'Campaign, Shift, Date, Name, GBM H1–H8, Drop Test' : 'Campaign, Shift, Date, Name, Al2O3, Fe2O3, TiO2, Loi, Note'}
-              </span>
-            )}
           </div>
         )}
-        <div className="overflow-x-auto max-h-[600px] custom-scrollbar">
-          <table className="w-full text-left border-separate border-spacing-0">
+
+        {/* Table */}
+        <div className="premium-table-wrap">
+          <div className="premium-table-scroll">
+          <table className="premium-table">
             <thead>
-              <tr className="bg-brand-50">
-                <th className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest sticky left-0 top-0 bg-brand-50 z-30 border-b border-zinc-200 align-bottom">
+              <tr>
+                <th className="col-sticky-left" style={{minWidth:'140px'}}>
                   Timestamp
                 </th>
                 {visibleFields.map(field => {
                   let avgStr: string | null = null;
                   
-                  // Calculate average only if it's a number field or specifically numeric in nature
                   if (field.type === 'number' || ['Al2O3', 'Fe2O3', 'TiO2', 'Loi', 'SiO2', 'CaO', 'MgO', 'Fineness', 'Drop Test'].some(k => field.label.includes(k))) {
                     const nums = displayedEntries
                       .map(e => parseFloat(e.data[field.label] || e.data[field.name]))
@@ -428,11 +344,11 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   }
 
                   return (
-                    <th key={field.name} className="px-6 py-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap sticky top-0 bg-brand-50 z-20 border-b border-zinc-200 align-bottom">
+                    <th key={field.name} style={{whiteSpace:'nowrap'}}>
                       {avgStr !== null && (
-                        <div className="mb-2">
-                          <span className="text-[#5B6B2E] font-black text-xs mr-1">{avgStr}</span>
-                          <span className="text-[8px] text-zinc-400 uppercase opacity-70">Avg</span>
+                        <div style={{marginBottom:'4px'}}>
+                          <span style={{fontSize:'11px', fontWeight:900, color:'oklch(0.44 0.14 145)', marginRight:'3px'}}>{avgStr}</span>
+                          <span style={{fontSize:'8px', color:'oklch(0.62 0.04 240)', textTransform:'uppercase', opacity:0.7}}>Avg</span>
                         </div>
                       )}
                       {field.label}
@@ -441,17 +357,22 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                 })}
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
+            <tbody>
               {displayedEntries.length === 0 ? (
-                <tr>
-                  <td colSpan={visibleFields.length + 1} className="px-6 py-12 text-center text-zinc-400 italic">
-                    {searchTerm || protocolFilter !== 'All' || dguReport !== 'all' ? 'No matching entries found.' : 'No entries found for this department.'}
+                <tr className="tbl-empty">
+                  <td colSpan={visibleFields.length + 1}>
+                    <div className="flex flex-col items-center gap-3">
+                      <AlertCircle className="w-10 h-10" style={{color:'oklch(0.78 0.05 145)'}} />
+                      <p>
+                        {searchTerm || protocolFilter !== 'All' || dguReport !== 'all' ? 'No matching entries found.' : 'No entries found for this department.'}
+                      </p>
+                    </div>
                   </td>
                 </tr>
               ) : (
                 displayedEntries.map((entry) => (
-                  <tr key={entry.id} className="hover:bg-zinc-50/50 transition-colors group">
-                    <td className="px-6 py-4 text-sm font-mono text-zinc-500 whitespace-nowrap sticky left-0 bg-white group-hover:bg-zinc-50 transition-colors z-10">
+                  <tr key={entry.id}>
+                    <td className="col-sticky-left tbl-ts">
                       {formatDisplayDate(entry.timestamp)}
                     </td>
                     {visibleFields.map(field => {
@@ -464,7 +385,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                       const rangeStr = localRanges?.[field.label] || localRanges?.[field.name];
                       const range = parseRange(rangeStr || '');
 
-                      let cellClass = "px-6 py-4 text-sm text-zinc-600 whitespace-nowrap";
+                      let cellClass = "text-sm text-slate-700 whitespace-nowrap";
+                      let statusIcon = null;
 
                       let hasColored = false;
 
@@ -473,7 +395,6 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                         const targetMaxStr = `${field.label.toLowerCase()} max`;
                         let minVal, maxVal;
 
-                        // Robustly search through the entry data keys
                         for (const key in entry.data) {
                           const kLower = key.toLowerCase().trim();
                           if (kLower === targetMinStr) minVal = entry.data[key];
@@ -498,9 +419,11 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                           if (!isNaN(numValue) && !isNaN(min) && !isNaN(max)) {
                             hasColored = true;
                             if (numValue >= min && numValue <= max) {
-                              cellClass = cn(cellClass, "text-emerald-700 font-bold bg-emerald-50/70 italic border-l-2 border-emerald-500");
+                              cellClass = cn(cellClass, "text-emerald-700 font-bold bg-emerald-50/70 rounded-lg px-3 py-1.5 inline-block");
+                              statusIcon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 inline ml-1" />;
                             } else {
-                              cellClass = cn(cellClass, "text-red-700 font-bold bg-red-50/70 animate-pulse border-l-2 border-red-500");
+                              cellClass = cn(cellClass, "text-rose-700 font-bold bg-rose-50/70 rounded-lg px-3 py-1.5 inline-block");
+                              statusIcon = <AlertCircle className="w-3.5 h-3.5 text-rose-500 inline ml-1" />;
                             }
                           }
                         }
@@ -510,9 +433,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                         const label = field.label.trim();
                         let min: number | null = null;
                         let max: number | null = null;
-                        let reverseLogic = false; // If true, above max is red, below is green
+                        let reverseLogic = false;
 
-                        // Default user requested limits
                         if (department.id === 'product_house') {
                           if (label === 'Al2O3') { min = 87.5; max = 89; }
                           else if (label === 'Fe2O3') { min = 1.6; max = 2; }
@@ -544,17 +466,20 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                           const numValue = parseFloat(value);
                           if (!isNaN(numValue)) {
                             if (reverseLogic) {
-                              // Max+ logic: below green, above red
                               if (numValue <= (max || 0)) {
-                                cellClass = cn(cellClass, "text-emerald-600 font-bold bg-emerald-50/50 italic border-l-2 border-emerald-500");
+                                cellClass = cn(cellClass, "text-emerald-700 font-bold bg-emerald-50/70 rounded-lg px-3 py-1.5 inline-block");
+                                statusIcon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 inline ml-1" />;
                               } else {
-                                cellClass = cn(cellClass, "text-red-600 font-bold bg-red-50/50 animate-pulse border-l-2 border-red-500");
+                                cellClass = cn(cellClass, "text-rose-700 font-bold bg-rose-50/70 rounded-lg px-3 py-1.5 inline-block");
+                                statusIcon = <AlertCircle className="w-3.5 h-3.5 text-rose-500 inline ml-1" />;
                               }
                             } else if (min !== null && max !== null) {
                               if (numValue >= min && numValue <= max) {
-                                cellClass = cn(cellClass, "text-emerald-600 font-bold bg-emerald-50/50 italic border-l-2 border-emerald-500");
+                                cellClass = cn(cellClass, "text-emerald-700 font-bold bg-emerald-50/70 rounded-lg px-3 py-1.5 inline-block");
+                                statusIcon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 inline ml-1" />;
                               } else {
-                                cellClass = cn(cellClass, "text-red-600 font-bold bg-red-50/50 animate-pulse border-l-2 border-red-500");
+                                cellClass = cn(cellClass, "text-rose-700 font-bold bg-rose-50/70 rounded-lg px-3 py-1.5 inline-block");
+                                statusIcon = <AlertCircle className="w-3.5 h-3.5 text-rose-500 inline ml-1" />;
                               }
                             }
                           }
@@ -572,9 +497,11 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
 
                             if (!isNaN(min) && !isNaN(max) && !isNaN(val)) {
                               if (val >= min && val <= max) {
-                                cellClass = cn(cellClass, "text-emerald-700 font-bold bg-emerald-50/70 italic border-l-2 border-emerald-500");
+                                cellClass = cn(cellClass, "text-emerald-700 font-bold bg-emerald-50/70 rounded-lg px-3 py-1.5 inline-block");
+                                statusIcon = <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 inline ml-1" />;
                               } else {
-                                cellClass = cn(cellClass, "text-red-700 font-bold bg-red-50/70 animate-pulse border-l-2 border-red-500");
+                                cellClass = cn(cellClass, "text-rose-700 font-bold bg-rose-50/70 rounded-lg px-3 py-1.5 inline-block");
+                                statusIcon = <AlertCircle className="w-3.5 h-3.5 text-rose-500 inline ml-1" />;
                               }
                               hasColored = true;
                             }
@@ -586,16 +513,19 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                         const numValue = parseFloat(value);
                         if (!isNaN(numValue)) {
                           if (numValue >= range.min && numValue <= range.max) {
-                            cellClass = cn(cellClass, "text-emerald-600 font-bold bg-emerald-50/30");
+                            cellClass = cn(cellClass, "text-emerald-600 font-bold bg-emerald-50/30 rounded-lg px-3 py-1.5 inline-block");
                           } else {
-                            cellClass = cn(cellClass, "text-red-600 font-bold bg-red-50/30");
+                            cellClass = cn(cellClass, "text-rose-600 font-bold bg-rose-50/30 rounded-lg px-3 py-1.5 inline-block");
                           }
                         }
                       }
 
                       return (
-                        <td key={field.name} className={cellClass}>
-                          {value || '-'}
+                        <td key={field.name} className="px-4 py-2.5">
+                          <span className={cellClass}>
+                            {value || '-'}
+                            {statusIcon}
+                          </span>
                         </td>
                       );
                     })}
@@ -604,11 +534,13 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
               )}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
+      {/* Add Entry Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <DepartmentForm
               department={department}
@@ -660,7 +592,11 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                     });
                     const resData = await response.json().catch(() => ({}));
                     if (response.ok && resData.result === 'success') {
-                      alert('✅ Data saved successfully to Google Sheets!');
+                      if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
+                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
+                      } else {
+                        alert('✅ Data saved successfully to Google Sheets!');
+                      }
                     } else {
                       throw new Error(resData.error || 'Failed to sync with Google Sheets');
                     }
@@ -680,17 +616,15 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
         </div>
       )}
 
+      {/* Admin Limit Modal */}
       {isAdminLimitOpen && (
         <AdminLimitModal
           ranges={localRanges}
           onClose={() => setIsAdminLimitOpen(false)}
           onSave={async (newRanges) => {
             setLocalRanges(newRanges);
-            // Sync to Google Sheet (Parameter_Range sheet)
             try {
               const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl || '')}`;
-              // We need to update each changed row or the whole set.
-              // For simplicity, we'll loop through the keys we care about.
               const keys = ['Al2O3', 'Fe2O3', 'SiO2', 'TiO2', 'CaO', 'MgO', 'Loi', 'Fineness', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Drop Test', 'Moisture'];
               for (const key of keys) {
                 if (newRanges[key]) {
@@ -699,7 +633,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       sheetName: 'Parameter_Range',
-                      uniqueId: key, // Key is the name in Col A
+                      uniqueId: key,
                       partialData: { "Parameter Name": key, "Range": newRanges[key] }
                     })
                   });
@@ -728,37 +662,46 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
   const keys = ['Al2O3', 'Fe2O3', 'SiO2', 'TiO2', 'CaO', 'MgO', 'Loi', 'Fineness', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Drop Test', 'Moisture'];
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-900/60 backdrop-blur-md">
-      <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-zinc-200">
-        <div className="px-8 py-6 bg-zinc-900 text-white flex items-center justify-between">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+        <div className="px-8 py-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
           <div>
-            <p className="text-[#5B6B2E] text-[10px] font-bold uppercase tracking-widest mb-1">Quality Control</p>
+            <p className="text-brand-300 text-[10px] font-bold uppercase tracking-widest mb-1">Quality Control</p>
             <h2 className="text-xl font-bold tracking-tight">Limit Configuration</h2>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-zinc-800 rounded-full transition-colors">
-            <X className="w-5 h-5" />
+          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+            <X className="w-5 h-5 text-white" />
           </button>
         </div>
-        <div className="p-8 space-y-6 overflow-y-auto max-h-[70vh] custom-scrollbar">
+        <div className="p-8 space-y-5 overflow-y-auto max-h-[70vh] custom-scrollbar">
           <div className="grid grid-cols-1 gap-4">
             {keys.map(key => (
               <div key={key} className="space-y-1.5">
-                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest ml-1">{key}</label>
+                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">{key}</label>
                 <input
                   type="text"
                   value={localRanges[key] || ''}
                   placeholder={['Fineness', 'Drop Test', 'Moisture'].includes(key) ? 'e.g. 95' : 'e.g. 82.5 to 83.5'}
                   onChange={(e) => setLocalRanges({ ...localRanges, [key]: e.target.value })}
-                  className="w-full px-4 py-3 bg-zinc-50 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-[#5B6B2E] focus:border-transparent outline-none text-sm font-bold text-zinc-700"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 outline-none text-sm font-medium text-slate-800 transition-all"
                 />
-                <p className="text-[9px] text-zinc-400 italic ml-1">
-                  {['Drop Test', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Fineness'].includes(key) ? 'Value BELOW this will be RED, above will be GREEN.' : ['Moisture'].includes(key) ? 'Value ABOVE this will be RED, below will be GREEN.' : 'Standard Min to Max format.'}
+                <p className="text-[9px] text-slate-400 italic ml-1">
+                  {['Drop Test', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Fineness'].includes(key) 
+                    ? 'Value BELOW this will be RED, above will be GREEN.' 
+                    : ['Moisture'].includes(key) 
+                      ? 'Value ABOVE this will be RED, below will be GREEN.' 
+                      : 'Standard Min to Max format.'}
                 </p>
               </div>
             ))}
           </div>
-          <div className="flex items-center justify-end space-x-3 pt-6 border-t border-zinc-100">
-            <button onClick={onClose} className="px-6 py-2.5 text-xs font-bold text-zinc-500 hover:text-zinc-900 uppercase">Cancel</button>
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
+            <button 
+              onClick={onClose} 
+              className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+            >
+              Cancel
+            </button>
             <button
               onClick={async () => {
                 setIsSaving(true);
@@ -767,9 +710,9 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
                 onClose();
               }}
               disabled={isSaving}
-              className="px-8 py-2.5 bg-zinc-900 text-white rounded-xl text-xs font-bold hover:bg-zinc-800 transition-all flex items-center"
+              className="px-8 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-lg shadow-brand-200/50 active:scale-95 disabled:opacity-50"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2 text-[#5B6B2E]" />}
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
               Apply & Sync
             </button>
           </div>

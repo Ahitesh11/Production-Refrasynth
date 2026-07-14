@@ -18,7 +18,9 @@ import {
   ShieldCheck,
   Zap,
   Globe,
-  Users
+  Users,
+  Sparkles,
+  ChevronDown
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Department, User } from '../types';
@@ -54,27 +56,37 @@ const NavItem = ({ id, name, icon: Icon, activeId, onSelect, isCollapsed }: NavI
     <button
       onClick={() => onSelect(id as any)}
       className={cn(
-        "group relative flex items-center w-full transition-all duration-300 rounded-xl mb-1",
-        isCollapsed ? "justify-center p-2.5" : "px-4 py-2",
+        "group relative flex items-center w-full transition-all duration-200 rounded-lg mb-0.5",
+        isCollapsed ? "justify-center p-2.5" : "px-3 py-2",
         isActive
-          ? "bg-brand-50 text-brand-700"
-          : "text-slate-500 hover:bg-slate-50 hover:text-slate-900"
+          ? "bg-brand-50/80 text-brand-700"
+          : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-900"
       )}
     >
       {isActive && (
         <motion.div
           layoutId="activeBar"
-          className="absolute left-0 w-0.5 h-4 bg-brand-600 rounded-full"
+          className="absolute left-0 w-1 h-5 bg-brand-600 rounded-full"
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         />
       )}
       <Icon className={cn(
-        "transition-colors shrink-0",
-        isCollapsed ? "w-5 h-5" : "w-4 h-4 mr-3",
-        isActive ? "text-brand-600" : "group-hover:text-slate-900"
+        "transition-all duration-200 shrink-0",
+        isCollapsed ? "w-[18px] h-[18px]" : "w-4 h-4 mr-2.5",
+        isActive ? "text-brand-600" : "text-slate-400 group-hover:text-slate-700"
       )} />
       {!isCollapsed && (
-        <span className="text-sm font-medium tracking-tight truncate">{name}</span>
+        <span className={cn(
+          "text-[13px] font-medium tracking-tight truncate transition-all",
+          isActive ? "text-brand-700" : "text-slate-700"
+        )}>{name}</span>
+      )}
+      {isActive && !isCollapsed && (
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-600"
+        />
       )}
     </button>
   );
@@ -96,16 +108,32 @@ export default function Sidebar({
 
   const categories = [
     {
-      name: 'Main', depts: [], items: [
-        { id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard },
-        { id: 'rm', name: 'RM', icon: Zap },
-        { id: 'inventory', name: 'Issue To SB3', icon: Database },
+      name: 'Main',
+      items: [
+        ...(user?.type === 'Admin' ? [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }] : []),
+        ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'Raw Material', icon: Zap }] : []),
+        ...(departments.some(d => d.id === 'sb3_ground' || d.id === 'inventory') ? [{ id: 'inventory', name: 'Issue To SB3', icon: Database }] : []),
       ]
     },
-    { name: 'Lab', depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm'), icon: FlaskConical },
-    { name: 'Stock', depts: departments.filter(d => d.category === 'Stock' && d.id !== 'inventory' && d.id !== 'sb3_ground'), icon: Package },
-    { name: 'Operations', depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'), icon: Gauge },
-    ...(user?.type === 'Admin' ? [{ name: 'Admin', depts: [], items: [{ id: 'manage_users', name: 'Manage Users', icon: Users }] }] : []),
+    {
+      name: 'Lab',
+      depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm'),
+      icon: FlaskConical
+    },
+    {
+      name: 'Stock',
+      depts: departments.filter(d => d.category === 'Stock' && d.id !== 'inventory' && d.id !== 'sb3_ground'),
+      icon: Package
+    },
+    {
+      name: 'Operations',
+      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'),
+      icon: Gauge
+    },
+    ...(user?.type === 'Admin' ? [{
+      name: 'Admin',
+      items: [{ id: 'manage_users', name: 'Manage Users', icon: Users }]
+    }] : []),
   ];
 
   const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users') => {
@@ -115,79 +143,102 @@ export default function Sidebar({
 
   return (
     <>
+      {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed bottom-8 right-8 z-[60] w-14 h-14 bg-slate-900 text-white rounded-3xl shadow-2xl flex items-center justify-center transform transition-transform hover:scale-105 active:scale-95 border border-white/10"
+        className="lg:hidden fixed bottom-8 right-8 z-[60] w-14 h-14 bg-brand-600 text-white rounded-2xl shadow-2xl shadow-brand-200/50 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 border border-white/20"
       >
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
 
+      {/* Mobile Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="lg:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[55]"
+            className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[55]"
             onClick={() => setIsOpen(false)}
           />
         )}
       </AnimatePresence>
 
+      {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:sticky top-0 left-0 z-[56] h-screen bg-white flex flex-col transition-all duration-500 border-r border-slate-100 shadow-[1px_0_0_0_rgba(0,0,0,0.01)]",
-        isCollapsed ? "w-20" : "w-64",
+        "fixed lg:sticky top-0 left-0 z-[56] h-screen bg-white flex flex-col transition-[width,transform] duration-300 ease-out border-r border-slate-200/80 shadow-2xl shadow-slate-200/20",
+        isCollapsed ? "w-16" : "w-60",
         isOpen ? "translate-x-0" : "max-lg:-translate-x-full"
       )}>
         {/* Resize Handle */}
         <button
           onClick={onToggleCollapse}
-          className="hidden lg:flex absolute -right-3.5 top-12 w-7 h-7 bg-white border border-slate-100 rounded-lg items-center justify-center shadow-lg hover:bg-slate-50 transition-all z-[60] group/toggle group"
+          className="hidden lg:flex absolute -right-3 top-11 w-6 h-6 bg-white border border-slate-200/80 rounded-full items-center justify-center shadow-md hover:bg-brand-50 hover:border-brand-200 transition-all z-[60] group"
         >
-          {isCollapsed ? <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" /> : <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600" />}
+          {isCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5 text-slate-400 group-hover:text-brand-600 transition-colors" />
+          )}
         </button>
 
         {/* Branding */}
-        <div className={cn("p-6", isCollapsed && "px-4")}>
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => handleSelect('dashboard')}>
+        <div className={cn(
+          "h-16 flex items-center border-b border-slate-200/80",
+          isCollapsed ? "px-3 justify-center" : "px-5"
+        )}>
+          <div className="flex items-center gap-2.5 cursor-pointer group" onClick={() => handleSelect('dashboard')}>
             <div className={cn(
-              "flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0",
-              isCollapsed ? "w-10 h-10" : "w-9 h-9"
+              "relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105 shrink-0",
+              isCollapsed ? "w-9 h-9" : "w-9 h-9"
             )}>
+              <div className="absolute inset-0 bg-brand-100/50 rounded-2xl blur-xl group-hover:blur-2xl transition-all" />
               <img
-                src="/logo.svg"
+                src="/logo.png"
                 alt="Logo"
-                className="w-full h-full object-contain"
+                className="relative w-full h-full object-contain"
               />
             </div>
             {!isCollapsed && (
               <div className="flex flex-col">
-                <h1 className="text-base font-bold tracking-tight text-slate-800 leading-tight">Refrasynth</h1>
+                <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-tight">Refrasynth</h1>
+                <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase"></p>
               </div>
             )}
           </div>
         </div>
 
-        {/* Navigation Feed */}
-        <div className={cn("flex-1 overflow-y-auto px-4 py-2 space-y-8 custom-scrollbar", isCollapsed && "px-2")}>
+        {/* Navigation */}
+        <div className={cn(
+          "flex-1 overflow-y-auto py-3 space-y-5 custom-scrollbar",
+          isCollapsed ? "px-2" : "px-3"
+        )}>
           {categories.map((cat, idx) => (
-            cat.items || (cat.depts && cat.depts.length > 0) ? (
-              <div key={cat.name}>
+            (cat.items && cat.items.length > 0) || (cat.depts && cat.depts.length > 0) ? (
+              <div key={cat.name} className="space-y-2">
                 {!isCollapsed && (
-                  <div className="px-4 mb-2">
-                    <p className="text-[10px] font-semibold text-slate-300 uppercase tracking-widest">{cat.name}</p>
+                  <div className="px-3">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{cat.name}</p>
                   </div>
                 )}
                 <div className="space-y-0.5">
                   {cat.items?.map(item => (
-                    <NavItem key={item.id} id={item.id as any} name={item.name} icon={item.icon} activeId={activeId} onSelect={handleSelect} isCollapsed={isCollapsed} />
+                    <NavItem
+                      key={item.id}
+                      id={item.id as any}
+                      name={item.name}
+                      icon={item.icon}
+                      activeId={activeId}
+                      onSelect={handleSelect}
+                      isCollapsed={isCollapsed}
+                    />
                   ))}
                   {cat.depts?.map(dept => (
                     <NavItem
                       key={dept.id}
                       id={dept.id}
                       name={dept.name}
-                      icon={cat.icon}
+                      icon={cat.icon || Activity}
                       activeId={activeId}
                       onSelect={handleSelect}
                       isCollapsed={isCollapsed}
@@ -200,53 +251,84 @@ export default function Sidebar({
         </div>
 
         {/* User Module */}
-        <div className={cn("p-6 border-t border-slate-50", isCollapsed && "p-3")}>
-          <div className={cn("flex items-center bg-slate-50 p-3 rounded-2xl border border-slate-100", isCollapsed ? "flex-col space-y-3 px-1" : "justify-between")}>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-brand-800 rounded-lg flex items-center justify-center text-white shrink-0">
-                {user?.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-brand-300" /> : <UserIcon className="w-4 h-4" />}
+        <div className={cn(
+          "border-t border-slate-200/80 bg-white/80 backdrop-blur-sm",
+          isCollapsed ? "p-2.5" : "p-3"
+        )}>
+          <div className={cn(
+            "flex items-center rounded-xl transition-all",
+            isCollapsed ? "flex-col gap-2.5" : "gap-2.5 p-2.5 bg-slate-50/80 border border-slate-200/60"
+          )}>
+            <div className={cn(
+              "relative flex items-center justify-center shrink-0",
+              isCollapsed ? "w-9 h-9" : "w-8 h-8"
+            )}>
+              <div className="absolute inset-0 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg" />
+              <div className="relative flex items-center justify-center w-full h-full rounded-lg text-white font-bold text-sm">
+                {user?.type === 'Admin' ? (
+                  <ShieldCheck className="w-4 h-4 text-brand-200" />
+                ) : (
+                  <UserIcon className="w-4 h-4" />
+                )}
               </div>
-              {!isCollapsed && (
-                <div className="truncate max-w-[100px]">
-                  <p className="text-xs font-semibold text-slate-700 truncate">{user?.username}</p>
-                  <p className="text-[9px] text-slate-400 uppercase font-medium">{user?.type}</p>
-                </div>
-              )}
             </div>
-            <div className={cn("flex items-center gap-0.5", isCollapsed && "flex-col")}>
+            {!isCollapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800 truncate">{user?.username || 'User'}</p>
+                <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{user?.type || 'Role'}</p>
+              </div>
+            )}
+            <div className={cn(
+              "flex items-center gap-0.5",
+              isCollapsed ? "flex-col" : ""
+            )}>
               {user?.type === 'Admin' && (
                 <button
                   onClick={() => { onOpenSettings(); setIsOpen(false); }}
-                  className="p-1.5 hover:bg-white rounded-lg transition-colors text-slate-400 hover:text-brand-600"
+                  className={cn(
+                    "p-2 rounded-xl transition-all text-slate-400 hover:text-brand-600 hover:bg-brand-50",
+                    isCollapsed ? "w-full flex justify-center" : ""
+                  )}
                   title="Settings"
                 >
-                  <Settings className="w-3.5 h-3.5" />
+                  <Settings className="w-4 h-4" />
                 </button>
               )}
               <button
                 onClick={onLogout}
-                className="p-1.5 hover:bg-rose-50 rounded-lg transition-colors text-slate-400 hover:text-rose-600"
+                className={cn(
+                  "p-2 rounded-xl transition-all text-slate-400 hover:text-rose-600 hover:bg-rose-50",
+                  isCollapsed ? "w-full flex justify-center" : ""
+                )}
                 title="Logout"
               >
-                <LogOut className="w-3.5 h-3.5" />
+                <LogOut className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className={cn("mt-4 flex items-center px-1", isCollapsed ? "flex-col space-y-3" : "justify-between")}>
-            <div className="flex items-center space-x-2">
+          {/* Status Bar */}
+          <div className={cn(
+            "mt-3 flex items-center",
+            isCollapsed ? "justify-center" : "justify-between px-1"
+          )}>
+            <div className="flex items-center gap-2">
               <div className={cn(
-                "w-1.5 h-1.5 rounded-full",
-                isRefreshing ? "bg-brand-500 animate-spin" : "bg-emerald-500"
+                "w-2 h-2 rounded-full transition-all duration-500",
+                isRefreshing ? "bg-brand-500 animate-pulse" : "bg-emerald-500"
               )} />
-              {!isCollapsed && <span className="text-[10px] font-medium text-slate-400 uppercase tracking-widest">{isRefreshing ? 'Syncing...' : 'Connected'}</span>}
+              {!isCollapsed && (
+                <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
+                  {isRefreshing ? 'Syncing...' : 'Connected'}
+                </span>
+              )}
             </div>
             {onRefresh && (
               <button
                 onClick={onRefresh}
                 disabled={isRefreshing}
                 className={cn(
-                  "p-1.5 hover:bg-slate-50 rounded-lg transition-all text-slate-400 hover:text-brand-600",
+                  "p-1.5 rounded-lg transition-all text-slate-400 hover:text-brand-600 hover:bg-brand-50",
                   isRefreshing && "animate-spin cursor-not-allowed"
                 )}
               >
@@ -254,6 +336,13 @@ export default function Sidebar({
               </button>
             )}
           </div>
+
+          {/* Version */}
+          {!isCollapsed && (
+            <div className="mt-2 text-center">
+              <p className="text-[9px] text-slate-300 font-medium tracking-wider">v2.0.1</p>
+            </div>
+          )}
         </div>
       </aside>
     </>

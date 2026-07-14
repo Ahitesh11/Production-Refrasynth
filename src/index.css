@@ -1,38 +1,80 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-@theme {
+/* Shadcn-style semantic tokens, all anchored on a single master hue (145 = emerald green)
+   so every surface (buttons, borders, muted text) reads as one cohesive palette. */
+:root {
+  --radius: 0.65rem;
+  --background: oklch(0.985 0.008 145);
+  --foreground: oklch(0.15 0.04 145);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.15 0.04 145);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.04 145);
+  --primary: oklch(0.52 0.155 145);
+  --primary-foreground: oklch(0.985 0.01 145);
+  --secondary: oklch(0.93 0.04 145);
+  --secondary-foreground: oklch(0.22 0.06 145);
+  --muted: oklch(0.94 0.025 145);
+  --muted-foreground: oklch(0.52 0.04 145);
+  --accent: oklch(0.91 0.05 145);
+  --accent-foreground: oklch(0.22 0.06 145);
+  --destructive: oklch(70.4% 0.191 22.216);
+  --border: oklch(0.86 0.055 145);
+  --input: oklch(0.86 0.055 145);
+  --ring: oklch(0.52 0.155 145);
+}
+
+@theme inline {
   --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  /* Re-defining orange to point to brand color #03A9F4 */
-  --color-orange-50: #e1f5fe;
-  --color-orange-100: #b3e5fc;
-  --color-orange-200: #81d4fa;
-  --color-orange-300: #4fc3f7;
-  --color-orange-400: #29b6f6;
-  --color-orange-500: #03A9F4;
-  --color-orange-600: #039be5;
-  --color-orange-700: #0288d1;
-  --color-orange-800: #0277bd;
-  --color-orange-900: #01579b;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 
-  /* Brand green, matched to the logo mark (#5B6B2E) */
-  --color-brand-50: #f4f6ec;
-  --color-brand-100: #e6ead3;
-  --color-brand-200: #cdd5a8;
-  --color-brand-300: #afbd7a;
-  --color-brand-400: #8b9c54;
-  --color-brand-500: #6b7d3a;
-  --color-brand-600: #5b6b2e;
-  --color-brand-700: #495624;
-  --color-brand-800: #39431c;
-  --color-brand-900: #2c3416;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* Brand ramp (used directly across the app as bg-brand-600, text-brand-700, etc.)
+     regenerated on the same master hue (145) so every existing component repaints
+     to this theme without needing individual class changes. */
+  --color-brand-50: oklch(0.97 0.015 145);
+  --color-brand-100: oklch(0.93 0.03 145);
+  --color-brand-200: oklch(0.87 0.05 145);
+  --color-brand-300: oklch(0.78 0.08 145);
+  --color-brand-400: oklch(0.68 0.115 145);
+  --color-brand-500: oklch(0.60 0.14 145);
+  --color-brand-600: oklch(0.52 0.155 145);
+  --color-brand-700: oklch(0.44 0.14 145);
+  --color-brand-800: oklch(0.36 0.115 145);
+  --color-brand-900: oklch(0.28 0.09 145);
 }
 
 @layer base {
+  * {
+    @apply border-border;
+  }
+
   body {
-    @apply antialiased text-slate-900 bg-[#f8fafc] min-h-screen relative;
+    @apply antialiased text-foreground bg-background min-h-screen relative;
     font-variant-numeric: tabular-nums;
     /* Sophisticated subtle grid pattern */
     background-image:
@@ -55,7 +97,39 @@
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    @apply bg-slate-200 rounded-full hover:bg-slate-300 transition-colors;
+    @apply bg-brand-200 rounded-full hover:bg-brand-300 transition-colors;
+  }
+
+  .custom-scrollbar-thin::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  .custom-scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar-thin::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 10px;
+  }
+
+  .custom-scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.78 0.085 145);
+  }
+
+  .custom-scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 
   /* Glassmorphism helpers */
@@ -76,7 +150,7 @@
 
 /* Better focus states */
 :focus-visible {
-  @apply outline-none ring-2 ring-orange-500 ring-offset-2;
+  @apply outline-none ring-2 ring-brand-500 ring-offset-2;
 }
 
 /* Scrollbar for the entire page */
@@ -89,5 +163,242 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-200 rounded-full border-2 border-solid border-slate-50 hover:bg-slate-300;
+  @apply bg-brand-200 rounded-full border-2 border-solid border-slate-50 hover:bg-brand-300;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM TABLE SYSTEM - Ultra-modern data table styling
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Table wrapper - outer shell */
+.premium-table-wrap {
+  @apply rounded-2xl overflow-hidden;
+  box-shadow:
+    0 0 0 1px oklch(0.87 0.05 145 / 0.6),
+    0 4px 20px -4px rgba(0,0,0,0.06),
+    0 1px 4px -1px rgba(0,0,0,0.04);
+}
+
+/* Scrollable container inside wrapper */
+.premium-table-scroll {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: 600px;
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.87 0.05 145) transparent;
+}
+.premium-table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.premium-table-scroll::-webkit-scrollbar-track { background: transparent; }
+.premium-table-scroll::-webkit-scrollbar-thumb {
+  background: oklch(0.87 0.05 145);
+  border-radius: 99px;
+}
+
+/* The actual <table> */
+.premium-table {
+  width: 100%;
+  text-align: left;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* ── Header row ───────────────────────────────────────────────── */
+.premium-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;  /* above body sticky cols (z-index 10) */
+  background: #f8fafc;
+}
+
+
+.premium-table th {
+  padding: 12px 16px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #334155;
+  white-space: nowrap;
+  border-bottom: 2px solid #e2e8f0;
+  /* Explicit background so each th paints correctly when sticky */
+  background: #f8fafc;
+  position: relative;
+}
+
+/* Thin right-border separator between header cells */
+.premium-table th:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: 0; top: 25%; bottom: 25%;
+  width: 1px;
+  background: #cbd5e1;
+}
+
+/* ── Body rows ────────────────────────────────────────────────── */
+.premium-table tbody tr {
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+}
+
+/* Zebra striping */
+.premium-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+.premium-table tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+/* Hover glow */
+.premium-table tbody tr:hover {
+  background: #ecfdf5 !important;
+  box-shadow: inset 3px 0 0 #059669;
+}
+
+/* ── Body cells ───────────────────────────────────────────────── */
+.premium-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  transition: background 0.15s ease;
+  vertical-align: middle;
+}
+
+.premium-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ── Sticky columns ───────────────────────────────────────────── */
+.premium-table .col-sticky-left {
+  position: sticky;
+  left: 0;
+  z-index: 10;   /* body cells: below thead (30) */
+  /* Explicit opaque backgrounds — 'inherit' is not reliable for sticky */
+  background: #ffffff;
+  box-shadow: 4px 0 12px -2px rgba(0,0,0,0.05), 1px 0 0 #e2e8f0;
+}
+.premium-table .col-sticky-right {
+  position: sticky;
+  right: 0;
+  z-index: 10;
+  background: #ffffff;
+  box-shadow: -4px 0 12px -2px rgba(0,0,0,0.05), -1px 0 0 #e2e8f0;
+}
+
+/* Match zebra striping for sticky cells */
+.premium-table tbody tr:nth-child(even) .col-sticky-left,
+.premium-table tbody tr:nth-child(even) .col-sticky-right {
+  background: #f8fafc; /* fully opaque even-row color */
+}
+.premium-table tbody tr:nth-child(odd) .col-sticky-left,
+.premium-table tbody tr:nth-child(odd) .col-sticky-right {
+  background: #ffffff;
+}
+/* Hover state for sticky cells */
+.premium-table tbody tr:hover .col-sticky-left,
+.premium-table tbody tr:hover .col-sticky-right {
+  background: #ecfdf5 !important;
+}
+
+/* Corner cells: sticky header + sticky column overlap — need highest z */
+.premium-table thead .col-sticky-left,
+.premium-table thead .col-sticky-right {
+  z-index: 40;
+}
+
+/* ── Inline badges used in tables ─────────────────────────────── */
+.tbl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tbl-badge-green  { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+.tbl-badge-red    { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+.tbl-badge-amber  { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+.tbl-badge-blue   { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+.tbl-badge-purple { background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+.tbl-badge-slate  { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* ── Number / mono cells ──────────────────────────────────────── */
+.tbl-num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: right;
+}
+.tbl-num-pos { color: oklch(0.40 0.14 145); }
+.tbl-num-neg { color: oklch(0.48 0.18 22); }
+.tbl-num-warn { color: oklch(0.50 0.14 75); }
+
+/* ── Highlighted value pill ───────────────────────────────────── */
+.tbl-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 8px;
+  font-weight: 800;
+  font-size: 12px;
+}
+.tbl-pill-ok   { background: oklch(0.94 0.07 145); color: oklch(0.32 0.13 145); }
+.tbl-pill-bad  { background: oklch(0.95 0.06 22);  color: oklch(0.40 0.17 22); }
+.tbl-pill-warn { background: oklch(0.96 0.07 80);  color: oklch(0.42 0.14 75); }
+
+/* ── Empty-state cell ─────────────────────────────────────────── */
+.tbl-empty td {
+  padding: 64px 24px;
+  text-align: center;
+  color: oklch(0.62 0.03 240);
+  font-size: 13px;
+  font-weight: 500;
+  border-bottom: none;
+}
+
+/* ── Action button inside table ───────────────────────────────── */
+.tbl-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+.tbl-action-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+.tbl-action-btn:active {
+  transform: translateY(1px);
+}
+
+/* ── Timestamp cell ────────────────────────────────────────── */
+.tbl-ts {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+  min-width: 160px;  /* prevent timestamp from being squished */
+}
+
+/* ── Section header row (e.g. "Plant Efficiency" footer) ─────── */
+.premium-table tfoot tr,
+.premium-table .tbl-footer-row {
+  background: #f8fafc;
+  border-top: 2px solid #e2e8f0;
 }

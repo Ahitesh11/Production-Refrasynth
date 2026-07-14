@@ -463,8 +463,8 @@ export const DEPARTMENTS: Department[] = [
     category: 'Process',
     fields: [
       { name: 'task_id', label: 'Task ID', type: 'text', readonly: true },
-      { name: 'given_by', label: 'Given By', type: 'text' },
-      { name: 'name', label: 'Name', type: 'text' },
+      { name: 'department', label: 'Department', type: 'select', options: ['Dispatch', 'HR & Admin', 'Maintenance', 'Production', 'Quality', 'Safety', 'Stores'] },
+      { name: 'name', label: 'Name', type: 'select', options: [] },
       { name: 'task_description', label: 'Task Description', type: 'text' },
       { name: 'task_start_date', label: 'Task Start Date', type: 'date' },
       { name: 'freq', label: 'Freq', type: 'select', options: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'] },

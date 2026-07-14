@@ -165,9 +165,10 @@ function doGet(e) {
         if (typeIdx === -1) typeIdx = headers.length - 1; // Fallback to last column
 
         var permissions = {};
-        // Columns from C (index 2) to the one before Type are department permissions
-        for (var j = 2; j < typeIdx; j++) {
-          permissions[headers[j]] = (row[j] === "Yes");
+        for (var j = 2; j < headers.length; j++) {
+          if (j !== typeIdx && headers[j]) {
+            permissions[headers[j]] = (String(row[j]).trim() === "Yes");
+          }
         }
         return createJsonResponse({
           username: row[0],
@@ -214,8 +215,10 @@ function doGet(e) {
       if (!uRow[0]) continue; // skip blank rows
 
       var uPermissions = {};
-      for (var p = 2; p < userTypeIdx; p++) {
-        uPermissions[userHeaders[p]] = (uRow[p] === "Yes");
+      for (var p = 2; p < userHeaders.length; p++) {
+        if (p !== userTypeIdx && userHeaders[p]) {
+          uPermissions[userHeaders[p]] = (String(uRow[p]).trim() === "Yes");
+        }
       }
 
       users.push({
