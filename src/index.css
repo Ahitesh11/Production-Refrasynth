@@ -203,42 +203,41 @@
 .premium-table thead {
   position: sticky;
   top: 0;
-  z-index: 30;  /* above body sticky cols (z-index 10) */
+  z-index: 30;
 }
 
 .premium-table th {
-  padding: 14px 24px;
-  font-size: 10px;
+  padding: 16px 24px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: #94a3b8; /* slate-400 */
+  color: #475569; /* soft gray for header labels */
   white-space: nowrap;
-  background: rgba(248, 250, 252, 0.95); /* slate-50 */
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #e2e8f0; /* slate-200 */
+  background: #f1f5f9; /* light gray background */
+  border-bottom: 1px solid #e2e8f0;
   position: relative;
 }
 
 /* ── Body rows ────────────────────────────────────────────────── */
 .premium-table tbody tr {
-  transition: background 0.2s ease;
+  transition: background 0.2s ease, transform 0.2s ease;
   position: relative;
-  background: #ffffff;
+  background: #ffffff; /* crisp white for table body */
 }
 
 /* Clean Hover State */
 .premium-table tbody tr:hover {
-  background: #f8fafc !important; /* slate-50 */
+  background: #f8fafc !important; /* extremely subtle highlight */
 }
 
 /* ── Body cells ───────────────────────────────────────────────── */
 .premium-table td {
-  padding: 16px 24px;
+  padding: 16px 24px; /* generous padding */
   font-size: 13px;
   font-weight: 500;
-  color: #475569; /* slate-600 */
-  border-bottom: 1px solid #f1f5f9; /* slate-100 */
+  color: #334155;
+  border-bottom: 1px solid #f1f5f9; /* subtle, thin horizontal dividers */
   transition: background 0.2s ease;
   vertical-align: middle;
   white-space: nowrap;
@@ -253,7 +252,7 @@
   position: sticky;
   left: 0;
   z-index: 10;
-  background: inherit;
+  background: inherit; /* will inherit white or alternating gray */
   box-shadow: inset -1px 0 0 #f1f5f9;
 }
 .premium-table .col-sticky-right {
@@ -264,15 +263,15 @@
   box-shadow: inset 1px 0 0 #f1f5f9;
 }
 
-/* Corner cells: sticky header + sticky column overlap — need highest z */
+/* Corner cells: sticky header + sticky column overlap */
 .premium-table thead .col-sticky-left {
   z-index: 40;
-  background: rgba(248, 250, 252, 0.95);
+  background: #f1f5f9;
   box-shadow: inset -1px 0 0 #e2e8f0, 0 1px 0 #e2e8f0;
 }
 .premium-table thead .col-sticky-right {
   z-index: 40;
-  background: rgba(248, 250, 252, 0.95);
+  background: #f1f5f9;
   box-shadow: inset 1px 0 0 #e2e8f0, 0 1px 0 #e2e8f0;
 }
 
@@ -281,8 +280,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 10px;
-  border-radius: 6px;
+  padding: 4px 12px;
+  border-radius: 9999px; /* Pill-shaped */
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.05em;

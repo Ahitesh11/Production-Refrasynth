@@ -16,7 +16,7 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '../lib/utils';
+import { cn, parseGlobalDate } from '../lib/utils';
 import DepartmentForm from './DepartmentForm';
 
 interface Props {
@@ -30,6 +30,7 @@ interface Props {
 export default function RMWorkflowView({ department, entries, onAddEntry, onUpdateEntry, scriptUrl }: Props) {
     const [activeTab, setActiveTab] = useState<'form' | 'step1' | 'step2' | 'history'>('form');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCampaign, setSelectedCampaign] = useState<string>('All');
     const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -39,19 +40,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         return entriesCopy.sort((a, b) => {
             const valA = a.data['Date Of Testing'] || a.data['date_of_testing'] || a.data['Planned'] || a.data['planned'] || a.data['Planned1'] || a.data['planned1'] || a.timestamp || '';
             const valB = b.data['Date Of Testing'] || b.data['date_of_testing'] || b.data['Planned'] || b.data['planned'] || b.data['Planned1'] || b.data['planned1'] || b.timestamp || '';
-
-            if (!valA && !valB) return 0;
-            if (!valA) return 1;
-            if (!valB) return -1;
-
-            const parseDate = (d: any) => {
-                if (!d) return 0;
-                const s = String(d).trim();
-                const parsed = new Date(s).getTime();
-                return isNaN(parsed) ? 0 : parsed;
-            };
-
-            return parseDate(valB) - parseDate(valA);
+            return parseGlobalDate(valB) - parseGlobalDate(valA);
         });
     }, [entries]);
 
@@ -108,6 +97,15 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         }
     };
 
+    const uniqueCampaigns = useMemo(() => {
+        const campaigns = new Set<string>();
+        sortedEntries.forEach(e => {
+            const c = getData(e, 'Campaign No.') || getData(e, 'campaign_no') || getData(e, 'campaign') || getData(e, 'Campaign');
+            if (c) campaigns.add(String(c).trim());
+        });
+        return Array.from(campaigns).sort();
+    }, [sortedEntries]);
+
     const visibleEntries = useMemo(() => {
         const term = searchTerm.toLowerCase();
         return sortedEntries.filter(e => {
@@ -122,8 +120,12 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
             if (activeTab === 'step2') return getData(e, 'planned1') && !getData(e, 'actual1');
             if (activeTab === 'history') return getData(e, 'actual1') || getData(e, 'al2o3');
             return true;
+        }).filter(e => {
+            if (selectedCampaign === 'All') return true;
+            const c = getData(e, 'Campaign No.') || getData(e, 'campaign_no') || getData(e, 'campaign') || getData(e, 'Campaign');
+            return c && String(c).trim() === selectedCampaign;
         });
-    }, [sortedEntries, searchTerm, activeTab]);
+    }, [sortedEntries, searchTerm, activeTab, selectedCampaign]);
 
     const handleSync = async (entry: Entry, updatedData: Record<string, any>) => {
         setIsSyncing(true);
@@ -200,7 +202,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         };
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-900/50 backdrop-blur-sm">
                 <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
                     <div className="px-8 py-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
                         <div className="flex items-center space-x-4">
@@ -243,7 +245,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                         step="any"
                                         defaultValue={getData(selectedEntry, field.name) || ''}
                                         placeholder={field.placeholder}
-                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900/10 focus:border-slate-400 transition-all outline-none text-sm font-medium text-slate-800 placeholder:text-slate-400"
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800/10 focus:border-slate-400 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400"
                                         required={!field.name.includes('remarks')}
                                     />
                                 </div>
@@ -254,7 +256,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                             <button
                                 type="button"
                                 onClick={() => setIsActionModalOpen(false)}
-                                className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                                className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-brand-900 transition-colors"
                                 disabled={isSyncing}
                             >
                                 Cancel
@@ -293,7 +295,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                         <Settings className="w-7 h-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">RM Workflow</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-brand-900">RM Workflow</h1>
                         <p className="text-sm text-slate-500 font-medium mt-1">Multi-Step Material Control System</p>
                     </div>
                 </div>
@@ -303,7 +305,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                         { id: 'form', label: 'Entry', icon: ClipboardList, activeColor: 'text-blue-600' },
                         { id: 'step1', label: 'Physical', icon: Activity, activeColor: 'text-emerald-600' },
                         { id: 'step2', label: 'Chemical', icon: FlaskConical, activeColor: 'text-purple-600' },
-                        { id: 'history', label: 'History', icon: History, activeColor: 'text-slate-900' }
+                        { id: 'history', label: 'History', icon: History, activeColor: 'text-brand-900' }
                     ].map((tab) => {
                         const isActive = activeTab === tab.id;
                         return (
@@ -312,7 +314,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                             onClick={() => setActiveTab(tab.id as any)}
                             className={cn(
                                 "relative flex flex-col sm:flex-row items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 z-10",
-                                isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                                isActive ? "text-brand-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
                             {isActive && (
@@ -389,15 +391,29 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                     <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
                         {/* Table Header */}
                         <div className="p-4 border-b border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div className="relative w-full sm:max-w-sm">
-                                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    placeholder="Search by unique no or RM name..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900/5 focus:border-slate-300 transition-all placeholder:text-slate-400"
-                                />
+                            <div className="flex items-center gap-3 w-full sm:max-w-md">
+                                {uniqueCampaigns.length > 0 && (
+                                    <select
+                                        value={selectedCampaign}
+                                        onChange={(e) => setSelectedCampaign(e.target.value)}
+                                        className="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-800/5 focus:border-slate-300 transition-all outline-none cursor-pointer shrink-0"
+                                    >
+                                        <option value="All">All Campaigns</option>
+                                        {uniqueCampaigns.map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                )}
+                                <div className="relative w-full">
+                                    <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search by unique no or RM name..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-brand-800/5 focus:border-slate-300 transition-all placeholder:text-slate-400"
+                                    />
+                                </div>
                             </div>
                             <div className="flex items-center gap-3 shrink-0">
                                 <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider whitespace-nowrap">

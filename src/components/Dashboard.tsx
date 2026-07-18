@@ -1341,7 +1341,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 shadow-xl">
+        <div className="bg-brand-800 border border-slate-700 rounded-xl px-4 py-3 shadow-xl">
           <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{label}</p>
           <p className="text-white font-black text-lg">{payload[0].value} <span className="text-slate-400 text-xs font-normal">MT</span></p>
         </div>
@@ -1361,7 +1361,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <LayoutDashboard className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">Dashboard</h1>
+              <h1 className="text-2xl font-black tracking-tight text-brand-900 leading-none">Dashboard</h1>
               <p className="text-[11px] text-slate-500 font-medium mt-0.5">{filterLabel} • {stats.total} entries</p>
             </div>
           </div>
@@ -1473,13 +1473,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 <Flame className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Production Report</h2>
+                <h2 className="text-2xl font-black text-brand-900 tracking-tight">Production Report</h2>
               </div>
             </div>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {[
-              { label: 'Total Production', val: energyStats.totalQty.toFixed(1), unit: 'MT', accent: 'bg-slate-400', text: 'text-slate-800', logic: '' },
+              { label: 'Total Production', val: energyStats.totalQty.toFixed(1), unit: 'MT', accent: 'bg-slate-400', text: 'text-slate-700', logic: '' },
               { label: 'Total Fuel', val: energyStats.totalFuel.toFixed(1), unit: 'units', accent: 'bg-amber-500', text: 'text-amber-600', logic: '' },
               { label: 'Total Electric', val: energyStats.totalElec.toFixed(1), unit: 'units', accent: 'bg-yellow-500', text: 'text-yellow-600', logic: '' },
               { label: 'Fuel / MT', val: energyStats.fuelPerMT, unit: 'u/MT', accent: 'bg-brand-500', text: 'text-brand-600', logic: '' },
@@ -1733,7 +1733,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 <section.icon className={`w-5 h-5 text-${section.color}-600`} />
               </div>
               <div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">{section.title}</h2>
+                <h2 className="text-2xl font-black text-brand-900 tracking-tight">{section.title}</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-2 h-2 rounded-full bg-${section.color}-500 animate-pulse`} />
                 </div>
@@ -1836,7 +1836,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Material Total Input</p>
-              <h3 className="text-sm font-black text-slate-900 mt-0.5">SB3 Ground</h3>
+              <h3 className="text-sm font-black text-brand-900 mt-0.5">SB3 Ground</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Input minus hopper usage</p>
             </div>
             <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
@@ -1854,7 +1854,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 return (
                   <div key={name}>
                     <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-slate-800 font-black truncate max-w-[140px] uppercase text-[10px] tracking-wider">{name}</span>
+                      <span className="text-slate-700 font-black truncate max-w-[140px] uppercase text-[10px] tracking-wider">{name}</span>
                       <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT In</span>
                     </div>
                     <div className="flex justify-between items-center text-[9px] mb-2 pl-2 border-l-2 border-slate-100">
@@ -1878,7 +1878,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Raw Material Hopper</p>
-              <h3 className="text-sm font-black text-slate-900 mt-0.5">SB3 Hopper</h3>
+              <h3 className="text-sm font-black text-brand-900 mt-0.5">SB3 Hopper</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of RM fed to hopper</p>
             </div>
             <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
@@ -1894,7 +1894,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 return (
                   <div key={name}>
                     <div className="flex justify-between text-[10px] tracking-wider uppercase font-semibold mb-1.5">
-                      <span className="text-slate-800 font-black truncate max-w-[140px]">{name}</span>
+                      <span className="text-slate-700 font-black truncate max-w-[140px]">{name}</span>
                       <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
                     </div>
                     <ProgressBar pct={pct} color="bg-brand-400" />
@@ -1910,7 +1910,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Actual Production</p>
-              <h3 className="text-sm font-black text-slate-900 mt-0.5">Product Output</h3>
+              <h3 className="text-sm font-black text-brand-900 mt-0.5">Product Output</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of all finished product</p>
             </div>
             <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center">
@@ -1942,7 +1942,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest">{pptStats.count} entries</p>
-              <h3 className="text-sm font-black text-slate-900 mt-0.5">PPT (Re-feed)</h3>
+              <h3 className="text-sm font-black text-brand-900 mt-0.5">PPT (Re-feed)</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of Ispileg re-feeded qty</p>
             </div>
             <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
@@ -1960,7 +1960,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Re-feed Ratio</span>
-                <span className="text-sm font-black text-slate-900">
+                <span className="text-sm font-black text-brand-900">
                   {accountingSummary.totalProduction > 0 ? ((pptStats.totalQty / accountingSummary.totalProduction) * 100).toFixed(1) : '0.0'} %
                 </span>
               </div>
@@ -1973,7 +1973,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">{spillageStats.count} entries</p>
-              <h3 className="text-sm font-black text-slate-900 mt-0.5">Spillage</h3>
+              <h3 className="text-sm font-black text-brand-900 mt-0.5">Spillage</h3>
               <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of all spillage streams</p>
             </div>
             <div className="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center">
@@ -2006,7 +2006,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                 <span className="text-[10px] font-bold text-slate-400 uppercase">Total Spillage</span>
-                <span className="text-sm font-black text-slate-900">{spillageStats.total.toFixed(1)} MT</span>
+                <span className="text-sm font-black text-brand-900">{spillageStats.total.toFixed(1)} MT</span>
               </div>
             </div>
           )}
@@ -2042,7 +2042,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{item.name}</span>
-                      <h4 className="text-2xl font-black text-slate-900 tracking-tight">{item.consumption} <span className="text-[10px] text-brand-500 uppercase">MT</span></h4>
+                      <h4 className="text-2xl font-black text-brand-900 tracking-tight">{item.consumption} <span className="text-[10px] text-brand-500 uppercase">MT</span></h4>
                     </div>
                     <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 group-hover:bg-brand-600 transition-colors duration-300">
                       <Activity className="w-3.5 h-3.5 text-brand-500 group-hover:text-white" />
@@ -2052,7 +2052,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                     <ProgressBar pct={Math.min(parseFloat(item.consumption) * 100, 100)} color="bg-brand-500" />
                     <div className="flex items-center justify-between">
                       <p className="text-[8px] font-bold text-slate-400 uppercase">Ratio per 1 MT</p>
-                      <p className="text-[10px] font-black text-slate-900">Total: {item.totalUsed} MT</p>
+                      <p className="text-[10px] font-black text-brand-900">Total: {item.totalUsed} MT</p>
                     </div>
                   </div>
                 </div>
@@ -2091,7 +2091,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 </div>
               </div>
               <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2">Total Production Cost (RM)</p>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">
+              <h2 className="text-3xl font-black text-brand-900 tracking-tighter mb-2">
                 {productionCost.totalRmCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </h2>
               <div className="flex items-center gap-2 mt-2">
@@ -2111,7 +2111,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               {productionCost.breakdown.map((item, idx) => (
                 <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between hover:shadow-md hover:border-emerald-200 transition-all duration-300">
                   <div className="grid grid-cols-4 gap-4 w-full items-center">
-                    <span className="text-xs font-black text-slate-900 uppercase tracking-wider">{item.name}</span>
+                    <span className="text-xs font-black text-brand-900 uppercase tracking-wider">{item.name}</span>
                     <span className="text-sm font-bold text-slate-600 text-right">{item.qty.toFixed(1)}</span>
                     <span className="text-[11px] font-bold text-slate-400 text-right"> {item.rate.toLocaleString('en-IN')}</span>
                     <span className="text-sm font-black text-emerald-700 text-right"> {item.cost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
@@ -2202,7 +2202,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
             <div className="relative z-10">
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">{kpi.label}</p>
-              <h3 className="text-3xl font-black text-slate-900 tracking-tighter leading-none tabular-nums flex items-baseline gap-1">
+              <h3 className="text-3xl font-black text-brand-900 tracking-tighter leading-none tabular-nums flex items-baseline gap-1">
                 {kpi.value}
                 <span className="text-base text-slate-400 font-bold tracking-tight">{kpi.suffix}</span>
               </h3>
@@ -2224,7 +2224,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
           <div className="absolute top-6 left-8 text-center sm:text-left">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Process Yield</p>
-            <h3 className="text-lg font-black text-slate-900 tracking-tight leading-none">Yield Efficiency</h3>
+            <h3 className="text-lg font-black text-brand-900 tracking-tight leading-none">Yield Efficiency</h3>
           </div>
           <div className="w-full h-52 mt-8 relative">
             <ResponsiveContainer width="100%" height="100%">
@@ -2248,7 +2248,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center mt-3">
-              <p className="text-3xl font-black text-slate-900 tracking-tighter">
+              <p className="text-3xl font-black text-brand-900 tracking-tighter">
                 {accountingSummary.totalGround > 0 ? ((accountingSummary.netOutput / accountingSummary.totalGround) * 100).toFixed(0) : '0'}%
               </p>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Efficiency</p>
@@ -2270,7 +2270,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Production Pulse</p>
-                <h3 className="text-base font-black text-slate-900 tracking-tight">Plant Status: Optimal</h3>
+                <h3 className="text-base font-black text-brand-900 tracking-tight">Plant Status: Optimal</h3>
               </div>
             </div>
 
@@ -2288,7 +2288,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 />
               </div>
               <div className="mt-4 flex items-center gap-2">
-                <span className="text-[11px] font-black text-slate-900 leading-none">{accountingSummary.dailyAvg} MT</span>
+                <span className="text-[11px] font-black text-brand-900 leading-none">{accountingSummary.dailyAvg} MT</span>
                 <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tight"></span>
               </div>
             </div>
@@ -2301,18 +2301,18 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Efficiency Metrics</p>
-                <h3 className="text-base font-black text-slate-900 tracking-tight">Resource Utilization</h3>
+                <h3 className="text-base font-black text-brand-900 tracking-tight">Resource Utilization</h3>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 pt-2">
               <div className="p-4 bg-brand-50/20 rounded-2xl border border-brand-100/50">
                 <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-2">Fuel / MT</p>
-                <p className="text-2xl font-black text-slate-900 leading-none">{energyStats.fuelPerMT}</p>
+                <p className="text-2xl font-black text-brand-900 leading-none">{energyStats.fuelPerMT}</p>
                 <p className="text-[9px] font-bold text-slate-400 uppercase mt-2">U/MT</p>
               </div>
               <div className="p-4 bg-rose-50/20 rounded-2xl border border-rose-100/50">
                 <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest mb-2">Elec. / MT</p>
-                <p className="text-2xl font-black text-slate-900 leading-none">{energyStats.elecPerMT}</p>
+                <p className="text-2xl font-black text-brand-900 leading-none">{energyStats.elecPerMT}</p>
                 <p className="text-[9px] font-bold text-slate-400 uppercase mt-2">U/MT</p>
               </div>
             </div>
@@ -2325,7 +2325,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               </div>
               <div>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-0.5">Quality Audit</p>
-                <h3 className="text-base font-black text-slate-900 tracking-tight">Compliance Summary</h3>
+                <h3 className="text-base font-black text-brand-900 tracking-tight">Compliance Summary</h3>
               </div>
             </div>
             <div className="space-y-4 pt-2">
@@ -2353,7 +2353,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             </div>
             <div>
               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Historical Data</p>
-              <h3 className="text-base font-black text-slate-900">Composition Archives</h3>
+              <h3 className="text-base font-black text-brand-900">Composition Archives</h3>
               <p className="text-[9px] text-slate-400 font-bold italic mt-1">Logic: Filtered historical records from all facility departments</p>
             </div>
           </div>
@@ -2375,7 +2375,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <Download className="w-3.5 h-3.5" />
               Export
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-700 transition-all">
+            <button className="flex items-center gap-2 px-4 py-2 bg-brand-800 text-white text-[11px] font-bold uppercase tracking-wider rounded-xl hover:bg-slate-700 transition-all">
               <RefreshCw className="w-3 h-3" />
               Sync
             </button>

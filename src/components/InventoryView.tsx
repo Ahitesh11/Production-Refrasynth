@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { Department, Entry } from '../types';
-import { Package, ClipboardList, Database, ArrowRight, PlusCircle, X, Search, History as HistoryIcon, User, List, Calendar, Box } from 'lucide-react';
+import { PlusCircle, X, Search, History as HistoryIcon, User, List, Calendar, Box, Package, Database, ClipboardList, ArrowRight } from 'lucide-react';
 import DepartmentForm from './DepartmentForm';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from '../lib/utils';
+import { cn, parseGlobalDate } from '../lib/utils';
 
 interface Props {
   inventoryData: any[];
@@ -19,6 +19,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedMaterial, setSelectedMaterial] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('All');
 
   // Normalize department entries
   const sb3Entries = useMemo(() => {
@@ -40,8 +41,25 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
     setIsModalOpen(false);
   };
 
+  const uniqueCampaigns = useMemo(() => {
+    const campaigns = new Set<string>();
+    sb3Entries.forEach(e => {
+      const c = e.data['Campaign No.'] || e.data.campaign_no;
+      if (c) campaigns.add(String(c).trim());
+    });
+    return Array.from(campaigns).sort();
+  }, [sb3Entries]);
+
   const filteredHistory = useMemo(() => {
-    let sorted = [...sb3Entries].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    let sorted = [...sb3Entries].sort((a, b) => parseGlobalDate(b.timestamp) - parseGlobalDate(a.timestamp));
+    
+    if (selectedCampaign !== 'All') {
+      sorted = sorted.filter(e => {
+        const c = e.data['Campaign No.'] || e.data.campaign_no;
+        return c && String(c).trim() === selectedCampaign;
+      });
+    }
+
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
       sorted = sorted.filter(e =>
@@ -50,7 +68,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
       );
     }
     return sorted;
-  }, [sb3Entries, searchTerm]);
+  }, [sb3Entries, searchTerm, selectedCampaign]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -61,7 +79,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight">IMS</h1>
+            <h1 className="text-2xl font-black text-brand-900 tracking-tight">IMS</h1>
             <div className="flex items-center gap-2 mt-1">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <p className="text-xs text-slate-500 font-bold uppercase tracking-[0.2em]">Live Material Stock Tracking</p>
@@ -72,7 +90,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
         <div className="flex items-center gap-3 bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
           <div className="px-4 py-2 bg-white rounded-xl shadow-sm border border-slate-200">
             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Total Materials</p>
-            <p className="text-lg font-black text-slate-900">{inventoryData.length}</p>
+            <p className="text-lg font-black text-brand-900">{inventoryData.length}</p>
           </div>
           <div className="px-4 py-2 bg-brand-600 rounded-xl shadow-lg shadow-brand-200 border border-brand-500">
             <p className="text-[10px] text-white/70 font-bold uppercase tracking-widest">History Count</p>
@@ -163,7 +181,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                           <tr key={idx}>
                             <td className="tbl-ts" style={{textAlign:'center'}}>{item['S. No.'] || idx + 1}</td>
                             <td>
-                              <span className="text-sm font-bold text-slate-800 uppercase tracking-tight" style={{fontSize:'12px'}}>
+                              <span className="text-sm font-bold text-slate-700 uppercase tracking-tight" style={{fontSize:'12px'}}>
                                 {materialName}
                               </span>
                             </td>
@@ -224,17 +242,31 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                   <div className="w-8 h-8 bg-amber-50 rounded-xl flex items-center justify-center">
                     <HistoryIcon className="w-4 h-4 text-amber-600" />
                   </div>
-                  <h2 className="text-lg font-black text-slate-800 tracking-tight">Issue Records (Material 1-6)</h2>
+                  <h2 className="text-lg font-black text-slate-700 tracking-tight">Issue Records (Material 1-6)</h2>
                 </div>
-                <div className="relative group max-w-sm w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-brand-500 transition-colors" />
-                  <input
-                    type="text"
-                    placeholder="Search records..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm"
-                  />
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  {uniqueCampaigns.length > 0 && (
+                    <select
+                      value={selectedCampaign}
+                      onChange={(e) => setSelectedCampaign(e.target.value)}
+                      className="px-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer"
+                    >
+                      <option value="All">All Campaigns</option>
+                      {uniqueCampaigns.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  )}
+                  <div className="relative group max-w-sm w-full">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-brand-500 transition-colors" />
+                    <input
+                      type="text"
+                      placeholder="Search records..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -347,7 +379,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              className="absolute inset-0 bg-brand-800/60 backdrop-blur-md"
             />
 
             <motion.div
@@ -357,7 +389,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
               className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/20"
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-8 py-7 bg-slate-900 text-white flex items-center justify-between">
+              <div className="px-8 py-7 bg-brand-800 text-white flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-600/30 ring-4 ring-white/10">
                     <ClipboardList className="w-6 h-6 text-white" />

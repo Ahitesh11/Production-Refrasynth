@@ -198,7 +198,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
             <Users className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 leading-none">Manage Users</h1>
+            <h1 className="text-2xl font-black tracking-tight text-brand-900 leading-none">Manage Users</h1>
             <p className="text-[11px] text-slate-500 font-medium mt-0.5">{users.length} user{users.length === 1 ? '' : 's'} • synced with the Login sheet</p>
           </div>
         </div>
@@ -344,7 +344,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
                       {user.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-brand-600" /> : <UserIcon className="w-4 h-4 text-slate-400" />}
                     </div>
                     <div className="min-w-0 text-left">
-                      <p className="text-sm font-bold text-slate-800 truncate">{user.username}</p>
+                      <p className="text-sm font-bold text-slate-700 truncate">{user.username}</p>
                       <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
                         {user.type || 'Entry'} • {user.type === 'Admin' ? 'Full Access' : `${grantedCount} department${grantedCount === 1 ? '' : 's'}`}
                       </p>
@@ -418,7 +418,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
                         <div className="flex justify-end gap-2">
                           <button
                             onClick={() => { setExpanded(null); setDraft(null); }}
-                            className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors"
+                            className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
                           >
                             Cancel
                           </button>

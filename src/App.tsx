@@ -241,7 +241,7 @@ export default function App() {
         
         // Use userNames from Login sheet for operator/chemist name fields
         if (field.name === 'name' || field.name === 'chemist_name' || field.name === 'reported_by') {
-          return { ...field, type: 'select', options: userNames.length > 0 ? userNames : (field.options || []) };
+          return { ...field, type: 'select' as const, options: userNames.length > 0 ? userNames : (field.options || []) };
         }
 
         return field;
@@ -270,16 +270,16 @@ export default function App() {
   if (isLoading && entries.length === 0) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-4 animate-bounce">
+        <div className="w-16 h-16 bg-brand-800 rounded-2xl flex items-center justify-center mb-4 animate-bounce">
           <Database className="w-8 h-8 text-white" />
         </div>
-        <p className="text-sm font-bold text-slate-900 uppercase tracking-widest animate-pulse mb-8">Loading ERP Data...</p>
+        <p className="text-sm font-bold text-brand-900 uppercase tracking-widest animate-pulse mb-8">Loading ERP Data...</p>
 
         {/* Show retry after 10 seconds */}
         <div className="animate-in fade-in duration-1000 delay-10000 fill-mode-forwards opacity-0">
           <button
             onClick={() => fetchData(true)}
-            className="px-6 py-3 bg-slate-900 text-white text-xs font-bold uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
+            className="px-6 py-3 bg-brand-800 text-white text-xs font-bold uppercase tracking-widest rounded-2xl hover:bg-slate-800 transition-all shadow-lg"
           >
             Retry Connection
           </button>
@@ -289,7 +289,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans selection:bg-slate-900 selection:text-white">
+    <div className="flex h-screen overflow-hidden bg-slate-50 font-sans selection:bg-brand-800 selection:text-white">
       <Sidebar
         activeId={activeId}
         onSelect={setActiveId}
@@ -308,16 +308,16 @@ export default function App() {
         <button
           onClick={() => fetchData(true)}
           disabled={isRefreshing}
-          className={`fixed bottom-24 right-8 lg:bottom-8 lg:right-8 z-[55] w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-2xl shadow-slate-900/30 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 border border-slate-700 ${isRefreshing ? 'opacity-70 cursor-not-allowed scale-100 hover:scale-100' : ''}`}
+          className={`fixed bottom-24 right-8 lg:bottom-8 lg:right-8 z-[55] w-14 h-14 bg-brand-800 text-white rounded-full flex items-center justify-center shadow-2xl shadow-slate-900/30 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 border border-slate-700 ${isRefreshing ? 'opacity-70 cursor-not-allowed scale-100 hover:scale-100' : ''}`}
           title="Refresh Data"
         >
           <RefreshCw className={`w-6 h-6 ${isRefreshing ? 'animate-spin text-brand-400' : ''}`} />
         </button>
 
         {isSettingsOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-brand-800/40 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-              <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
+              <div className="px-8 py-6 bg-brand-800 text-white flex items-center justify-between">
                 <div>
                   <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-1">System Config</p>
                   <h2 className="text-xl font-bold tracking-tight text-white">Settings</h2>
@@ -334,7 +334,7 @@ export default function App() {
                     value={tempUrl}
                     onChange={(e) => setTempUrl(e.target.value)}
                     placeholder="https://script.google.com/macros/s/.../exec"
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none text-xs font-mono"
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800 focus:border-transparent transition-all outline-none text-xs font-mono"
                   />
                   <p className="text-[9px] text-slate-400 italic mt-1 leading-relaxed">
                     Enter your deployed Web App URL from Google Apps Script.
@@ -343,7 +343,7 @@ export default function App() {
                   <button
                     onClick={testConnection}
                     disabled={isTesting}
-                    className="mt-2 text-[10px] font-bold text-slate-900 underline underline-offset-4 hover:text-slate-600 disabled:opacity-50"
+                    className="mt-2 text-[10px] font-bold text-brand-900 underline underline-offset-4 hover:text-slate-600 disabled:opacity-50"
                   >
                     {isTesting ? 'Testing...' : 'Test Connection'}
                   </button>
@@ -351,7 +351,7 @@ export default function App() {
                 <div className="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
                   <button
                     onClick={() => setIsSettingsOpen(false)}
-                    className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                    className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-brand-900 transition-colors"
                   >
                     Cancel
                   </button>
@@ -360,7 +360,7 @@ export default function App() {
                       handleUpdateUrl(tempUrl);
                       setIsSettingsOpen(false);
                     }}
-                    className="px-8 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                    className="px-8 py-2.5 bg-brand-800 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
                   >
                     Save & Reload
                   </button>
@@ -379,7 +379,7 @@ export default function App() {
                 <p className="text-sm font-medium">You don't have permission to view this page.</p>
                 <button
                   onClick={() => setActiveId('dashboard')}
-                  className="mt-4 text-xs font-bold text-slate-900 underline underline-offset-4"
+                  className="mt-4 text-xs font-bold text-brand-900 underline underline-offset-4"
                 >
                   Back to Dashboard
                 </button>
@@ -488,7 +488,7 @@ export default function App() {
               <p className="text-sm font-medium">You don't have permission to view this department.</p>
               <button
                 onClick={() => setActiveId('dashboard')}
-                className="mt-4 text-xs font-bold text-slate-900 underline underline-offset-4"
+                className="mt-4 text-xs font-bold text-brand-900 underline underline-offset-4"
               >
                 Back to Dashboard
               </button>

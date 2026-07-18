@@ -88,7 +88,7 @@ export default function Login({ onLogin }: Props) {
                 className="w-full h-full object-contain"
               />
             </motion.div>
-            <motion.h1 variants={itemVariants} className="text-2xl font-semibold tracking-tight text-slate-900">
+            <motion.h1 variants={itemVariants} className="text-2xl font-semibold tracking-tight text-brand-900">
               Refrasynth
             </motion.h1>
             <motion.p variants={itemVariants} className="text-sm text-slate-500 font-normal mt-1.5">
@@ -125,7 +125,7 @@ export default function Login({ onLogin }: Props) {
                     onChange={(e) => setUsername(e.target.value)}
                     required
                     autoComplete="username"
-                    className="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-800 placeholder:text-slate-400"
+                    className="w-full h-12 pl-10 pr-4 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400"
                     placeholder="Enter your username"
                   />
                 </div>
@@ -143,7 +143,7 @@ export default function Login({ onLogin }: Props) {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     autoComplete="current-password"
-                    className="w-full h-12 pl-10 pr-12 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-800 placeholder:text-slate-400"
+                    className="w-full h-12 pl-10 pr-12 bg-slate-50/80 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-400"
                     placeholder="Enter your password"
                   />
                   <button

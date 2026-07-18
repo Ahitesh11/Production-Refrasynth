@@ -60,7 +60,7 @@ const NavItem = ({ id, name, icon: Icon, activeId, onSelect, isCollapsed }: NavI
         isCollapsed ? "justify-center p-2.5" : "px-3 py-2",
         isActive
           ? "bg-brand-50/80 text-brand-700"
-          : "text-slate-500 hover:bg-slate-50/80 hover:text-slate-900"
+          : "text-slate-500 hover:bg-slate-50/80 hover:text-brand-900"
       )}
     >
       {isActive && (
@@ -158,7 +158,7 @@ export default function Sidebar({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-[55]"
+            className="lg:hidden fixed inset-0 bg-brand-900/40 backdrop-blur-sm z-[55]"
             onClick={() => setIsOpen(false)}
           />
         )}
@@ -201,7 +201,7 @@ export default function Sidebar({
             </div>
             {!isCollapsed && (
               <div className="flex flex-col">
-                <h1 className="text-lg font-bold tracking-tight text-slate-900 leading-tight">Refrasynth</h1>
+                <h1 className="text-lg font-bold tracking-tight text-brand-900 leading-tight">Refrasynth</h1>
                 <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase"></p>
               </div>
             )}
@@ -274,7 +274,7 @@ export default function Sidebar({
             </div>
             {!isCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-slate-800 truncate">{user?.username || 'User'}</p>
+                <p className="text-sm font-semibold text-slate-700 truncate">{user?.username || 'User'}</p>
                 <p className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">{user?.type || 'Role'}</p>
               </div>
             )}

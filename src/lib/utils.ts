@@ -45,3 +45,33 @@ export function getDepartmentAverage(deptId: string, entries: any[]): { val: str
   
   return null;
 }
+
+export function parseGlobalDate(d: any): number {
+  if (!d) return 0;
+  const s = String(d).trim();
+  if (!s) return 0;
+
+  // Handle DD/MM/YYYY HH:mm:ss format (e.g., "09/03/2026 12:34:21")
+  const match = s.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:\s+(.*))?/);
+  if (match) {
+    const p1 = parseInt(match[1], 10);
+    const p2 = parseInt(match[2], 10);
+    const year = parseInt(match[3], 10);
+    const time = match[4] ? `T${match[4]}` : 'T00:00:00';
+    
+    // JS Date parses ISO 8601 strictly as YYYY-MM-DD
+    // If p2 > 12, it must be MM/DD/YYYY
+    if (p2 > 12 && p1 <= 12) {
+      const parsed = new Date(`${year}-${String(p1).padStart(2, '0')}-${String(p2).padStart(2, '0')}${time}`).getTime();
+      if (!isNaN(parsed)) return parsed;
+    } else {
+      // Treat as DD/MM/YYYY
+      const parsed = new Date(`${year}-${String(p2).padStart(2, '0')}-${String(p1).padStart(2, '0')}${time}`).getTime();
+      if (!isNaN(parsed)) return parsed;
+    }
+  }
+
+  // Fallback
+  const parsed = new Date(s).getTime();
+  return isNaN(parsed) ? 0 : parsed;
+}

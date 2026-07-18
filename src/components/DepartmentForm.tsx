@@ -124,7 +124,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Department Protocol</span>
               <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
             </div>
-            <h2 className="text-xl font-bold text-slate-800 tracking-tight">{department.name}</h2>
+            <h2 className="text-xl font-bold text-slate-700 tracking-tight">{department.name}</h2>
           </div>
         </div>
         <button
@@ -168,7 +168,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
           <section className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-8">
             <div className="flex items-center space-x-3 pb-2 border-b border-slate-50">
               <Settings className="w-4 h-4 text-slate-400" />
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Configuration</h3>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Configuration</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {otherFields.map((field) => (
@@ -258,7 +258,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                   <div className="flex items-center justify-between border-b border-slate-50 pb-4">
                     <div className="flex items-center space-x-3">
                       <div className={cn("w-1.5 h-6 rounded-full", grid.accent)} />
-                      <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">{grid.title}</h4>
+                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{grid.title}</h4>
                     </div>
                     <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Digital Input Active</span>
                   </div>

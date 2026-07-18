@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Department, Entry } from '../types';
-import { Plus, CheckCircle2, AlertCircle, Loader2, Settings, X, Search, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Settings, Plus, Download, Filter, FileSpreadsheet, ListTodo, Search, History, TestTube2, AlertCircle, FileText, CheckCircle2, FlaskConical, Beaker, Check, Save, Loader2, X, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import DepartmentForm from './DepartmentForm';
-import { cn } from '../lib/utils';
+import { motion, AnimatePresence } from 'motion/react';
+import { cn, parseGlobalDate } from '../lib/utils';
 
 interface Props {
   department: Department;
@@ -76,6 +77,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [localRanges, setLocalRanges] = useState<Record<string, string>>(initialRanges || {});
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('All');
   const [protocolFilter, setProtocolFilter] = useState<string>('All');
 
   React.useEffect(() => {
@@ -98,25 +100,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       if (!valA) return 1;
       if (!valB) return -1;
 
-      const parseDate = (d: any) => {
-        if (!d) return 0;
-        const s = String(d).trim();
-        if (s.includes('/')) {
-          const parts = s.split(' ')[0].split('/');
-          if (parts.length === 3) {
-            const month = parseInt(parts[0], 10);
-            const day = parseInt(parts[1], 10);
-            const year = parseInt(parts[2], 10);
-            if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
-              return new Date(year, month - 1, day).getTime();
-            }
-          }
-        }
-        const parsed = new Date(s).getTime();
-        return isNaN(parsed) ? 0 : parsed;
-      };
-
-      return parseDate(valB) - parseDate(valA);
+      return parseGlobalDate(valB) - parseGlobalDate(valA);
     });
   }, [safeEntries, department.fields]);
 
@@ -163,6 +147,15 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
     return base;
   }, [department.fields, department.id, dguReport, ballingReport]);
 
+  const uniqueCampaigns = useMemo(() => {
+    const campaigns = new Set<string>();
+    sortedEntries.forEach(e => {
+      const c = e.data['Campaign No.'] || e.data.campaign_no || e.data.campaign || e.data['Campaign'];
+      if (c) campaigns.add(String(c).trim());
+    });
+    return Array.from(campaigns).sort();
+  }, [sortedEntries]);
+
   const displayedEntries = useMemo(() => {
     let filtered = sortedEntries;
 
@@ -197,8 +190,15 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       });
     }
 
+    if (selectedCampaign !== 'All') {
+      filtered = filtered.filter(e => {
+        const c = e.data['Campaign No.'] || e.data.campaign_no || e.data.campaign || e.data['Campaign'];
+        return c && String(c).trim() === selectedCampaign;
+      });
+    }
+
     return filtered;
-  }, [sortedEntries, searchTerm, protocolFilter, hasProtocol, dguReport, department.id]);
+  }, [sortedEntries, searchTerm, selectedCampaign, protocolFilter, hasProtocol, dguReport, department.id]);
 
   const canAdd = userType === 'Entry' || userType === 'Admin';
   const canMarkDone = userType === 'Mark Done' || userType === 'Admin';
@@ -208,7 +208,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">{department.name}</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-brand-900">{department.name}</h2>
           <p className="text-sm text-slate-500 mt-1">Manage and track {department.category.toLowerCase()} entries.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -237,15 +237,29 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 border-b border-slate-200/80 bg-slate-50/30">
-          <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search entries..."
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 transition-all placeholder:text-slate-400"
-            />
+          <div className="flex items-center gap-3 w-full flex-1">
+            {uniqueCampaigns.length > 0 && (
+              <select
+                value={selectedCampaign}
+                onChange={(e) => setSelectedCampaign(e.target.value)}
+                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer shrink-0"
+              >
+                <option value="All">All Campaigns</option>
+                {uniqueCampaigns.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            )}
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search entries..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 transition-all placeholder:text-slate-400"
+              />
+            </div>
           </div>
           {hasProtocol && protocolOptions.length > 0 && (
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
@@ -256,7 +270,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   className={cn(
                     "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                     protocolFilter === opt
-                      ? "bg-white text-slate-900 shadow-sm"
+                      ? "bg-white text-brand-900 shadow-sm"
                       : "text-slate-400 hover:text-slate-600"
                   )}
                 >
@@ -275,7 +289,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           <div className="flex flex-wrap items-center gap-2 px-6 py-3 bg-slate-50/20 border-b border-slate-200/60">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">View:</span>
             {([
-              { id: 'all', label: 'All Entries', color: 'bg-slate-900 text-white' },
+              { id: 'all', label: 'All Entries', color: 'bg-brand-800 text-white' },
               { id: 'fineness', label: 'Fineness', color: 'bg-emerald-600 text-white' },
               { id: 'lab', label: 'Lab', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
@@ -300,7 +314,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           <div className="flex flex-wrap items-center gap-2 px-6 py-3 bg-slate-50/20 border-b border-slate-200/60">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">View:</span>
             {([
-              { id: 'all', label: 'All Entries', color: 'bg-slate-900 text-white' },
+              { id: 'all', label: 'All Entries', color: 'bg-brand-800 text-white' },
               { id: 'moisture', label: 'Moisture', color: 'bg-cyan-600 text-white' },
               { id: 'lab', label: 'Lab', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
@@ -540,7 +554,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
 
       {/* Add Entry Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-900/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <DepartmentForm
               department={department}
@@ -658,7 +672,7 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
   const keys = ['Al2O3', 'Fe2O3', 'SiO2', 'TiO2', 'CaO', 'MgO', 'Loi', 'Fineness', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Drop Test', 'Moisture'];
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-brand-900/50 backdrop-blur-sm">
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
         <div className="px-8 py-6 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
           <div>
@@ -679,7 +693,7 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
                   value={localRanges[key] || ''}
                   placeholder={['Fineness', 'Drop Test', 'Moisture'].includes(key) ? 'e.g. 95' : 'e.g. 82.5 to 83.5'}
                   onChange={(e) => setLocalRanges({ ...localRanges, [key]: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 outline-none text-sm font-medium text-slate-800 transition-all"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 outline-none text-sm font-medium text-slate-700 transition-all"
                 />
                 <p className="text-[9px] text-slate-400 italic ml-1">
                   {['Drop Test', 'Drop Test 1', 'Drop Test 2', 'Drop Test 3', 'Fineness'].includes(key) 
@@ -694,7 +708,7 @@ function AdminLimitModal({ ranges, onClose, onSave }: {
           <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-200">
             <button 
               onClick={onClose} 
-              className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
+              className="px-6 py-2.5 text-sm font-medium text-slate-600 hover:text-brand-900 transition-colors"
             >
               Cancel
             </button>

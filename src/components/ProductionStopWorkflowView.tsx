@@ -13,7 +13,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn } from '../lib/utils';
+import { cn, parseGlobalDate } from '../lib/utils';
 import DepartmentForm from './DepartmentForm';
 
 interface Props {
@@ -27,6 +27,7 @@ interface Props {
 export default function ProductionStopWorkflowView({ department, entries, onAddEntry, onUpdateEntry, scriptUrl }: Props) {
     const [activeTab, setActiveTab] = useState<'form' | 'step1' | 'history'>('form');
     const [searchTerm, setSearchTerm] = useState('');
+    const [selectedCampaign, setSelectedCampaign] = useState<string>('All');
     const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
     const [isActionModalOpen, setIsActionModalOpen] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
@@ -34,21 +35,10 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
     const sortedEntries = useMemo(() => {
         const entriesCopy = [...entries];
         return entriesCopy.sort((a, b) => {
-            const valA = a.data['Date'] || a.data['date'] || a.timestamp || '';
-            const valB = b.data['Date'] || b.data['date'] || b.timestamp || '';
+            const valA = a.data['Date'] || a.data['date'] || a.data['Date of stop'] || a.data['date_of_stop'] || a.timestamp || '';
+            const valB = b.data['Date'] || b.data['date'] || b.data['Date of stop'] || b.data['date_of_stop'] || b.timestamp || '';
 
-            if (!valA && !valB) return 0;
-            if (!valA) return 1;
-            if (!valB) return -1;
-
-            const parseDate = (d: any) => {
-                if (!d) return 0;
-                const s = String(d).trim();
-                const parsed = new Date(s).getTime();
-                return isNaN(parsed) ? 0 : parsed;
-            };
-
-            return parseDate(valB) - parseDate(valA);
+            return parseGlobalDate(valB) - parseGlobalDate(valA);
         });
     }, [entries]);
 
@@ -92,6 +82,15 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
         return val;
     };
 
+    const uniqueCampaigns = useMemo(() => {
+        const campaigns = new Set<string>();
+        sortedEntries.forEach(e => {
+            const c = getData(e, 'Campaign No.') || getData(e, 'campaign_no') || getData(e, 'campaign') || getData(e, 'Campaign');
+            if (c) campaigns.add(String(c).trim());
+        });
+        return Array.from(campaigns).sort();
+    }, [sortedEntries]);
+
     const visibleEntries = useMemo(() => {
         const term = searchTerm.toLowerCase();
         return sortedEntries.filter(e => {
@@ -105,9 +104,13 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
             if (activeTab === 'step1') return !isFixed;
             if (activeTab === 'history') return !!isFixed;
             return true;
+        }).filter(e => {
+            if (selectedCampaign === 'All') return true;
+            const c = getData(e, 'Campaign No.') || getData(e, 'campaign_no') || getData(e, 'campaign') || getData(e, 'Campaign');
+            return c && String(c).trim() === selectedCampaign;
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [sortedEntries, searchTerm, activeTab]);
+    }, [sortedEntries, searchTerm, activeTab, selectedCampaign]);
 
     const formatDuration = (val: any) => {
         if (!val) return '';
@@ -401,9 +404,9 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
         };
 
         return (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md text-slate-900">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-800/60 backdrop-blur-md text-brand-900">
                 <div className="bg-white w-full max-w-xl rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-100">
-                    <div className="px-8 py-6 bg-slate-900 text-white flex items-center justify-between">
+                    <div className="px-8 py-6 bg-brand-800 text-white flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-emerald-500">
                                 <Activity className="w-5 h-5 text-white" />
@@ -428,7 +431,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                         <select
                                             name={field.name}
                                             defaultValue={getData(selectedEntry, field.name) || ''}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none text-sm font-medium cursor-pointer"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800 focus:border-transparent transition-all outline-none text-sm font-medium cursor-pointer"
                                             required
                                         >
                                             <option value="">Select...</option>
@@ -439,7 +442,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             <select
                                                 name={`${field.name}_hour`}
                                                 defaultValue={((getData(selectedEntry, field.name) || '12:00 AM').split(' ')[0] || '12:00').split(':')[0] || '12'}
-                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
+                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
                                             >
                                                 {Array.from({ length: 12 }, (_, i) => String(i + 1).padStart(2, '0')).map(h => (
                                                     <option key={h} value={h}>{h}</option>
@@ -449,7 +452,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             <select
                                                 name={`${field.name}_minute`}
                                                 defaultValue={((getData(selectedEntry, field.name) || '12:00 AM').split(' ')[0] || '12:00').split(':')[1] || '00'}
-                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
+                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
                                             >
                                                 {Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0')).map(m => (
                                                     <option key={m} value={m}>{m}</option>
@@ -458,7 +461,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             <select
                                                 name={`${field.name}_ampm`}
                                                 defaultValue={(getData(selectedEntry, field.name) || '12:00 AM').split(' ')[1] || 'AM'}
-                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
+                                                className="w-full px-2 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800 outline-none text-sm font-medium appearance-none text-center cursor-pointer"
                                             >
                                                 <option value="AM">AM</option>
                                                 <option value="PM">PM</option>
@@ -470,7 +473,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                             type={field.type}
                                             step="any"
                                             defaultValue={getData(selectedEntry, field.name) || ''}
-                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-transparent transition-all outline-none text-sm font-medium"
+                                            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-800 focus:border-transparent transition-all outline-none text-sm font-medium"
                                             required
                                         />
                                     )}
@@ -481,7 +484,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                             <button
                                 type="button"
                                 onClick={() => setIsActionModalOpen(false)}
-                                className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors"
+                                className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-brand-900 transition-colors"
                                 disabled={isSyncing}
                             >
                                 Cancel
@@ -513,7 +516,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                         <Wrench className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-slate-900">Production Stop</h1>
+                        <h1 className="text-3xl font-bold tracking-tight text-brand-900">Production Stop</h1>
                         <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-widest"></p>
                     </div>
                 </div>
@@ -530,7 +533,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                             className={cn(
                                 "flex items-center px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all",
                                 activeTab === tab.id
-                                    ? "bg-white text-slate-900 shadow-md border border-slate-100 scale-[1.02]"
+                                    ? "bg-white text-brand-900 shadow-md border border-slate-100 scale-[1.02]"
                                     : "text-slate-400 hover:text-slate-600"
                             )}
                         >
@@ -606,15 +609,29 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                 <div className="grid grid-cols-1 gap-6 animate-in slide-in-from-bottom-4 duration-500">
                     <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden text-nowrap">
                         <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                            <div className="relative max-w-sm w-full">
-                                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                                <input
-                                    type="text"
-                                    placeholder="Search entries..."
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-slate-900/5 transition-all"
-                                />
+                            <div className="flex items-center gap-3 w-full sm:max-w-md">
+                                {uniqueCampaigns.length > 0 && (
+                                    <select
+                                        value={selectedCampaign}
+                                        onChange={(e) => setSelectedCampaign(e.target.value)}
+                                        className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-800/5 transition-all outline-none cursor-pointer shrink-0"
+                                    >
+                                        <option value="All">All Campaigns</option>
+                                        {uniqueCampaigns.map(c => (
+                                            <option key={c} value={c}>{c}</option>
+                                        ))}
+                                    </select>
+                                )}
+                                <div className="relative w-full">
+                                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                                    <input
+                                        type="text"
+                                        placeholder="Search entries..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs outline-none focus:ring-2 focus:ring-brand-800/5 transition-all"
+                                    />
+                                </div>
                             </div>
                             <div className="flex items-center gap-3">
                                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
