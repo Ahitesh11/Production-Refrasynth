@@ -10,7 +10,7 @@ import ManageUsers from './components/ManageUsers';
 
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
-import { AlertCircle, Database, X } from 'lucide-react';
+import { AlertCircle, Database, X, RefreshCw } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(() => {
@@ -213,18 +213,20 @@ export default function App() {
   const activeDept = DEPARTMENTS.find(d => d.id === activeId);
 
   // Filter departments based on user permissions
-  const allowedDepartments = DEPARTMENTS.filter(dept => {
-    if (user?.type === 'Admin') return true;
-    if (!user?.permissions) return false;
+  const allowedDepartments = useMemo(() => {
+    return DEPARTMENTS.filter(dept => {
+      if (user?.type === 'Admin') return true;
+      if (!user?.permissions) return false;
 
-    // Normalize names for comparison (handle extra spaces)
-    const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
-    const deptName = normalize(dept.name);
+      // Normalize names for comparison (handle extra spaces)
+      const normalize = (s: string) => s.trim().replace(/\s+/g, ' ').toLowerCase();
+      const deptName = normalize(dept.name);
 
-    return Object.entries(user.permissions).some(([name, allowed]) =>
-      allowed && normalize(name) === deptName
-    );
-  });
+      return Object.entries(user.permissions).some(([name, allowed]) =>
+        allowed && normalize(name) === deptName
+      );
+    });
+  }, [user]);
 
   // Inject master data into department fields
   const departmentsWithMaster = useMemo(() => {
@@ -235,6 +237,11 @@ export default function App() {
         if (field.name === 'product_name') return { ...field, options: masterData.products.length > 0 ? masterData.products : field.options };
         if (field.name === 'rm_name' || field.name.startsWith('mat') || field.name.startsWith('rm')) {
           return { ...field, options: masterData.materials.length > 0 ? masterData.materials : field.options };
+        }
+        
+        // Use userNames from Login sheet for operator/chemist name fields
+        if (field.name === 'name' || field.name === 'chemist_name' || field.name === 'reported_by') {
+          return { ...field, type: 'select', options: userNames.length > 0 ? userNames : (field.options || []) };
         }
 
         return field;
@@ -249,6 +256,12 @@ export default function App() {
   const handleUpdateEntry = (updatedEntry: Entry) => {
     setEntries(prev => prev.map(e => e.id === updatedEntry.id ? updatedEntry : e));
   };
+
+  // Memoize filtered entries to prevent massive re-renders
+  const rmEntries = useMemo(() => entries.filter(e => e.departmentId === 'rm'), [entries]);
+  const productionStopEntries = useMemo(() => entries.filter(e => e.departmentId === 'production_stop'), [entries]);
+  const sb3GroundEntries = useMemo(() => entries.filter(e => e.departmentId === 'sb3_ground'), [entries]);
+  const activeDeptEntries = useMemo(() => entries.filter(e => e.departmentId === activeId), [entries, activeId]);
 
   if (!user) {
     return <Login onLogin={handleLogin} />;
@@ -291,6 +304,15 @@ export default function App() {
       />
 
       <main className="flex-1 overflow-y-auto relative min-w-0">
+        {/* Global Floating Refresh Button */}
+        <button
+          onClick={() => fetchData(true)}
+          disabled={isRefreshing}
+          className={`fixed bottom-24 right-8 lg:bottom-8 lg:right-8 z-[55] w-14 h-14 bg-slate-900 text-white rounded-full flex items-center justify-center shadow-2xl shadow-slate-900/30 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 border border-slate-700 ${isRefreshing ? 'opacity-70 cursor-not-allowed scale-100 hover:scale-100' : ''}`}
+          title="Refresh Data"
+        >
+          <RefreshCw className={`w-6 h-6 ${isRefreshing ? 'animate-spin text-brand-400' : ''}`} />
+        </button>
 
         {isSettingsOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
@@ -375,7 +397,7 @@ export default function App() {
             activeId === 'rm' ? (
               <RMWorkflowView
                 department={departmentsWithMaster.find(d => d.id === 'rm')!}
-                entries={entries.filter(e => e.departmentId === 'rm')}
+                entries={rmEntries}
                 onAddEntry={handleAddEntry}
                 onUpdateEntry={handleUpdateEntry}
                 scriptUrl={scriptUrl}
@@ -383,7 +405,7 @@ export default function App() {
             ) : activeId === 'production_stop' ? (
               <ProductionStopWorkflowView
                 department={departmentsWithMaster.find(d => d.id === 'production_stop')!}
-                entries={entries.filter(e => e.departmentId === 'production_stop')}
+                entries={productionStopEntries}
                 onAddEntry={handleAddEntry}
                 onUpdateEntry={handleUpdateEntry}
                 scriptUrl={scriptUrl}
@@ -393,7 +415,7 @@ export default function App() {
               <InventoryView
                 inventoryData={inventoryData}
                 sb3GroundDepartment={departmentsWithMaster.find(d => d.id === 'sb3_ground')!}
-                entries={entries.filter(e => e.departmentId === 'sb3_ground')}
+                entries={sb3GroundEntries}
                 onSuccess={async (data) => {
                   const timestamp = new Date().toLocaleString();
                   const newEntry: Entry = {
@@ -435,11 +457,7 @@ export default function App() {
 
                     const resData = await response.json().catch(() => ({}));
                     if (response.ok && resData.result === 'success') {
-                      if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
-                      } else {
-                        alert('✅ Data saved successfully to Google Sheets!');
-                      }
+                      alert('✅ Data saved successfully to Google Sheets!');
                       handleAddEntry(newEntry);
                       fetchData(true); // Refresh inventory stats
                     } else {
@@ -456,7 +474,7 @@ export default function App() {
             ) : (
               <DepartmentView
                 department={departmentsWithMaster.find(d => d.id === activeId)!}
-                entries={entries.filter(e => e.departmentId === activeId)}
+                entries={activeDeptEntries}
                 onAddEntry={handleAddEntry}
                 onUpdateEntry={handleUpdateEntry}
                 userType={user.type}

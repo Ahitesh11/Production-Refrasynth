@@ -48,7 +48,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                 return isNaN(parsed) ? 0 : parsed;
             };
 
-            return parseDate(valA) - parseDate(valB);
+            return parseDate(valB) - parseDate(valA);
         });
     }, [entries]);
 
@@ -348,9 +348,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
             if (result.result !== 'success') {
                 throw new Error(result.error || 'Server error');
             }
-            if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-                alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
-            }
+            alert('✅ Data saved successfully to Google Sheets!');
         } catch (err: any) {
             console.error(`❌ Background sync failed: ${err.message}`);
             alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
@@ -595,9 +593,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                     if (!response.ok || resData.result === 'error') {
                                         throw new Error(resData.error || 'Failed to sync with Google Sheets');
                                     }
-                                    if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-                                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
-                                    }
+                                    alert('✅ Data saved successfully to Google Sheets!');
                                 } catch (err: any) {
                                     console.error('❌ Background submission failed:', err);
                                     alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);

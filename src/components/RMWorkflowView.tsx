@@ -51,7 +51,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                 return isNaN(parsed) ? 0 : parsed;
             };
 
-            return parseDate(valA) - parseDate(valB);
+            return parseDate(valB) - parseDate(valA);
         });
     }, [entries]);
 
@@ -92,6 +92,20 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         if (val1 !== undefined && val1 !== null && val1 !== '') return val1;
         if (val2 !== undefined && val2 !== null && val2 !== '') return val2;
         return '';
+    };
+
+    const formatDisplayDate = (dateStr: string) => {
+        if (!dateStr) return '—';
+        try {
+            if (/^\d{2}\/\d{2}\/\d{4}/.test(dateStr)) return dateStr;
+            const date = new Date(dateStr);
+            if (!isNaN(date.getTime())) {
+                return format(date, 'MMM dd, yyyy HH:mm');
+            }
+            return dateStr;
+        } catch (e) {
+            return dateStr;
+        }
     };
 
     const visibleEntries = useMemo(() => {
@@ -143,9 +157,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
             if (!response.ok || resData.result === 'error') {
                 throw new Error(resData.error || 'Failed to sync with Google Sheets');
             }
-            if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-                alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
-            }
+            alert('✅ Data saved successfully to Google Sheets!');
         } catch (err: any) {
             console.error(`Background sync failed: ${err.message}`);
             alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
@@ -159,7 +171,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         const isPhysical = activeTab === 'step1';
         const fields = isPhysical
             ? [
-                { name: 'ad', label: 'AD', type: 'number', placeholder: 'Enter AD value' },
+                { name: 'ap', label: 'AP', type: 'number', placeholder: 'Enter AD value' },
                 { name: 'bd', label: 'BD', type: 'number', placeholder: 'Enter BD value' },
                 { name: 'fineness', label: 'Fineness', type: 'number', placeholder: 'Enter fineness %' },
                 { name: 'loi', label: 'LOI', type: 'number', placeholder: 'Enter LOI value' },
@@ -286,30 +298,30 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                     </div>
                 </div>
 
-                <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-2xl border border-slate-200/80 shadow-sm">
+                <div className="relative flex items-center bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
                     {[
-                        { id: 'form', label: 'Entry', icon: ClipboardList, color: 'blue' },
-                        { id: 'step1', label: 'Physical', icon: Activity, color: 'emerald' },
-                        { id: 'step2', label: 'Chemical', icon: FlaskConical, color: 'purple' },
-                        { id: 'history', label: 'History', icon: History, color: 'slate' }
-                    ].map((tab) => (
+                        { id: 'form', label: 'Entry', icon: ClipboardList, activeColor: 'text-blue-600' },
+                        { id: 'step1', label: 'Physical', icon: Activity, activeColor: 'text-emerald-600' },
+                        { id: 'step2', label: 'Chemical', icon: FlaskConical, activeColor: 'text-purple-600' },
+                        { id: 'history', label: 'History', icon: History, activeColor: 'text-slate-900' }
+                    ].map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        return (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={cn(
-                                "flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all",
-                                activeTab === tab.id
-                                    ? "bg-white text-slate-900 shadow-md border border-slate-200/80 scale-[1.02]"
-                                    : "text-slate-500 hover:text-slate-700 hover:bg-white/50"
+                                "relative flex flex-col sm:flex-row items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all duration-300 z-10",
+                                isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                             )}
                         >
-                            <tab.icon className={cn(
-                                "w-4 h-4",
-                                activeTab === tab.id ? `text-${tab.color}-500` : "text-slate-400"
-                            )} />
+                            {isActive && (
+                                <div className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/80 -z-10 animate-in zoom-in-95 duration-200" />
+                            )}
+                            <tab.icon className={cn("w-4 h-4 transition-colors", isActive ? tab.activeColor : "text-slate-400")} />
                             {tab.label}
                         </button>
-                    ))}
+                    )})}
                 </div>
             </header>
 
@@ -363,9 +375,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                     if (!response.ok || resData.result === 'error') {
                                         throw new Error(resData.error || 'Failed to sync with Google Sheets');
                                     }
-                                    if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-                                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
-                                    }
+                                    alert('✅ Data saved successfully to Google Sheets!');
                                 } catch (err: any) {
                                     console.error('Background submission failed:', err);
                                     alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
@@ -470,33 +480,33 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                 {activeTab === 'history' ? (
                                                     <>
                                                         <td className="tbl-ts">{entry.timestamp}</td>
-                                                        <td className="col-sticky-left font-bold" style={{fontSize:'12px', color:'oklch(0.25 0.04 145)'}}>{getData(entry, 'unique_no')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.35 0.04 240)'}}>{getData(entry, 'party_name')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'truck_no')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'invoice_no')}</td>
-                                                        <td style={{fontSize:'12px', fontWeight:600, color:'oklch(0.30 0.05 145)'}}>{getData(entry, 'rm_name')}</td>
+                                                        <td className="col-sticky-left font-bold" style={{fontSize:'13px', color:'oklch(0.25 0.04 145)'}}>{getData(entry, 'unique_no')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.35 0.04 240)'}}>{getData(entry, 'party_name')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'truck_no')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'invoice_no')}</td>
+                                                        <td style={{fontSize:'13px', fontWeight:600, color:'oklch(0.30 0.05 145)'}}>{getData(entry, 'rm_name')}</td>
                                                         <td className="tbl-num">{getData(entry, 'truck_qty')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'chemist_name')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'date_of_testing')}</td>
-                                                        <td><span className="tbl-badge tbl-badge-green">{getData(entry, 'planned')}</span></td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'actual')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'ad')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'bd')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'chemist_name')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{formatDisplayDate(getData(entry, 'date_of_testing'))}</td>
+                                                        <td><span className="tbl-badge tbl-badge-green">{formatDisplayDate(getData(entry, 'planned'))}</span></td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{formatDisplayDate(getData(entry, 'actual'))}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'ad')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'bd')}</td>
                                                         <td>
                                                           <span className={cn('tbl-pill', Number(getData(entry, 'fineness')) > 95 ? 'tbl-pill-bad' : 'tbl-pill-ok')}>
                                                             {getData(entry, 'fineness')}
                                                           </span>
                                                         </td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'loi')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'moisture')}</td>
-                                                        <td><span className="tbl-badge tbl-badge-purple">{getData(entry, 'planned1')}</span></td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'actual1')}</td>
-                                                        <td style={{fontSize:'13px', fontWeight:900, color:'oklch(0.44 0.14 145)'}}>{getData(entry, 'al2o3')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'fe2o3')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'sio2')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'mgo')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'tio2')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'cao')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'loi')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'moisture')}</td>
+                                                        <td><span className="tbl-badge tbl-badge-purple">{formatDisplayDate(getData(entry, 'planned1'))}</span></td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{formatDisplayDate(getData(entry, 'actual1'))}</td>
+                                                        <td style={{fontSize:'14px', fontWeight:900, color:'oklch(0.44 0.14 145)'}}>{getData(entry, 'al2o3')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'fe2o3')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'sio2')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'mgo')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'tio2')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'cao')}</td>
                                                         <td>
                                                             <span className="tbl-badge tbl-badge-green">
                                                                 <CheckCircle2 className="w-3 h-3" />
@@ -506,35 +516,35 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <td className="col-sticky-left font-bold" style={{fontSize:'12px', color:'oklch(0.25 0.04 145)'}}>{getData(entry, 'unique_no')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.35 0.04 240)'}}>{getData(entry, 'party_name')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'truck_no')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'invoice_no')}</td>
-                                                        <td style={{fontSize:'12px', fontWeight:600, color:'oklch(0.30 0.05 145)'}}>{getData(entry, 'rm_name')}</td>
-                                                        <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'date_of_testing')}</td>
+                                                        <td className="col-sticky-left font-bold" style={{fontSize:'13px', color:'oklch(0.25 0.04 145)'}}>{getData(entry, 'unique_no')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.35 0.04 240)'}}>{getData(entry, 'party_name')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'truck_no')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'invoice_no')}</td>
+                                                        <td style={{fontSize:'13px', fontWeight:600, color:'oklch(0.30 0.05 145)'}}>{getData(entry, 'rm_name')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{formatDisplayDate(getData(entry, 'date_of_testing'))}</td>
                                                         {activeTab === 'step1' ? (
                                                             <>
                                                                 <td>
                                                                     <span className="tbl-badge tbl-badge-green">
-                                                                        {getData(entry, 'planned')}
+                                                                        {formatDisplayDate(getData(entry, 'planned'))}
                                                                     </span>
                                                                 </td>
                                                                 <td className="tbl-num">{getData(entry, 'truck_qty')}</td>
                                                             </>
                                                         ) : (
                                                             <>
-                                                                <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'ad') || '—'}</td>
-                                                                <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'bd') || '—'}</td>
+                                                                <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'ad') || '—'}</td>
+                                                                <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'bd') || '—'}</td>
                                                                 <td>
                                                                   <span className={cn('tbl-pill', getData(entry, 'fineness') ? (Number(getData(entry, 'fineness')) > 95 ? 'tbl-pill-bad' : 'tbl-pill-ok') : 'tbl-pill-warn')}>
                                                                     {getData(entry, 'fineness') || '—'}
                                                                   </span>
                                                                 </td>
-                                                                <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'loi') || '—'}</td>
-                                                                <td style={{fontSize:'12px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'moisture') || '—'}</td>
+                                                                <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'loi') || '—'}</td>
+                                                                <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'moisture') || '—'}</td>
                                                                 <td>
                                                                     <span className="tbl-badge tbl-badge-purple">
-                                                                        {getData(entry, 'planned1')}
+                                                                        {formatDisplayDate(getData(entry, 'planned1'))}
                                                                     </span>
                                                                 </td>
                                                             </>

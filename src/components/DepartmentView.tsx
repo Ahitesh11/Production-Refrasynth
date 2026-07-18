@@ -116,7 +116,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
         return isNaN(parsed) ? 0 : parsed;
       };
 
-      return parseDate(valA) - parseDate(valB);
+      return parseDate(valB) - parseDate(valA);
     });
   }, [safeEntries, department.fields]);
 
@@ -592,11 +592,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                     });
                     const resData = await response.json().catch(() => ({}));
                     if (response.ok && resData.result === 'success') {
-                      if (!scriptUrl || scriptUrl.includes('AKfycbyQNcs5g-6p4dZ4qhdKL0GYkem_hudT7PUf0ZhSVmK1dZvHjw_fzurvGqWTztk6xNyBFQ')) {
-                        alert('⚠️ Data synced to DEMO SHEET. Please configure your own Script URL in Settings.');
-                      } else {
-                        alert('✅ Data saved successfully to Google Sheets!');
-                      }
+                      alert('✅ Data saved successfully to Google Sheets!');
                     } else {
                       throw new Error(resData.error || 'Failed to sync with Google Sheets');
                     }

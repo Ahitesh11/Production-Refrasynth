@@ -82,6 +82,7 @@ export const DEPARTMENTS: Department[] = [
       { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'date', label: 'Date', type: 'date' },
+      { name: 'name', label: 'Name', type: 'text' },
       { name: 'temperature', label: 'Temperature', type: 'number' },
       { name: 'viscosity', label: 'Viscosity', type: 'number' },
       { name: 'moisture', label: 'Moisture', type: 'number' },
@@ -154,6 +155,7 @@ export const DEPARTMENTS: Department[] = [
       { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'date', label: 'Date', type: 'date' },
+      { name: 'name', label: 'Name', type: 'text' },
       { name: 'ap', label: 'AP', type: 'number' },
       { name: 'bd', label: 'BD', type: 'number' },
     ]
