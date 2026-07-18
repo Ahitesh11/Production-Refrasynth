@@ -7,7 +7,7 @@ import RMWorkflowView from './components/RMWorkflowView';
 import ProductionStopWorkflowView from './components/ProductionStopWorkflowView';
 import InventoryView from './components/InventoryView';
 import ManageUsers from './components/ManageUsers';
-import ChecklistWorkflowView from './components/ChecklistWorkflowView';
+
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
 import { AlertCircle, Database, X } from 'lucide-react';
@@ -236,9 +236,7 @@ export default function App() {
         if (field.name === 'rm_name' || field.name.startsWith('mat') || field.name.startsWith('rm')) {
           return { ...field, options: masterData.materials.length > 0 ? masterData.materials : field.options };
         }
-        if (dept.id === 'check_list' && field.name === 'name') {
-          return { ...field, options: userNames.length > 0 ? userNames : field.options };
-        }
+
         return field;
       })
     }));
@@ -390,14 +388,7 @@ export default function App() {
                 onUpdateEntry={handleUpdateEntry}
                 scriptUrl={scriptUrl}
               />
-            ) : activeId === 'check_list' ? (
-              <ChecklistWorkflowView
-                department={departmentsWithMaster.find(d => d.id === 'check_list')!}
-                entries={entries.filter(e => e.departmentId === 'check_list')}
-                onAddEntry={handleAddEntry}
-                onUpdateEntry={handleUpdateEntry}
-                scriptUrl={scriptUrl}
-              />
+
             ) : activeId === 'inventory' ? (
               <InventoryView
                 inventoryData={inventoryData}

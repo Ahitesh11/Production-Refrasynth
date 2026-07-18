@@ -16,8 +16,7 @@ export type DepartmentId =
   | 'spillage'
   | 'production_stop'
   | 'opening_closing'
-  | 'inventory'
-  | 'check_list';
+  | 'inventory';
 
 export interface User {
   username: string;
@@ -456,26 +455,6 @@ export const DEPARTMENTS: Department[] = [
       { name: 'issue_qty', label: 'Issue Qty', type: 'number', readonly: true },
       { name: 'actual_stock', label: 'Actual Stock', type: 'number', readonly: true },
     ]
-  },
-  {
-    id: 'check_list',
-    name: 'Check List',
-    category: 'Process',
-    fields: [
-      { name: 'task_id', label: 'Task ID', type: 'text', readonly: true },
-      { name: 'department', label: 'Department', type: 'select', options: ['Dispatch', 'HR & Admin', 'Maintenance', 'Production', 'Quality', 'Safety', 'Stores'] },
-      { name: 'name', label: 'Name', type: 'select', options: [] },
-      { name: 'task_description', label: 'Task Description', type: 'text' },
-      { name: 'task_start_date', label: 'Task Start Date', type: 'date' },
-      { name: 'freq', label: 'Freq', type: 'select', options: ['Daily', 'Weekly', 'Monthly', 'Quarterly', 'Yearly'] },
-      { name: 'planned1', label: 'Planned1', type: 'date', readonly: true },
-      { name: 'actual1', label: 'Actual1', type: 'datetime-local', readonly: true },
-      { name: 'delay1', label: 'Delay1', type: 'text', readonly: true },
-      { name: 'status1', label: 'Status1', type: 'select', options: ['Pending', 'Completed', 'Delayed'] },
-      { name: 'planned2', label: 'Planned2', type: 'date', readonly: true },
-      { name: 'actual2', label: 'Actual2', type: 'datetime-local', readonly: true },
-      { name: 'delay2', label: 'Delay2', type: 'text', readonly: true },
-      { name: 'status2', label: 'Status2', type: 'select', options: ['Pending', 'Completed', 'Delayed'] },
-    ]
   }
 ];
+

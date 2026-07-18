@@ -127,7 +127,7 @@ export default function Sidebar({
     },
     {
       name: 'Operations',
-      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'),
+      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm' && d.id !== 'check_list'),
       icon: Gauge
     },
     ...(user?.type === 'Admin' ? [{
