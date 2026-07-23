@@ -264,6 +264,22 @@ function createJsonResponse(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+function uploadBase64ToDrive(base64Str, folderId) {
+  try {
+    var parts = base64Str.split(';');
+    var mimeType = parts[0].split(':')[1];
+    var data = parts[1].split(',')[1];
+    
+    var blob = Utilities.newBlob(Utilities.base64Decode(data), mimeType, "Upload_" + Utilities.getUuid() + (mimeType === 'image/jpeg' ? '.jpg' : '.png'));
+    var folder = DriveApp.getFolderById(folderId);
+    var file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    return file.getUrl();
+  } catch(e) {
+    return "Error Uploading: " + e.toString();
+  }
+}
+
 function doPost(e) {
   if (!e || !e.postData) {
     return ContentService.createTextOutput("Error: POST request required.").setMimeType(ContentService.MimeType.TEXT);
@@ -274,6 +290,24 @@ function doPost(e) {
 
   try {
     var data = JSON.parse(e.postData.contents);
+    
+    // Auto-upload any base64 images to Google Drive and replace with the URL
+    var folderId = "1JHhKJFGLjwfkCGGCNdFB5ZS11wXhhFXm";
+    if (data.values && Array.isArray(data.values)) {
+      for (var i = 0; i < data.values.length; i++) {
+        if (typeof data.values[i] === 'string' && data.values[i].indexOf('data:image/') === 0) {
+          data.values[i] = uploadBase64ToDrive(data.values[i], folderId);
+        }
+      }
+    }
+    if (data.partialData) {
+      for (var key in data.partialData) {
+        if (typeof data.partialData[key] === 'string' && data.partialData[key].indexOf('data:image/') === 0) {
+          data.partialData[key] = uploadBase64ToDrive(data.partialData[key], folderId);
+        }
+      }
+    }
+
     var sheetName = data.sheetName;
     var values = data.values; // Array [Timestamp, Data1, Data2...]
     var partialData = data.partialData; // Object { "Field Name": value }
@@ -423,6 +457,11 @@ function doPost(e) {
         }
         if (sheetName === "Why Production Stop" && (colHeader === "Planned" || colHeader === "Delay")) {
           continue;
+        }
+
+        // --- SAFETY: Prevent 50,000 character limit exception ---
+        if (typeof val === 'string' && val.length > 45000) {
+          val = "Error: Image too large to save directly. Base64 length: " + val.length;
         }
 
         sheet.getRange(newRowIdx, k + 1).setValue(val);

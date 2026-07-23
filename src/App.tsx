@@ -7,6 +7,8 @@ import RMWorkflowView from './components/RMWorkflowView';
 import ProductionStopWorkflowView from './components/ProductionStopWorkflowView';
 import InventoryView from './components/InventoryView';
 import ManageUsers from './components/ManageUsers';
+import MISReport from './components/MISReport';
+import DepartmentForm from './components/DepartmentForm';
 
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
@@ -17,7 +19,7 @@ export default function App() {
     const saved = localStorage.getItem('erp_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users'>(() => {
+  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry'>(() => {
     const saved = localStorage.getItem('erp_user');
     const savedUser = saved ? JSON.parse(saved) : null;
     if (!savedUser || savedUser.type === 'Admin') return 'dashboard';
@@ -385,6 +387,68 @@ export default function App() {
                 </button>
               </div>
             )
+          ) : activeId === 'mis_report' ? (
+            <MISReport
+              entries={entries}
+              departments={departmentsWithMaster}
+              parameterRanges={parameterRanges}
+            />
+          ) : activeId === 'rm_entry' ? (
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden p-8 animate-in slide-in-from-bottom-4 duration-500 max-w-3xl mx-auto mt-8">
+              <div className="mb-6 flex items-center gap-3 text-slate-500">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
+                      <Database className="w-4 h-4 text-slate-600" />
+                  </div>
+                  <h3 className="text-sm font-semibold uppercase tracking-wider">New Material Intake</h3>
+              </div>
+              <DepartmentForm
+                  department={{
+                      ...departmentsWithMaster.find(d => d.id === 'rm')!,
+                      fields: departmentsWithMaster.find(d => d.id === 'rm')!.fields.filter(f => ['party_name', 'truck_no', 'invoice_no', 'bill_date', 'rm_name', 'truck_qty'].includes(f.name))
+                  }}
+                  onClose={() => setActiveId('rm')}
+                  onSuccess={async (submittedData) => {
+                      const timestamp = format(new Date(), 'MM/dd/yyyy HH:mm:ss');
+                      const uniqueNo = `RM-${Date.now()}`;
+                      const data = { ...submittedData, unique_no: uniqueNo };
+                      const newEntry: Entry = {
+                          id: `RM_${Date.now()}`,
+                          departmentId: 'rm',
+                          timestamp,
+                          data: data
+                      };
+
+                      handleAddEntry(newEntry);
+                      setActiveId('rm');
+
+                      const fieldsOrder = [
+                          'unique_no', 'party_name', 'truck_no', 'invoice_no', 'bill_date', 'rm_name',
+                          'truck_qty', 'chemist_name', 'date_of_testing',
+                          'planned', 'actual', 'delay', 'ad', 'bd', 'fineness', 'loi', 'moisture',
+                          'remarks_physical', 'planned1', 'actual1', 'delay1', 'al2o3', 'fe2o3',
+                          'sio2', 'mgo', 'tio2', 'cao', 'remarks_chemical'
+                      ];
+                      const values = [timestamp, ...fieldsOrder.map(key => data[key] || '')];
+
+                      try {
+                          const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
+                          const response = await fetch(proxyUrl, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ sheetName: 'RM', entryId: timestamp, values: values })
+                          });
+                          const resData = await response.json().catch(() => ({}));
+                          if (!response.ok || resData.result === 'error') {
+                              throw new Error(resData.error || 'Failed to sync with Google Sheets');
+                          }
+                          alert('✅ Data saved successfully to Google Sheets!');
+                      } catch (err: any) {
+                          console.error('Background submission failed:', err);
+                          alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
+                      }
+                  }}
+              />
+            </div>
           ) : activeId === 'dashboard' ? (
             <Dashboard
               entries={entries}

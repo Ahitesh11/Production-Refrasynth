@@ -30,6 +30,71 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const compressImage = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Compress aggressively to fit within Google Sheets 50,000 character limit
+          const compressed = canvas.toDataURL('image/jpeg', 0.4);
+          if (compressed.length > 45000) {
+            // If still too big, scale down further and re-compress
+            const smallCanvas = document.createElement('canvas');
+            smallCanvas.width = width * 0.5;
+            smallCanvas.height = height * 0.5;
+            smallCanvas.getContext('2d')?.drawImage(canvas, 0, 0, smallCanvas.width, smallCanvas.height);
+            resolve(smallCanvas.toDataURL('image/jpeg', 0.4));
+          } else {
+            resolve(compressed);
+          }
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.type.startsWith('image/')) {
+        const compressedBase64 = await compressImage(file);
+        setFormData(prev => ({ ...prev, [name]: compressedBase64 }));
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({ ...prev, [name]: reader.result }));
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -112,19 +177,20 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
   });
 
   return (
-    <div className="flex flex-col h-full max-h-[92vh] bg-slate-50 rounded-[32px] overflow-hidden shadow-2xl border border-slate-200">
+    <div className="flex flex-col bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 rounded-[28px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-white/60 backdrop-blur-xl">
       {/* Refined Header */}
-      <div className="px-8 py-6 bg-white border-b border-slate-200 flex items-center justify-between relative">
+      <div className="px-6 py-5 bg-white/60 backdrop-blur-md border-b border-indigo-100/50 flex items-center justify-between relative z-10">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-200/50 to-transparent" />
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-100 transition-transform hover:scale-105">
-            <Database className="w-6 h-6 text-white" />
+          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:scale-110 hover:rotate-3 hover:shadow-indigo-500/30">
+            <Database className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center space-x-2 mb-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Department Protocol</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400">Department Protocol</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse" />
             </div>
-            <h2 className="text-xl font-bold text-slate-700 tracking-tight">{department.name}</h2>
+            <h2 className="text-xl font-black text-slate-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">{department.name}</h2>
           </div>
         </div>
         <button
@@ -136,25 +202,25 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="p-8 space-y-10">
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <div className="p-6 space-y-6">
           {/* Protocol Selector for Kiln and DGU */}
           {(department.id === 'kiln' || department.id === 'dgu') && (
-            <div className="flex flex-col items-center space-y-4 pt-2">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <div className="flex flex-col items-center space-y-3 pt-1">
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                 {department.id === 'kiln' ? 'Kiln Protocol' : 'DGU Protocol'}
               </span>
-              <div className="inline-flex p-1 bg-white border border-slate-200 rounded-2xl shadow-sm">
+              <div className="inline-flex p-1 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm">
                 {(department.id === 'kiln' ? ['Shift', 'Composite'] : ['Shift', 'Daily']).map((mode) => (
                   <button
                     key={mode}
                     type="button"
                     onClick={() => setFormData(prev => ({ ...prev, entry_type: mode }))}
                     className={cn(
-                      "px-8 py-2.5 rounded-xl text-xs font-bold transition-all duration-300",
+                      "px-6 py-2 rounded-lg text-[11px] font-bold transition-all duration-300",
                       (formData.entry_type || 'Shift') === mode
-                        ? "bg-brand-500 text-white shadow-md shadow-brand-100"
-                        : "text-slate-400 hover:text-slate-600"
+                        ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/25 scale-105"
+                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
                     )}
                   >
                     {mode}
@@ -165,16 +231,19 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
           )}
 
           {/* Context Section */}
-          <section className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-8">
-            <div className="flex items-center space-x-3 pb-2 border-b border-slate-50">
-              <Settings className="w-4 h-4 text-slate-400" />
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Configuration</h3>
+          <section className="bg-white/70 backdrop-blur-md rounded-3xl p-6 border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] space-y-6 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-gradient-to-br from-indigo-100/40 to-violet-100/40 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+            <div className="flex items-center space-x-2 pb-3 border-b border-slate-100/60 relative z-10">
+              <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center">
+                <Settings className="w-3.5 h-3.5 text-indigo-500" />
+              </div>
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em]">Configuration</h3>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
               {otherFields.map((field) => (
                 <div key={field.name} className="space-y-2 group">
-                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">
-                    {field.label}
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 flex items-center justify-between">
+                    <span>{field.label} {['Material 1', 'Qty1', 'Image Of Weight Slip', 'Date', 'Shift'].includes(field.label) && <span className="text-red-500">*</span>}</span>
                   </label>
                   <div className="relative">
                     {field.type === 'select' && field.options && field.options.length > 0 ? (
@@ -183,7 +252,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         value={formData[field.name] || ''}
                         onChange={handleChange}
                         required={isRequiredField(field.name)}
-                        className="w-full h-11 pl-4 pr-10 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all outline-none text-sm font-medium text-slate-700 appearance-none"
+                        className="w-full h-10 pl-3 pr-8 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-xs font-semibold text-slate-700 appearance-none hover:border-slate-300 hover:bg-white/80"
                       >
                         <option value="">Select...</option>
                         {field.options?.map(opt => (
@@ -200,7 +269,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const mStr = (currentVal.split(' ')[0] || '12:00').split(':')[1] || '00';
                             setFormData(prev => ({ ...prev, [field.name]: `${e.target.value}:${mStr} ${ampmStr}` }));
                           }}
-                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
+                          className="w-full h-10 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-semibold text-slate-700 appearance-none text-center cursor-pointer hover:bg-white/80"
                         >
                           {Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -213,7 +282,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const hStr = (currentVal.split(' ')[0] || '12:00').split(':')[0] || '12';
                             setFormData(prev => ({ ...prev, [field.name]: `${hStr}:${e.target.value} ${ampmStr}` }));
                           }}
-                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
+                          className="w-full h-10 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-semibold text-slate-700 appearance-none text-center cursor-pointer hover:bg-white/80"
                         >
                           {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
@@ -223,12 +292,21 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const currentTime = (formData[field.name] || '12:00 AM').split(' ')[0] || '12:00';
                             setFormData(prev => ({ ...prev, [field.name]: `${currentTime} ${e.target.value}` }));
                           }}
-                          className="w-full h-11 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 outline-none text-sm font-medium text-slate-700 appearance-none text-center cursor-pointer"
+                          className="w-full h-10 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-semibold text-slate-700 appearance-none text-center cursor-pointer hover:bg-white/80"
                         >
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
                         </select>
                       </div>
+                    ) : field.type === 'file' ? (
+                      <input
+                        type="file"
+                        accept="image/*"
+                        name={field.name}
+                        onChange={handleFileChange}
+                        required={isRequiredField(field.name)}
+                        className="w-full block text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:bg-indigo-50 file:text-indigo-600 file:shadow-sm border border-slate-200/80 rounded-xl bg-white/50 cursor-pointer hover:file:bg-indigo-100 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all h-10"
+                      />
                     ) : (
                       <input
                         type={field.type === 'select' ? 'text' : field.type}
@@ -238,11 +316,11 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         onChange={handleChange}
                         required={isRequiredField(field.name)}
                         placeholder={field.type === 'number' ? '0.00' : 'Enter value...'}
-                        className="w-full h-11 px-4 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/5 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
+                        className="w-full h-10 px-3 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-xs font-semibold text-slate-700 placeholder:text-slate-300 hover:border-slate-300 hover:bg-white/80"
                       />
                     )}
                     {field.type === 'select' && (
-                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-300 pointer-events-none rotate-90" />
+                      <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none rotate-90" />
                     )}
                   </div>
                 </div>
@@ -252,15 +330,15 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
 
           {/* Analytical Grids */}
           {activeGrids.length > 0 && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {activeGrids.map(grid => (
-                <section key={grid.title} className="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm space-y-6">
-                  <div className="flex items-center justify-between border-b border-slate-50 pb-4">
-                    <div className="flex items-center space-x-3">
-                      <div className={cn("w-1.5 h-6 rounded-full", grid.accent)} />
-                      <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider">{grid.title}</h4>
+                <section key={grid.title} className="bg-white/70 backdrop-blur-md rounded-3xl p-6 border border-white shadow-[0_4px_20px_rgb(0,0,0,0.03)] space-y-4 hover:shadow-[0_4px_20px_rgb(0,0,0,0.06)] transition-all duration-300">
+                  <div className="flex items-center justify-between border-b border-slate-100/60 pb-3">
+                    <div className="flex items-center space-x-2">
+                      <div className={cn("w-1 h-5 rounded-full shadow-sm", grid.accent.replace('bg-brand-', 'bg-indigo-'))} />
+                      <h4 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em]">{grid.title}</h4>
                     </div>
-                    <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Digital Input Active</span>
+                    <span className="text-[8px] font-bold text-slate-300 uppercase tracking-widest">Digital Input Active</span>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
                     {grid.fields.map((field) => (
@@ -286,11 +364,11 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
           )}
 
           {/* Action Area */}
-          <div className="flex items-center justify-between pt-6">
+          <div className="flex items-center justify-between pt-6 pb-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2.5 text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-widest"
+              className="px-5 py-2.5 text-[10px] font-black text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-[0.15em] hover:bg-rose-50 rounded-xl"
             >
               Cancel Operation
             </button>
@@ -298,16 +376,16 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
             <button
               type="submit"
               disabled={isSubmitting}
-              className="relative px-10 py-3.5 bg-brand-600 text-white rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50 transition-all shadow-xl shadow-brand-600/20 group"
+              className="relative px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 transition-all shadow-md shadow-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/40 group hover:-translate-y-0.5"
             >
               {isSubmitting ? (
-                <div className="flex items-center space-x-3">
-                  <Loader2 className="w-4 h-4 animate-spin text-brand-500" />
+                <div className="flex items-center space-x-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-white/80" />
                   <span>Transmitting...</span>
                 </div>
               ) : (
-                <div className="flex items-center space-x-3">
-                  <FileText className="w-4 h-4 text-brand-500 group-hover:scale-110 transition-transform" />
+                <div className="flex items-center space-x-2">
+                  <FileText className="w-4 h-4 text-indigo-200 group-hover:scale-110 group-hover:text-white transition-all duration-300" />
                   <span>Submit Records</span>
                 </div>
               )}

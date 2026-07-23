@@ -75,3 +75,43 @@ export function parseGlobalDate(d: any): number {
   const parsed = new Date(s).getTime();
   return isNaN(parsed) ? 0 : parsed;
 }
+
+export function exportToCSV(data: any[], filename: string) {
+  if (!data || !data.length) {
+    alert("No data available to export.");
+    return;
+  }
+
+  // Extract all unique headers from the data objects
+  const headersSet = new Set<string>();
+  data.forEach(row => {
+    Object.keys(row).forEach(key => headersSet.add(key));
+  });
+  const headers = Array.from(headersSet);
+
+  // Build CSV content
+  const csvRows = [];
+  // Add Header Row
+  csvRows.push(headers.map(h => `"${String(h).replace(/"/g, '""')}"`).join(','));
+
+  // Add Data Rows
+  data.forEach(row => {
+    const values = headers.map(header => {
+      const val = row[header] !== undefined && row[header] !== null ? String(row[header]) : '';
+      return `"${val.replace(/"/g, '""')}"`;
+    });
+    csvRows.push(values.join(','));
+  });
+
+  const csvString = csvRows.join('\n');
+  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `${filename}.csv`);
+  link.style.visibility = 'hidden';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}

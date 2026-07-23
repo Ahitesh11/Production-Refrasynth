@@ -325,11 +325,7 @@ export default function ManageUsers({ scriptUrl }: Props) {
           <p className="text-sm font-medium text-slate-400">No users yet.</p>
         </div>
       ) : (
-        <div className="space-y-2">
-          <div className="hidden sm:flex items-center justify-between gap-4 px-4 py-2">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider pr-16">Actions</span>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
           {users.map(user => {
             const isExpanded = expanded === user.username;
             const grantedCount = Object.values(user.permissions).filter(Boolean).length;

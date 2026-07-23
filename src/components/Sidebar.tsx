@@ -2,6 +2,7 @@ import React from 'react';
 import { DepartmentId } from '../types';
 import {
   LayoutDashboard,
+  BarChart3,
   FlaskConical,
   Package,
   Database,
@@ -27,8 +28,8 @@ import { Department, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
-  activeId: DepartmentId | 'dashboard' | 'manage_users' | null;
-  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users') => void;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | null;
+  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry') => void;
   departments: Department[];
   user: User | null;
   onLogout: () => void;
@@ -40,10 +41,10 @@ interface Props {
 }
 
 interface NavItemProps {
-  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users';
+  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users' | 'mis_report' | 'rm_entry';
   name: string;
   icon: any;
-  activeId: DepartmentId | 'dashboard' | 'manage_users' | null;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | null;
   onSelect: (id: any) => void;
   isCollapsed: boolean;
   key?: React.Key;
@@ -111,7 +112,9 @@ export default function Sidebar({
       name: 'Main',
       items: [
         ...(user?.type === 'Admin' ? [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }] : []),
-        ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'Raw Material', icon: Zap }] : []),
+        ...(user?.type === 'Admin' ? [{ id: 'mis_report', name: 'MIS Report', icon: BarChart3 }] : []),
+        ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm_entry', name: 'RM Entry', icon: Zap }] : []),
+        ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'RM Workflow', icon: Activity }] : []),
         ...(departments.some(d => d.id === 'sb3_ground' || d.id === 'inventory') ? [{ id: 'inventory', name: 'Issue To SB3', icon: Database }] : []),
       ]
     },
@@ -127,7 +130,7 @@ export default function Sidebar({
     },
     {
       name: 'Operations',
-      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm' && d.id !== 'check_list'),
+      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm'),
       icon: Gauge
     },
     ...(user?.type === 'Admin' ? [{
@@ -136,7 +139,7 @@ export default function Sidebar({
     }] : []),
   ];
 
-  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users') => {
+  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry') => {
     onSelect(id);
     setIsOpen(false);
   };

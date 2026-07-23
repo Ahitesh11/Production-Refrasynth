@@ -4,7 +4,7 @@ import { Settings, Plus, Download, Filter, FileSpreadsheet, ListTodo, Search, Hi
 import { format, differenceInMinutes } from 'date-fns';
 import DepartmentForm from './DepartmentForm';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn, parseGlobalDate } from '../lib/utils';
+import { cn, parseGlobalDate, exportToCSV } from '../lib/utils';
 
 interface Props {
   department: Department;
@@ -282,6 +282,14 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest shrink-0 whitespace-nowrap">
             {displayedEntries.length} result{displayedEntries.length !== 1 ? 's' : ''}
           </span>
+          <button
+            onClick={() => exportToCSV(displayedEntries.map(e => ({ Timestamp: e.timestamp, ...e.data })), department.name)}
+            className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-brand-200 shadow-sm shrink-0"
+            title="Download CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
         </div>
 
         {/* DGU Report View Tabs */}

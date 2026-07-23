@@ -13,10 +13,11 @@ import {
     History,
     Search,
     AlertCircle,
-    ArrowRight
+    ArrowRight,
+    Download
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn, parseGlobalDate } from '../lib/utils';
+import { cn, parseGlobalDate, exportToCSV } from '../lib/utils';
 import DepartmentForm from './DepartmentForm';
 
 interface Props {
@@ -28,7 +29,7 @@ interface Props {
 }
 
 export default function RMWorkflowView({ department, entries, onAddEntry, onUpdateEntry, scriptUrl }: Props) {
-    const [activeTab, setActiveTab] = useState<'form' | 'step1' | 'step2' | 'history'>('form');
+    const [activeTab, setActiveTab] = useState<'step1' | 'step2' | 'history'>('step1');
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCampaign, setSelectedCampaign] = useState<string>('All');
     const [selectedEntry, setSelectedEntry] = useState<Entry | null>(null);
@@ -49,6 +50,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         party_name: 'Party Name',
         truck_no: 'Truck No.',
         invoice_no: 'Invoice No.',
+        bill_date: 'Bill Date',
         rm_name: 'Raw Material Name',
         truck_qty: 'Truck Qty',
         chemist_name: 'Name of Chemist',
@@ -135,7 +137,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         setSelectedEntry(null);
 
         const fieldsOrder = [
-            'unique_no', 'party_name', 'truck_no', 'invoice_no', 'rm_name',
+            'unique_no', 'party_name', 'truck_no', 'invoice_no', 'bill_date', 'rm_name',
             'truck_qty', 'chemist_name', 'date_of_testing',
             'planned', 'actual', 'delay', 'ad', 'bd', 'fineness', 'loi', 'moisture',
             'remarks_physical', 'planned1', 'actual1', 'delay1', 'al2o3', 'fe2o3',
@@ -173,7 +175,9 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
         const isPhysical = activeTab === 'step1';
         const fields = isPhysical
             ? [
-                { name: 'ap', label: 'AP', type: 'number', placeholder: 'Enter AD value' },
+                { name: 'chemist_name', label: 'Name of Chemist', type: 'text', placeholder: 'Enter chemist name' },
+                { name: 'date_of_testing', label: 'Date Of Testing', type: 'date', placeholder: '' },
+                { name: 'ad', label: 'AD', type: 'number', placeholder: 'Enter AD value' },
                 { name: 'bd', label: 'BD', type: 'number', placeholder: 'Enter BD value' },
                 { name: 'fineness', label: 'Fineness', type: 'number', placeholder: 'Enter fineness %' },
                 { name: 'loi', label: 'LOI', type: 'number', placeholder: 'Enter LOI value' },
@@ -302,7 +306,6 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
 
                 <div className="relative flex items-center bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/60 shadow-inner">
                     {[
-                        { id: 'form', label: 'Entry', icon: ClipboardList, activeColor: 'text-blue-600' },
                         { id: 'step1', label: 'Physical', icon: Activity, activeColor: 'text-emerald-600' },
                         { id: 'step2', label: 'Chemical', icon: FlaskConical, activeColor: 'text-purple-600' },
                         { id: 'history', label: 'History', icon: History, activeColor: 'text-brand-900' }
@@ -328,67 +331,8 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
             </header>
 
             {/* Content */}
-            {activeTab === 'form' ? (
-                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden p-8 animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="max-w-2xl mx-auto">
-                        <div className="mb-6 flex items-center gap-3 text-slate-500">
-                            <div className="w-8 h-8 rounded-xl bg-slate-100 flex items-center justify-center">
-                                <Plus className="w-4 h-4 text-slate-600" />
-                            </div>
-                            <h3 className="text-sm font-semibold uppercase tracking-wider">New Material Intake</h3>
-                        </div>
-                        <DepartmentForm
-                            department={{
-                                ...department,
-                                fields: department.fields.filter(f => ['party_name', 'truck_no', 'invoice_no', 'rm_name', 'truck_qty', 'chemist_name', 'date_of_testing'].includes(f.name))
-                            }}
-                            onClose={() => { }}
-                            onSuccess={async (submittedData) => {
-                                const timestamp = format(new Date(), 'MM/dd/yyyy HH:mm:ss');
-                                const uniqueNo = `RM-${Date.now()}`;
-                                const data = { ...submittedData, unique_no: uniqueNo };
-                                const newEntry: Entry = {
-                                    id: `RM_${Date.now()}`,
-                                    departmentId: 'rm',
-                                    timestamp,
-                                    data: data
-                                };
-
-                                onAddEntry(newEntry);
-                                setActiveTab('step1');
-
-                                const fieldsOrder = [
-                                    'unique_no', 'party_name', 'truck_no', 'invoice_no', 'rm_name',
-                                    'truck_qty', 'chemist_name', 'date_of_testing',
-                                    'planned', 'actual', 'delay', 'ad', 'bd', 'fineness', 'loi', 'moisture',
-                                    'remarks_physical', 'planned1', 'actual1', 'delay1', 'al2o3', 'fe2o3',
-                                    'sio2', 'mgo', 'tio2', 'cao', 'remarks_chemical'
-                                ];
-                                const values = [timestamp, ...fieldsOrder.map(key => data[key] || '')];
-
-                                try {
-                                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
-                                    const response = await fetch(proxyUrl, {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ sheetName: 'RM', entryId: timestamp, values: values })
-                                    });
-                                    const resData = await response.json().catch(() => ({}));
-                                    if (!response.ok || resData.result === 'error') {
-                                        throw new Error(resData.error || 'Failed to sync with Google Sheets');
-                                    }
-                                    alert('✅ Data saved successfully to Google Sheets!');
-                                } catch (err: any) {
-                                    console.error('Background submission failed:', err);
-                                    alert(`❌ Sync Failed: ${err.message}\n\nData is saved locally but not in Google Sheets.`);
-                                }
-                            }}
-                        />
-                    </div>
-                </div>
-            ) : (
-                <div className="animate-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+            <div className="animate-in slide-in-from-bottom-4 duration-500">
+                <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
                         {/* Table Header */}
                         <div className="p-4 border-b border-slate-200/80 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div className="flex items-center gap-3 w-full sm:max-w-md">
@@ -424,6 +368,14 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest whitespace-nowrap">
                                     {visibleEntries.length} result{visibleEntries.length !== 1 ? 's' : ''}
                                 </span>
+                                <button
+                                    onClick={() => exportToCSV(visibleEntries.map(e => ({ Timestamp: e.timestamp, ...e.data })), 'RM_Workflow_History')}
+                                    className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-brand-200 shadow-sm shrink-0"
+                                    title="Download CSV"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Export</span>
+                                </button>
                             </div>
                         </div>
 
@@ -440,6 +392,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                 <th>Party Name</th>
                                                 <th>Truck No.</th>
                                                 <th>Invoice No.</th>
+                                                <th>Bill Date</th>
                                                 <th>RM Name</th>
                                                 <th>Qty</th>
                                                 <th>Chemist</th>
@@ -467,6 +420,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                 <th>Party Name</th>
                                                 <th>Truck No.</th>
                                                 <th>Invoice No.</th>
+                                                <th>Bill Date</th>
                                                 <th>RM Name</th>
                                                 <th>Testing Date</th>
                                                 {activeTab === 'step1' ? (
@@ -536,6 +490,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                                         <td style={{fontSize:'13px', color:'oklch(0.35 0.04 240)'}}>{getData(entry, 'party_name')}</td>
                                                         <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'truck_no')}</td>
                                                         <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{getData(entry, 'invoice_no')}</td>
+                                                        <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{formatDisplayDate(getData(entry, 'bill_date'))}</td>
                                                         <td style={{fontSize:'13px', fontWeight:600, color:'oklch(0.30 0.05 145)'}}>{getData(entry, 'rm_name')}</td>
                                                         <td style={{fontSize:'13px', color:'oklch(0.40 0.03 240)'}}>{formatDisplayDate(getData(entry, 'date_of_testing'))}</td>
                                                         {activeTab === 'step1' ? (
@@ -602,9 +557,8 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                             )}
                             </div>
                         </div>
-                    </div>
                 </div>
-            )}
+            </div>
             {isActionModalOpen && renderActionModal()}
         </div>
     );

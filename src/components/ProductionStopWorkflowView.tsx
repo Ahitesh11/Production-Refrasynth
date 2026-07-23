@@ -10,10 +10,14 @@ import {
     ClipboardList,
     History,
     Search,
-    AlertCircle
+    AlertCircle,
+    FileText,
+    ArrowRight,
+    Save,
+    Download
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { cn, parseGlobalDate } from '../lib/utils';
+import { cn, parseGlobalDate, exportToCSV } from '../lib/utils';
 import DepartmentForm from './DepartmentForm';
 
 interface Props {
@@ -640,6 +644,14 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                 <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">
                                     {visibleEntries.length} result{visibleEntries.length !== 1 ? 's' : ''}
                                 </span>
+                                <button
+                                    onClick={() => exportToCSV(visibleEntries.map(e => ({ Timestamp: e.timestamp, ...e.data })), 'Production_Stop_History')}
+                                    className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-brand-200 shadow-sm shrink-0"
+                                    title="Download CSV"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    <span className="hidden sm:inline">Export</span>
+                                </button>
                             </div>
                         </div>
                         <div className="premium-table-wrap">

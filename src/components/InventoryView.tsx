@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { Department, Entry } from '../types';
-import { PlusCircle, X, Search, History as HistoryIcon, User, List, Calendar, Box, Package, Database, ClipboardList, ArrowRight } from 'lucide-react';
+import { PlusCircle, X, Search, History as HistoryIcon, User, List, Calendar, Box, Package, Database, ClipboardList, ArrowRight, Download, TrendingUp, TrendingDown, AlertTriangle } from 'lucide-react';
 import DepartmentForm from './DepartmentForm';
 import { motion, AnimatePresence } from 'motion/react';
-import { cn, parseGlobalDate } from '../lib/utils';
+import { cn, parseGlobalDate, exportToCSV } from '../lib/utils';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 interface Props {
   inventoryData: any[];
@@ -69,6 +70,67 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
     }
     return sorted;
   }, [sb3Entries, searchTerm, selectedCampaign]);
+
+  const { topUsedItems, lowestStockItems } = useMemo(() => {
+    const validItems = inventoryData.filter(item => {
+      const name = item['Raw Material Name'] || item['Material Name'];
+      return name && String(name).trim() && String(name).trim() !== '-';
+    });
+
+    const withUsage = validItems.map(item => {
+      const name = item['Raw Material Name'] || item['Material Name'];
+      const used = Number(item['Use Stock'] || 0);
+      const issued = Number(item['Issue Qty'] || 0);
+      const actualStock = Number(item['Actual Stock'] || 0);
+      return {
+        name: String(name),
+        totalUsed: Math.abs(used) + Math.abs(issued),
+        actualStock
+      };
+    });
+
+    const topUsed = [...withUsage].sort((a, b) => b.totalUsed - a.totalUsed).slice(0, 5);
+    const lowestStock = [...withUsage].sort((a, b) => a.actualStock - b.actualStock).slice(0, 5);
+
+    return { topUsedItems: topUsed, lowestStockItems: lowestStock };
+  }, [inventoryData]);
+
+  const stockRecommendations = useMemo(() => {
+    const campaigns = new Set<string>();
+    sb3Entries.forEach(e => {
+      const c = e.data['Campaign No.'] || e.data.campaign_no;
+      if (c && String(c).trim() && String(c).trim() !== '-') campaigns.add(String(c).trim());
+    });
+    const campaignList = Array.from(campaigns).sort();
+    
+    if (campaignList.length === 0) return { campaign: null, recommendations: [] };
+    
+    const lastCampaign = campaignList[campaignList.length - 1];
+
+    const lastCampaignEntries = sb3Entries.filter(e => {
+      const c = e.data['Campaign No.'] || e.data.campaign_no;
+      return c && String(c).trim() === lastCampaign;
+    });
+
+    const consumption: Record<string, number> = {};
+    lastCampaignEntries.forEach(e => {
+      const used = Number(e.data['Use Stock'] || 0);
+      const issued = Number(e.data['Issue Qty'] || 0);
+      const mat = e.data['Raw Material Name'] || e.data['Material Name'];
+      
+      if (mat && (used || issued)) {
+        const name = String(mat).trim();
+        if (name !== '-') {
+            if (!consumption[name]) consumption[name] = 0;
+            consumption[name] += Math.abs(used) + Math.abs(issued);
+        }
+      }
+    });
+
+    const recs = Object.entries(consumption).map(([name, recommendedQty]) => ({ name, recommendedQty })).sort((a, b) => b.recommendedQty - a.recommendedQty);
+    
+    return { campaign: lastCampaign, recommendations: recs };
+  }, [sb3Entries]);
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20">
@@ -137,6 +199,85 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
             transition={{ duration: 0.3 }}
             className="space-y-4"
           >
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              {/* Most Consumed Materials */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <TrendingUp className="w-5 h-5 text-emerald-600" />
+                  <h3 className="text-lg font-bold text-slate-800">Most Consumed Materials</h3>
+                </div>
+                {topUsedItems.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={topUsedItems} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} tickFormatter={(val) => val.split(' ')[0]} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <Bar dataKey="totalUsed" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                          {topUsedItems.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill="#10b981" />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-sm text-slate-400">No consumption data</div>
+                )}
+              </div>
+
+              {/* Lowest Stock Materials */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6">
+                <div className="flex items-center gap-2 mb-6">
+                  <AlertTriangle className="w-5 h-5 text-rose-600" />
+                  <h3 className="text-lg font-bold text-slate-800">Lowest Stock Alerts</h3>
+                </div>
+                {lowestStockItems.length > 0 ? (
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={lowestStockItems} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                        <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} tickFormatter={(val) => val.split(' ')[0]} />
+                        <YAxis tick={{ fontSize: 12 }} />
+                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                        <Bar dataKey="actualStock" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                          {lowestStockItems.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.actualStock <= 0 ? "#f43f5e" : "#f59e0b"} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                ) : (
+                  <div className="h-64 flex items-center justify-center text-sm text-slate-400">No stock data</div>
+                )}
+              </div>
+            </div>
+
+            {/* AI Recommendation Widget */}
+            {stockRecommendations.campaign && stockRecommendations.recommendations.length > 0 && (
+              <div className="bg-gradient-to-r from-brand-600 to-brand-800 rounded-2xl shadow-lg p-6 mb-8 text-white relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                  <Package className="w-32 h-32" />
+                </div>
+                <div className="relative z-10">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest backdrop-blur-sm border border-white/20">AI Recommendation</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-1">Recommended Stock Levels</h3>
+                  <p className="text-white/80 text-sm mb-6">Based on the consumption patterns from your last campaign <strong>({stockRecommendations.campaign})</strong>, you should maintain at least the following stock:</p>
+                  
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+                    {stockRecommendations.recommendations.map((rec, idx) => (
+                      <div key={idx} className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20 hover:bg-white/20 transition-colors">
+                        <p className="text-xs text-white/70 font-semibold uppercase tracking-wider mb-1 truncate" title={rec.name}>{rec.name}</p>
+                        <p className="text-2xl font-black">{rec.recommendedQty.toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="premium-table-wrap">
               <div className="premium-table-scroll">
                 <table className="premium-table">
@@ -267,6 +408,14 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
                       className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm"
                     />
                   </div>
+                  <button
+                    onClick={() => exportToCSV(filteredHistory.map(e => ({ Timestamp: e.timestamp, ...e.data })), 'Inventory_History')}
+                    className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-brand-700 hover:bg-brand-100 hover:text-brand-800 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-brand-200 shadow-sm shrink-0"
+                    title="Download CSV"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span className="hidden sm:inline">Export</span>
+                  </button>
                 </div>
               </div>
 
@@ -379,50 +528,28 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsModalOpen(false)}
-              className="absolute inset-0 bg-brand-800/60 backdrop-blur-md"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
             />
 
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="relative w-full max-w-2xl bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-white/20"
+              className="relative w-full max-w-2xl"
               onClick={e => e.stopPropagation()}
             >
-              <div className="px-8 py-7 bg-brand-800 text-white flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center shadow-lg shadow-brand-600/30 ring-4 ring-white/10">
-                    <ClipboardList className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Issue Material</h2>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-[10px] text-brand-400 font-black uppercase tracking-widest">Selected Material: {selectedMaterial}</p>
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setIsModalOpen(false)}
-                  className="p-3 bg-white/5 hover:bg-white/10 rounded-full transition-all text-white/70 hover:text-white"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="p-4 overflow-y-auto max-h-[75vh] custom-scrollbar">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 pl-4 px-4 py-2 bg-slate-50 border-y border-slate-100">Material Entry</p>
-                <DepartmentForm
-                  department={{
-                    ...sb3GroundDepartment,
-                    fields: sb3GroundDepartment.fields.filter(f => ['campaign_no', 'product_name', 'shift', 'date', 'mat1', 'qty1'].includes(f.name))
-                  }}
-                  onClose={() => setIsModalOpen(false)}
-                  onSuccess={handleSuccess}
-                  initialData={{
-                    mat1: selectedMaterial
-                  }}
-                />
-              </div>
+              <DepartmentForm
+                department={{
+                  ...sb3GroundDepartment,
+                  name: `Issue Material (${selectedMaterial})`,
+                  fields: sb3GroundDepartment.fields.filter(f => ['campaign_no', 'product_name', 'shift', 'date', 'Image Of Weight Slip', 'mat1', 'qty1'].includes(f.name))
+                }}
+                onClose={() => setIsModalOpen(false)}
+                onSuccess={handleSuccess}
+                initialData={{
+                  mat1: selectedMaterial
+                }}
+              />
             </motion.div>
           </div>
         )}

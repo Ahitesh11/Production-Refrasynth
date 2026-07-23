@@ -34,7 +34,7 @@ export interface Department {
 export interface Field {
   name: string;
   label: string;
-  type: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'select';
+  type: 'text' | 'number' | 'date' | 'time' | 'datetime-local' | 'select' | 'file';
   options?: string[];
   hint?: string;
   readonly?: boolean;
@@ -189,6 +189,7 @@ export const DEPARTMENTS: Department[] = [
       { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'date', label: 'Date', type: 'date' },
+      { name: 'Image Of Weight Slip', label: 'Image Of Weight Slip', type: 'file' },
       { name: 'mat1', label: 'Material 1', type: 'select', options: [] },
       { name: 'qty1', label: 'Qty1', type: 'number' },
       { name: 'mat2', label: 'Material 2', type: 'select', options: [] },
@@ -338,6 +339,7 @@ export const DEPARTMENTS: Department[] = [
       { name: 'party_name', label: 'Party Name', type: 'text' },
       { name: 'truck_no', label: 'Truck No.', type: 'text' },
       { name: 'invoice_no', label: 'Invoice No.', type: 'text' },
+      { name: 'bill_date', label: 'Bill Date', type: 'date' },
       { name: 'rm_name', label: 'Raw Material Name', type: 'select', options: [] },
       { name: 'truck_qty', label: 'Truck Qty', type: 'number' },
       { name: 'chemist_name', label: 'Name of Chemist', type: 'text' },
