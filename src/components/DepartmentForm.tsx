@@ -177,20 +177,19 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
   });
 
   return (
-    <div className="flex flex-col bg-gradient-to-br from-slate-50 via-white to-indigo-50/30 rounded-[28px] overflow-hidden shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-white/60 backdrop-blur-xl">
+    <div className="flex flex-col h-full bg-surface">
       {/* Refined Header */}
-      <div className="px-6 py-5 bg-white/60 backdrop-blur-md border-b border-indigo-100/50 flex items-center justify-between relative z-10">
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-indigo-200/50 to-transparent" />
+      <div className="px-6 py-5 border-b border-border flex items-center justify-between relative z-10 rounded-t-2xl">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/20 transition-all duration-300 hover:scale-110 hover:rotate-3 hover:shadow-indigo-500/30">
+          <div className="w-12 h-12 gradient-accent rounded-xl flex items-center justify-center shadow-md">
             <Database className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center space-x-2 mb-0.5">
-              <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400">Department Protocol</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)] animate-pulse" />
+              <span className="text-[0.625rem] font-bold uppercase tracking-widest text-accent">Department Protocol</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-primary status-dot-connected" />
             </div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-600">{department.name}</h2>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">{department.name}</h2>
           </div>
         </div>
         <button
@@ -203,7 +202,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col">
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* Protocol Selector for Kiln and DGU */}
           {(department.id === 'kiln' || department.id === 'dgu') && (
             <div className="flex flex-col items-center space-y-3 pt-1">
@@ -243,16 +242,16 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
               {otherFields.map((field) => (
                 <div key={field.name} className="space-y-2 group">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 flex items-center justify-between">
-                    <span>{field.label} {['Material 1', 'Qty1', 'Image Of Weight Slip', 'Date', 'Shift'].includes(field.label) && <span className="text-red-500">*</span>}</span>
+                    <span>{field.label} {isRequiredField(field.name) && <span className="text-red-500">*</span>}</span>
                   </label>
                   <div className="relative">
-                    {field.type === 'select' && field.options && field.options.length > 0 ? (
+                    {field.type === 'select' ? (
                       <select
                         name={field.name}
                         value={formData[field.name] || ''}
                         onChange={handleChange}
                         required={isRequiredField(field.name)}
-                        className="w-full h-10 pl-3 pr-8 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-xs font-semibold text-slate-700 appearance-none hover:border-slate-300 hover:bg-white/80"
+                        className="form-input appearance-none pl-3 pr-8"
                       >
                         <option value="">Select...</option>
                         {field.options?.map(opt => (
@@ -269,7 +268,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const mStr = (currentVal.split(' ')[0] || '12:00').split(':')[1] || '00';
                             setFormData(prev => ({ ...prev, [field.name]: `${e.target.value}:${mStr} ${ampmStr}` }));
                           }}
-                          className="w-full h-10 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-semibold text-slate-700 appearance-none text-center cursor-pointer hover:bg-white/80"
+                          className="form-input appearance-none text-center cursor-pointer"
                         >
                           {Array.from({length: 12}, (_, i) => String(i + 1).padStart(2, '0')).map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
@@ -282,7 +281,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const hStr = (currentVal.split(' ')[0] || '12:00').split(':')[0] || '12';
                             setFormData(prev => ({ ...prev, [field.name]: `${hStr}:${e.target.value} ${ampmStr}` }));
                           }}
-                          className="w-full h-10 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-semibold text-slate-700 appearance-none text-center cursor-pointer hover:bg-white/80"
+                          className="form-input appearance-none text-center cursor-pointer"
                         >
                           {Array.from({length: 60}, (_, i) => String(i).padStart(2, '0')).map(m => <option key={m} value={m}>{m}</option>)}
                         </select>
@@ -292,7 +291,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                             const currentTime = (formData[field.name] || '12:00 AM').split(' ')[0] || '12:00';
                             setFormData(prev => ({ ...prev, [field.name]: `${currentTime} ${e.target.value}` }));
                           }}
-                          className="w-full h-10 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 outline-none text-xs font-semibold text-slate-700 appearance-none text-center cursor-pointer hover:bg-white/80"
+                          className="form-input appearance-none text-center cursor-pointer"
                         >
                           <option value="AM">AM</option>
                           <option value="PM">PM</option>
@@ -309,14 +308,14 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                       />
                     ) : (
                       <input
-                        type={field.type === 'select' ? 'text' : field.type}
+                        type={field.type}
                         step={field.type === 'number' ? 'any' : undefined}
                         name={field.name}
                         value={formData[field.name] || ''}
                         onChange={handleChange}
                         required={isRequiredField(field.name)}
                         placeholder={field.type === 'number' ? '0.00' : 'Enter value...'}
-                        className="w-full h-10 px-3 bg-white/50 border border-slate-200/80 rounded-xl focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all outline-none text-xs font-semibold text-slate-700 placeholder:text-slate-300 hover:border-slate-300 hover:bg-white/80"
+                        className="form-input px-3"
                       />
                     )}
                     {field.type === 'select' && (
@@ -344,7 +343,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                     {grid.fields.map((field) => (
                       <div key={field.name} className="space-y-1.5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center block">
-                          {grid.labelPrefixes.reduce((acc, prefix) => acc.replace(prefix, ''), field.label)}
+                          {grid.labelPrefixes.reduce((acc, prefix) => acc.replace(prefix, ''), field.label)} {isRequiredField(field.name) && <span className="text-red-500">*</span>}
                         </label>
                         <input
                           type="number"
@@ -353,7 +352,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                           value={formData[field.name] || ''}
                           onChange={handleChange}
                           placeholder="0.0"
-                          className="w-full h-10 px-0 bg-slate-50 border border-slate-100 rounded-lg focus:bg-white focus:border-brand-500 transition-all outline-none text-sm font-bold text-slate-700 text-center"
+                          className="form-input px-0 text-center text-sm font-bold"
                         />
                       </div>
                     ))}
@@ -376,7 +375,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
             <button
               type="submit"
               disabled={isSubmitting}
-              className="relative px-8 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.15em] hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 transition-all shadow-md shadow-indigo-500/30 hover:shadow-lg hover:shadow-indigo-500/40 group hover:-translate-y-0.5"
+              className="btn-primary uppercase tracking-widest text-[10px] shadow-md hover:shadow-lg disabled:opacity-50"
             >
               {isSubmitting ? (
                 <div className="flex items-center space-x-2">

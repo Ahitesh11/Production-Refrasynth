@@ -1464,7 +1464,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- ENERGY STATS */}
-      <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 mb-6 group overflow-hidden relative">
+      <div className="bg-surface rounded-2xl shadow-xl p-6 mb-6 group overflow-hidden relative">
         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full -mr-32 -mt-32 blur-3xl opacity-20 group-hover:opacity-60 transition-all duration-700 z-0" />
         <div className="relative z-10">
           <div className="flex items-center justify-between mb-6">
@@ -1727,7 +1727,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             )
           }
         ].map((section, idx) => (
-          <div key={idx} className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 group transition-all hover:shadow-xl">
+          <div key={idx} className="bg-surface rounded-2xl shadow-xl p-6 group transition-all hover:shadow-xl">
             <div className="flex items-center gap-4 mb-6">
               <div className={`w-10 h-10 bg-${section.color}-50 rounded-xl flex items-center justify-center shadow-sm`}>
                 <section.icon className={`w-5 h-5 text-${section.color}-600`} />
@@ -1745,7 +1745,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- PRODUCTION ACCOUNTING */}
-      <div className="bg-white rounded-2xl border border-brand-100 shadow-sm overflow-hidden mb-6">
+      <div className="glass-card overflow-hidden mb-6">
         <div className="px-5 sm:px-7 py-5 bg-gradient-to-r from-brand-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-100">
           <div>
             <h2 className="text-xl font-black text-brand-900 tracking-tight">Consumption Report</h2>
@@ -1832,7 +1832,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       {/* -- MATERIAL INTELLIGENCE */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-6">
         {/* SB3 Ground */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Material Total Input</p>
@@ -1874,7 +1874,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         {/* SB3 Hopper */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Raw Material Hopper</p>
@@ -1906,7 +1906,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         {/* Product Output */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Actual Production</p>
@@ -1938,7 +1938,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         {/* PPT Re-feed */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest">{pptStats.count} entries</p>
@@ -1969,7 +1969,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         {/* Spillage */}
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center justify-between mb-5">
             <div>
               <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">{spillageStats.count} entries</p>
@@ -2014,7 +2014,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- MATERIAL CONSUMPTION ANALYSIS */}
-      <div className="bg-white rounded-[2rem] border border-brand-100 shadow-sm overflow-hidden mb-6">
+      <div className="bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-brand-50 to-white border-b border-brand-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-brand-100 rounded-lg flex items-center justify-center border border-brand-200">
@@ -2063,7 +2063,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- PRODUCTION COST ANALYSIS */}
-      <div className="bg-white rounded-[2rem] border border-emerald-100 shadow-sm overflow-hidden mb-6">
+      <div className="bg-surface rounded-[2rem] border border-border shadow-sm overflow-hidden mb-6">
         <div className="bg-gradient-to-r from-emerald-50 to-white border-b border-emerald-100 px-8 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center border border-emerald-200">
@@ -2221,7 +2221,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       {/* -- PERFORMANCE INSIGHTS */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Yield Performance (Donut Chart) */}
-        <div className="bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
+        <div className="bg-surface rounded-2xl shadow-xl p-6 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-2xl transition-all duration-500">
           <div className="absolute top-6 left-8 text-center sm:text-left">
             <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">Process Yield</p>
             <h3 className="text-lg font-black text-brand-900 tracking-tight leading-none">Yield Efficiency</h3>
@@ -2257,7 +2257,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         </div>
 
         {/* Plant Health Summary */}
-        <div className="lg:col-span-3 bg-white rounded-[1.75rem] border border-slate-100 shadow-sm p-6 grid grid-cols-1 md:grid-cols-3 gap-4 hover:shadow-2xl transition-all duration-500 relative">
+        <div className="lg:col-span-3 bg-surface rounded-2xl shadow-xl p-6 grid grid-cols-1 md:grid-cols-3 gap-4 hover:shadow-2xl transition-all duration-500 relative">
           <div className="space-y-6 relative overflow-hidden">
             {/* Animated Glow Dot */}
             <div className="flex items-center gap-4">

@@ -289,7 +289,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+        <div className="glass-card p-5 flex items-center justify-between hover:shadow-md transition-shadow">
           <div>
             <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Entries</p>
             <h3 className="text-3xl font-bold text-slate-900 mt-2">{summaryStats.totalEntries}</h3>
@@ -299,7 +299,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+        <div className="glass-card p-5 flex items-center justify-between hover:shadow-md transition-shadow">
           <div>
             <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Average Score</p>
             <h3 className="text-3xl font-bold text-slate-900 mt-2">{summaryStats.avgScore}%</h3>
@@ -309,7 +309,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+        <div className="glass-card p-5 flex items-center justify-between hover:shadow-md transition-shadow">
           <div>
             <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Green</p>
             <h3 className="text-3xl font-bold text-emerald-600 mt-2">{summaryStats.totalGreen}</h3>
@@ -319,7 +319,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-5 flex items-center justify-between hover:shadow-md transition-shadow">
+        <div className="glass-card p-5 flex items-center justify-between hover:shadow-md transition-shadow">
           <div>
             <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">Total Red</p>
             <h3 className="text-3xl font-bold text-rose-600 mt-2">{summaryStats.totalRed}</h3>
@@ -332,7 +332,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top 5 Performers */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center gap-2 mb-6">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             <h3 className="text-lg font-bold text-slate-800">Top 5 Best Performers</h3>
@@ -358,7 +358,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
         </div>
 
         {/* Worst 5 Performers */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6">
+        <div className="glass-card p-6">
           <div className="flex items-center gap-2 mb-6">
             <TrendingDown className="w-5 h-5 text-rose-600" />
             <h3 className="text-lg font-bold text-slate-800">Top 5 Worst Performers</h3>
@@ -384,7 +384,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+      <div className="glass-card overflow-hidden">
         <div className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 border-b border-slate-200/80 bg-slate-50/30">
           <div className="flex items-center gap-3 w-full flex-1">
             {uniqueCampaigns.length > 0 && (

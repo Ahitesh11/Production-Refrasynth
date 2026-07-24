@@ -44,10 +44,11 @@ export default function App() {
     const saved = localStorage.getItem('erp_composition');
     return saved ? JSON.parse(saved) : [];
   });
-  const [masterData, setMasterData] = useState<{ campaigns: string[], products: string[], materials: string[] }>({
+  const [masterData, setMasterData] = useState<{ campaigns: string[], products: string[], materials: string[], inchargeNames: string[] }>({
     campaigns: [],
     products: [],
-    materials: []
+    materials: [],
+    inchargeNames: []
   });
   const [inventoryData, setInventoryData] = useState<any[]>(() => {
     const saved = localStorage.getItem('erp_inventory');
@@ -122,13 +123,14 @@ export default function App() {
     try {
       const urlParam = scriptUrl ? `&url=${encodeURIComponent(scriptUrl)}` : '';
 
+      const ts = Date.now();
       const [masterRes, entriesRes, rangesRes, compositionRes, inventoryRes, usersRes] = await Promise.all([
-        fetch(`/api/proxy?action=getMaster${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getAllEntries${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getParameterRanges${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getComposition${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getInventory${urlParam}`).catch(e => ({ ok: false, error: e })),
-        fetch(`/api/proxy?action=getUsers${urlParam}`).catch(e => ({ ok: false, error: e }))
+        fetch(`/api/proxy?action=getMaster${urlParam}&_t=${ts}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getAllEntries${urlParam}&_t=${ts}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getParameterRanges${urlParam}&_t=${ts}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getComposition${urlParam}&_t=${ts}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getInventory${urlParam}&_t=${ts}`).catch(e => ({ ok: false, error: e })),
+        fetch(`/api/proxy?action=getUsers${urlParam}&_t=${ts}`).catch(e => ({ ok: false, error: e }))
       ]);
 
       if ('ok' in masterRes && masterRes.ok) {
@@ -244,6 +246,10 @@ export default function App() {
         // Use userNames from Login sheet for operator/chemist name fields
         if (field.name === 'name' || field.name === 'chemist_name' || field.name === 'reported_by') {
           return { ...field, type: 'select' as const, options: userNames.length > 0 ? userNames : (field.options || []) };
+        }
+
+        if (field.name === 'incharge_name') {
+          return { ...field, options: masterData.inchargeNames && masterData.inchargeNames.length > 0 ? masterData.inchargeNames : field.options };
         }
 
         return field;
@@ -428,14 +434,19 @@ export default function App() {
                           'remarks_physical', 'planned1', 'actual1', 'delay1', 'al2o3', 'fe2o3',
                           'sio2', 'mgo', 'tio2', 'cao', 'remarks_chemical'
                       ];
-                      const values = [timestamp, ...fieldsOrder.map(key => data[key] || '')];
+                      const partialData: Record<string, any> = { 'Timestamp': timestamp };
+                      const rmFields = departmentsWithMaster.find(d => d.id === 'rm')!.fields;
+                      fieldsOrder.forEach(key => {
+                        const field = rmFields.find(f => f.name === key);
+                        if (field) partialData[field.label] = data[key] || '';
+                      });
 
                       try {
                           const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
                           const response = await fetch(proxyUrl, {
                               method: 'POST',
                               headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ sheetName: 'RM', entryId: timestamp, values: values })
+                              body: JSON.stringify({ sheetName: 'RM', entryId: timestamp, values: [], partialData })
                           });
                           const resData = await response.json().catch(() => ({}));
                           if (!response.ok || resData.result === 'error') {

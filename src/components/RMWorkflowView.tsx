@@ -241,7 +241,7 @@ export default function RMWorkflowView({ department, entries, onAddEntry, onUpda
                                     field.type === 'text' ? "col-span-2" : ""
                                 )}>
                                     <label className="text-sm font-semibold text-slate-700 ml-1">
-                                        {field.label}
+                                        {field.label} {!field.name.includes('remarks') && <span className="text-red-500">*</span>}
                                     </label>
                                     <input
                                         name={field.name}

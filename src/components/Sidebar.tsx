@@ -60,8 +60,8 @@ const NavItem = ({ id, name, icon: Icon, activeId, onSelect, isCollapsed }: NavI
         "group relative flex items-center w-full transition-all duration-200 rounded-lg mb-0.5",
         isCollapsed ? "justify-center p-2.5" : "px-3 py-2",
         isActive
-          ? "bg-brand-50/80 text-brand-700"
-          : "text-slate-500 hover:bg-slate-50/80 hover:text-brand-900"
+          ? "nav-item-active"
+          : "text-slate-500 hover:bg-slate-50/80 hover:text-foreground"
       )}
     >
       {isActive && (

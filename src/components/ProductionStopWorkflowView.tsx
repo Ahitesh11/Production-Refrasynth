@@ -430,7 +430,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                         <div className="grid grid-cols-2 gap-4">
                             {fields.map(field => (
                                 <div key={field.name} className={cn("space-y-1.5 text-left", field.type === 'text' ? "col-span-2" : "")}>
-                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{field.label}</label>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">{field.label} {!field.name.includes('delay') && <span className="text-red-500">*</span>}</label>
                                     {field.type === 'select' ? (
                                         <select
                                             name={field.name}

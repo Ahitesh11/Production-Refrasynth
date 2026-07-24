@@ -224,9 +224,9 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           {canAdd && (
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl font-medium transition-all shadow-lg shadow-brand-200/50 active:scale-95"
+              className="btn-primary"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4" />
               Add New Entry
             </button>
           )}
@@ -234,7 +234,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       </div>
 
       {/* Table Card */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+      <div className="glass-card overflow-hidden">
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 border-b border-slate-200/80 bg-slate-50/30">
           <div className="flex items-center gap-3 w-full flex-1">
@@ -242,7 +242,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
               <select
                 value={selectedCampaign}
                 onChange={(e) => setSelectedCampaign(e.target.value)}
-                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer shrink-0"
+                className="form-input w-auto shrink-0 py-2 text-xs font-bold"
               >
                 <option value="All">All Campaigns</option>
                 {uniqueCampaigns.map(c => (
@@ -257,7 +257,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                 placeholder="Search entries..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-400 transition-all placeholder:text-slate-400"
+                className="form-input w-full pl-10"
               />
             </div>
           </div>
@@ -270,8 +270,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   className={cn(
                     "px-4 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all",
                     protocolFilter === opt
-                      ? "bg-white text-brand-900 shadow-sm"
-                      : "text-slate-400 hover:text-slate-600"
+                      ? "bg-surface shadow-sm text-primary-dark border border-primary-light"
+                      : "text-slate-500 hover:text-foreground"
                   )}
                 >
                   {opt}
@@ -297,7 +297,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           <div className="flex flex-wrap items-center gap-2 px-6 py-3 bg-slate-50/20 border-b border-slate-200/60">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mr-1">View:</span>
             {([
-              { id: 'all', label: 'All Entries', color: 'bg-brand-800 text-white' },
+              { id: 'all', label: 'All Entries', color: 'bg-primary text-white shadow-md' },
               { id: 'fineness', label: 'Fineness', color: 'bg-emerald-600 text-white' },
               { id: 'lab', label: 'Lab', color: 'bg-brand-600 text-white' },
             ] as const).map(tab => (
@@ -542,6 +542,12 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                         }
                       }
 
+                      if (field.name.toLowerCase().includes('shift') && typeof value === 'string') {
+                        if (value === 'Shift A') cellClass = cn(cellClass, "badge-shift-a");
+                        else if (value === 'Shift B') cellClass = cn(cellClass, "badge-shift-b");
+                        else if (value === 'Shift C') cellClass = cn(cellClass, "badge-shift-c");
+                      }
+
                       return (
                         <td key={field.name} className="px-4 py-2.5">
                           <span className={cellClass}>
@@ -562,8 +568,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
 
       {/* Add Entry Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-brand-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) setIsModalOpen(false) }}>
+          <div className="bg-surface w-full max-w-2xl rounded-2xl shadow-xl overflow-hidden modal-container">
             <DepartmentForm
               department={department}
               onClose={() => setIsModalOpen(false)}
@@ -588,18 +594,16 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
 
                 {
                   setSyncingId(newEntry.id);
-                  const values = [
-                    newEntry.timestamp,
-                    ...department.fields
-                      .filter(f => f.name !== 'entry_type')
-                      .map(f => {
-                        let val = formattedData[f.name] || '';
-                        if (f.type === 'date' && val && !/^\d{2}\/\d{2}\/\d{4}/.test(val)) {
-                          try { val = format(new Date(val), 'MM/dd/yyyy'); } catch (e) { }
-                        }
-                        return val;
-                      })
-                  ];
+                  const partialData: Record<string, any> = { 'Timestamp': newEntry.timestamp };
+                  department.fields.forEach(f => {
+                    if (f.name !== 'entry_type') {
+                      let val = formattedData[f.name] || '';
+                      if (f.type === 'date' && val && !/^\d{2}\/\d{2}\/\d{4}/.test(val)) {
+                        try { val = format(new Date(val), 'MM/dd/yyyy'); } catch (e) { }
+                      }
+                      partialData[f.label] = val;
+                    }
+                  });
 
                   try {
                     const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
@@ -609,7 +613,8 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                       body: JSON.stringify({
                         sheetName: department.name,
                         entryId: newEntry.timestamp,
-                        values: values
+                        values: [],
+                        partialData: partialData
                       }),
                     });
                     const resData = await response.json().catch(() => ({}));

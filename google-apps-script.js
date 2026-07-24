@@ -50,10 +50,30 @@ function doGet(e) {
       if (data[j][matIdx]) materials.push(String(data[j][matIdx]));
     }
 
+    var inchargeNames = [];
+    var allSheets = ss.getSheets();
+    var inchargeSheet = null;
+    for (var s = 0; s < allSheets.length; s++) {
+      if (allSheets[s].getName().trim().toLowerCase() === "incharge name") {
+        inchargeSheet = allSheets[s];
+        break;
+      }
+    }
+    
+    if (inchargeSheet) {
+      var inchargeData = inchargeSheet.getDataRange().getValues();
+      for (var k = 1; k < inchargeData.length; k++) {
+        if (inchargeData[k][0]) {
+          inchargeNames.push(String(inchargeData[k][0]).trim());
+        }
+      }
+    }
+
     return createJsonResponse({
       campaigns: campaigns.filter(String),
       products: products.filter(String),
       materials: materials.filter(String),
+      inchargeNames: inchargeNames.filter(String),
       status: "success"
     });
   }
@@ -443,28 +463,46 @@ function doPost(e) {
       // If the sheet looks empty, use row 2 (after headers)
       if (newRowIdx < 2) newRowIdx = 2;
 
-      for (var k = 0; k < values.length; k++) {
-        var val = values[k];
-        var colHeader = headers[k];
-
-        // 1. Skip writing empty strings to let sheet formulas (e.g. ArrayFormula) breathe
-        if (val === "" || val === null) continue;
-
-        // 2. Don't write to Planned columns in RM initial creation 
-        // (This allows your formulas to initialize automatically)
-        if (sheetName === "RM" && (colHeader === "Planned" || colHeader === "Planned1" || colHeader === "Delay" || colHeader === "Delay1")) {
-          continue;
+      if (partialData && Object.keys(partialData).length > 0 && (!values || values.length === 0)) {
+        for (var key in partialData) {
+          var colIdx = headers.indexOf(key);
+          if (colIdx > -1) {
+            var val = partialData[key];
+            var colHeader = headers[colIdx];
+            if (val === "" || val === null) continue;
+            
+            if (sheetName === "RM" && (colHeader === "Planned" || colHeader === "Planned1" || colHeader === "Delay" || colHeader === "Delay1")) continue;
+            if (sheetName === "Why Production Stop" && (colHeader === "Planned" || colHeader === "Delay")) continue;
+            if (typeof val === 'string' && val.length > 45000) {
+              val = "Error: Image too large to save directly. Base64 length: " + val.length;
+            }
+            sheet.getRange(newRowIdx, colIdx + 1).setValue(val);
+          }
         }
-        if (sheetName === "Why Production Stop" && (colHeader === "Planned" || colHeader === "Delay")) {
-          continue;
-        }
+      } else {
+        for (var k = 0; k < values.length; k++) {
+          var val = values[k];
+          var colHeader = headers[k];
 
-        // --- SAFETY: Prevent 50,000 character limit exception ---
-        if (typeof val === 'string' && val.length > 45000) {
-          val = "Error: Image too large to save directly. Base64 length: " + val.length;
-        }
+          // 1. Skip writing empty strings to let sheet formulas (e.g. ArrayFormula) breathe
+          if (val === "" || val === null) continue;
 
-        sheet.getRange(newRowIdx, k + 1).setValue(val);
+          // 2. Don't write to Planned columns in RM initial creation 
+          // (This allows your formulas to initialize automatically)
+          if (sheetName === "RM" && (colHeader === "Planned" || colHeader === "Planned1" || colHeader === "Delay" || colHeader === "Delay1")) {
+            continue;
+          }
+          if (sheetName === "Why Production Stop" && (colHeader === "Planned" || colHeader === "Delay")) {
+            continue;
+          }
+
+          // --- SAFETY: Prevent 50,000 character limit exception ---
+          if (typeof val === 'string' && val.length > 45000) {
+            val = "Error: Image too large to save directly. Base64 length: " + val.length;
+          }
+
+          sheet.getRange(newRowIdx, k + 1).setValue(val);
+        }
       }
     }
 

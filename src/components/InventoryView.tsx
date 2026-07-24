@@ -168,8 +168,8 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
           className={cn(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
             activeTab === 'overview'
-              ? "bg-white text-brand-600 shadow-sm border border-slate-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              ? "bg-surface shadow-sm text-primary-dark border border-primary-light"
+              : "text-slate-500 hover:text-foreground hover:bg-slate-100"
           )}
         >
           <Package className="w-4 h-4" />
@@ -180,8 +180,8 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
           className={cn(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
             activeTab === 'history'
-              ? "bg-white text-brand-600 shadow-sm border border-slate-200"
-              : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+              ? "bg-surface shadow-sm text-primary-dark border border-primary-light"
+              : "text-slate-500 hover:text-foreground hover:bg-slate-100"
           )}
         >
           <HistoryIcon className="w-4 h-4" />
@@ -199,59 +199,7 @@ export default function InventoryView({ inventoryData, sb3GroundDepartment, entr
             transition={{ duration: 0.3 }}
             className="space-y-4"
           >
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              {/* Most Consumed Materials */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <TrendingUp className="w-5 h-5 text-emerald-600" />
-                  <h3 className="text-lg font-bold text-slate-800">Most Consumed Materials</h3>
-                </div>
-                {topUsedItems.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={topUsedItems} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                        <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} tickFormatter={(val) => val.split(' ')[0]} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                        <Bar dataKey="totalUsed" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                          {topUsedItems.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill="#10b981" />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-sm text-slate-400">No consumption data</div>
-                )}
-              </div>
 
-              {/* Lowest Stock Materials */}
-              <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6">
-                <div className="flex items-center gap-2 mb-6">
-                  <AlertTriangle className="w-5 h-5 text-rose-600" />
-                  <h3 className="text-lg font-bold text-slate-800">Lowest Stock Alerts</h3>
-                </div>
-                {lowestStockItems.length > 0 ? (
-                  <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={lowestStockItems} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
-                        <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} tickFormatter={(val) => val.split(' ')[0]} />
-                        <YAxis tick={{ fontSize: 12 }} />
-                        <Tooltip cursor={{ fill: 'rgba(0,0,0,0.02)' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-                        <Bar dataKey="actualStock" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                          {lowestStockItems.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.actualStock <= 0 ? "#f43f5e" : "#f59e0b"} />
-                          ))}
-                        </Bar>
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                ) : (
-                  <div className="h-64 flex items-center justify-center text-sm text-slate-400">No stock data</div>
-                )}
-              </div>
-            </div>
 
             {/* AI Recommendation Widget */}
             {stockRecommendations.campaign && stockRecommendations.recommendations.length > 0 && (
