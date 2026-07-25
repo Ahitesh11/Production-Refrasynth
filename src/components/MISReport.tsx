@@ -69,7 +69,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
       return ['kiln', 'dgu', 'balling_disc', 'product_house', 'drop_test'].includes(e.departmentId);
     });
 
-    return filtered.map(entry => {
+    const evaluated = filtered.map(entry => {
       const department = departments.find(d => d.id === entry.departmentId);
       if (!department) return { entry, green: 0, red: 0, total: 0, score: 0 };
 
@@ -188,10 +188,31 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
         }
       });
 
-      const personName = entry.data['Name'] || entry.data.name || entry.data['Name of Chemist'] || entry.data.chemist_name || entry.data['Reported By'] || entry.data.reported_by || '-';
+      const personName = entry.data['Incharge Name'] || entry.data.incharge_name || entry.data.incharge || '-';
       const score = total > 0 ? Math.round((green / total) * 100) : 0;
       return { entry, department, personName, green, red, total, score };
-    }).filter(e => e.total > 0).sort((a, b) => new Date(b.entry.timestamp).getTime() - new Date(a.entry.timestamp).getTime());
+    }).filter(e => e.total > 0);
+
+    const grouped: Record<string, any> = {};
+    evaluated.forEach(e => {
+       let dateStr = 'Unknown Date';
+       try { dateStr = format(new Date(e.entry.timestamp), 'dd MMM yyyy'); } catch(err) {}
+       const incharge = e.personName;
+       const key = `${dateStr}_${incharge}`;
+       if (!grouped[key]) {
+          grouped[key] = { id: key, date: dateStr, personName: incharge, green: 0, red: 0, total: 0, score: 0, departments: new Set<string>(), entriesCount: 0, timestamp: e.entry.timestamp };
+       }
+       grouped[key].green += e.green;
+       grouped[key].red += e.red;
+       grouped[key].total += e.total;
+       if (e.department?.name) grouped[key].departments.add(e.department.name);
+       grouped[key].entriesCount++;
+    });
+
+    return Object.values(grouped).map(g => {
+       g.score = g.total > 0 ? Math.round((g.green / g.total) * 100) : 0;
+       return g;
+    }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   }, [entries, departments, parameterRanges, selectedCampaign, selectedName, selectedDepartment, startDate, endDate]);
 
   const summaryStats = useMemo(() => {
@@ -209,7 +230,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
 
     return {
       avgScore: Math.round(totalScore / evaluatedEntries.length),
-      totalEntries: evaluatedEntries.length,
+      totalEntries: evaluatedEntries.reduce((sum, e) => sum + e.entriesCount, 0),
       totalGreen,
       totalRed
     };
@@ -240,23 +261,19 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
   }, [evaluatedEntries]);
 
   const handleExport = () => {
-    const headers = ['Timestamp', 'Name', 'Department', 'Campaign', 'Score (%)', 'Green Params', 'Red Params', 'Total Params'];
-    const rows = evaluatedEntries.map(({ entry, department, personName, green, red, total, score }) => {
-      const campaign = entry.data['Campaign No.'] || entry.data.campaign_no || entry.data.campaign || entry.data['Campaign'] || '-';
-      let formattedDate = entry.timestamp;
-      try {
-        formattedDate = format(new Date(entry.timestamp), 'dd MMM yyyy, hh:mm a');
-      } catch (e) {}
+    const headers = ['Date', 'Incharge Name', 'Departments', 'Total Entries', 'Score (%)', 'Green Params', 'Red Params', 'Total Params'];
+    const rows = evaluatedEntries.map(e => {
+      const depts = Array.from(e.departments).join(' | ');
       
       return [
-        `"${formattedDate}"`,
-        `"${personName}"`,
-        `"${department?.name || ''}"`,
-        `"${campaign}"`,
-        score,
-        green,
-        red,
-        total
+        `"${e.date}"`,
+        `"${e.personName}"`,
+        `"${depts}"`,
+        e.entriesCount,
+        e.score,
+        e.green,
+        e.red,
+        e.total
       ].join(',');
     });
 
@@ -456,10 +473,10 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
           <table className="w-full text-left text-sm whitespace-nowrap">
             <thead className="bg-slate-50 border-b border-slate-200">
               <tr>
-                <th className="px-6 py-4 font-semibold text-slate-600">Timestamp</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Name</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Department</th>
-                <th className="px-6 py-4 font-semibold text-slate-600">Campaign / Details</th>
+                <th className="px-6 py-4 font-semibold text-slate-600">Date</th>
+                <th className="px-6 py-4 font-semibold text-slate-600">Incharge Name</th>
+                <th className="px-6 py-4 font-semibold text-slate-600">Departments</th>
+                <th className="px-6 py-4 font-semibold text-slate-600 text-center">Entries</th>
                 <th className="px-6 py-4 font-semibold text-slate-600 text-center">Score</th>
                 <th className="px-6 py-4 font-semibold text-slate-600 text-center">Parameters</th>
               </tr>
@@ -467,7 +484,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
             <tbody className="divide-y divide-slate-100">
               {evaluatedEntries.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
                     <div className="flex flex-col items-center justify-center">
                       <BarChart3 className="w-12 h-12 text-slate-300 mb-3" />
                       <p className="text-lg font-medium text-slate-600">No evaluated entries found</p>
@@ -476,50 +493,46 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
                   </td>
                 </tr>
               ) : (
-                evaluatedEntries.map(({ entry, department, personName, green, red, total, score }) => {
-                  const campaign = entry.data['Campaign No.'] || entry.data.campaign_no || entry.data.campaign || entry.data['Campaign'] || '-';
-                  let formattedDate = entry.timestamp;
-                  try {
-                    formattedDate = format(new Date(entry.timestamp), 'dd MMM yyyy, hh:mm a');
-                  } catch (e) {}
+                evaluatedEntries.map((e) => {
+                  const depts = Array.from(e.departments as Set<string>).join(', ');
 
                   return (
-                    <tr key={entry.id} className="hover:bg-slate-50 transition-colors">
+                    <tr key={e.id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4 text-slate-600 font-medium">
-                        {formattedDate}
+                        {e.date}
                       </td>
                       <td className="px-6 py-4 text-slate-600 font-medium">
-                        {personName}
+                        {e.personName}
                       </td>
                       <td className="px-6 py-4 text-slate-900 font-semibold">
-                        {department?.name}
+                        {depts}
                       </td>
-                      <td className="px-6 py-4 text-slate-500">
-                        {campaign}
+                      <td className="px-6 py-4 text-slate-500 text-center">
+                        {e.entriesCount}
                       </td>
                       <td className="px-6 py-4 text-center">
                         <div className="inline-flex items-center justify-center font-bold px-3 py-1.5 rounded-lg border-2 w-20 shadow-sm"
                           style={{
-                            borderColor: score >= 80 ? '#10b981' : score >= 50 ? '#f59e0b' : '#ef4444',
-                            backgroundColor: score >= 80 ? '#ecfdf5' : score >= 50 ? '#fffbeb' : '#fef2f2',
-                            color: score >= 80 ? '#059669' : score >= 50 ? '#d97706' : '#dc2626'
+                            borderColor: e.score >= 80 ? '#10b981' : e.score >= 50 ? '#f59e0b' : '#ef4444',
+                            backgroundColor: e.score >= 80 ? '#ecfdf5' : e.score >= 50 ? '#fffbeb' : '#fef2f2',
+                            color: e.score >= 80 ? '#059669' : e.score >= 50 ? '#d97706' : '#dc2626'
                           }}
                         >
-                          {score}%
+                          {e.score}%
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center justify-center gap-4">
                            <div className="flex items-center text-emerald-600 font-bold bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
                              <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                             {green}
+                             {e.green}
                            </div>
                            <div className="flex items-center text-rose-600 font-bold bg-rose-50 px-2.5 py-1 rounded-md border border-rose-100">
                              <AlertCircle className="w-4 h-4 mr-1.5" />
-                             {red}
+                             {e.red}
                            </div>
                            <div className="text-slate-400 text-xs font-medium ml-2">
-                             (Total {total})
+                             (Total {e.total})
                            </div>
                         </div>
                       </td>
