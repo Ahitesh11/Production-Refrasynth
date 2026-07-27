@@ -17,6 +17,7 @@ export type DepartmentId =
   | 'production_stop'
   | 'opening_closing'
   | 'inventory'
+  | 'campaign_opening'
   | 'shift_allocation';
 
 export interface User {
@@ -533,7 +534,7 @@ export const DEPARTMENTS: Department[] = [
     category: 'Process',
     fields: [
       { name: 'date', label: 'Date', type: 'date' },
-      { name: 'shift', label: 'Shift', type: 'select', options: ['A', 'B', 'C', 'General'] },
+      { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'department', label: 'Department', type: 'select', options: ['DGU', 'Mixer', 'Balling Disc', 'Kiln', 'Cooler', 'Product House', 'SB3 Ground', 'SB3 Hopper'] },
       { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] }
     ]
