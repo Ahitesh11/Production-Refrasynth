@@ -16,7 +16,8 @@ export type DepartmentId =
   | 'spillage'
   | 'production_stop'
   | 'opening_closing'
-  | 'inventory';
+  | 'inventory'
+  | 'shift_allocation';
 
 export interface User {
   username: string;
@@ -524,6 +525,17 @@ export const DEPARTMENTS: Department[] = [
       { name: 'use_stock', label: 'Use Stock', type: 'number', readonly: true },
       { name: 'issue_qty', label: 'Issue Qty', type: 'number', readonly: true },
       { name: 'actual_stock', label: 'Actual Stock', type: 'number', readonly: true },
+    ]
+  },
+  {
+    id: 'shift_allocation',
+    name: 'Shift Allocation',
+    category: 'Process',
+    fields: [
+      { name: 'date', label: 'Date', type: 'date' },
+      { name: 'shift', label: 'Shift', type: 'select', options: ['A', 'B', 'C', 'General'] },
+      { name: 'department', label: 'Department', type: 'select', options: ['DGU', 'Mixer', 'Balling Disc', 'Kiln', 'Cooler', 'Product House', 'SB3 Ground', 'SB3 Hopper'] },
+      { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] }
     ]
   }
 ];

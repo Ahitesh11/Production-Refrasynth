@@ -125,7 +125,7 @@ function doGet(e) {
   if (action === "getAllEntries") {
     var sheets = ss.getSheets();
     var allEntries = [];
-    // Automatically fetches data from Campaign Opening, Campaign Closing, etc.
+    // Automatically fetches data from Campaign Opening, Shift Allocation, etc.
     var excluded = ["Master", "Composition Records"];
 
     sheets.forEach(function (sheet) {

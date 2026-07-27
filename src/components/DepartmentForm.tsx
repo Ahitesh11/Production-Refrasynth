@@ -79,6 +79,56 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     });
   }, [formData.opening_balance, formData.qty1, formData.qty2, formData.qty3, formData.qty4, formData.qty5, formData.qty6, formData.ispileg_qty, department.id]);
 
+  // Auto-fill Incharge Name based on Shift Allocation
+  useEffect(() => {
+    if (!formData.date || !formData.shift || !department.name) return;
+    
+    // Only try to auto-fill if the department actually has an incharge_name field
+    if (!department.fields.some(f => f.name === 'incharge_name')) return;
+
+    try {
+      const saved = localStorage.getItem('erp_entries');
+      const entries = saved ? JSON.parse(saved) : [];
+      
+      const allocation = entries.find((e: any) => {
+        const deptId = String(e.departmentId || '').toLowerCase().replace(/\s+/g, '_');
+        if (deptId !== 'shift_allocation') return false;
+        
+        const d = e.data;
+        const entryDate = d['Date'] || d['date'] || e.timestamp;
+        const entryShift = d['Shift'] || d['shift'] || d['Date'] || d['date'];
+        const entryDept = d['Department'] || d['department'] || d['Shift'] || d['shift'];
+        
+        let formattedEntryDate = String(entryDate).trim();
+        try {
+           // Handle various date formats by forcing it through Date object if valid
+           const parsedDate = new Date(formattedEntryDate);
+           if (!isNaN(parsedDate.getTime())) {
+             formattedEntryDate = format(parsedDate, 'yyyy-MM-dd');
+           }
+        } catch(err){}
+
+        const normEntryShift = String(entryShift).toLowerCase().replace('shift', '').trim();
+        const normFormShift = String(formData.shift).toLowerCase().replace('shift', '').trim();
+        const normEntryDept = String(entryDept).toLowerCase().trim();
+        const normFormDept = String(department.name).toLowerCase().trim();
+
+        return formattedEntryDate === formData.date &&
+               normEntryShift === normFormShift &&
+               normEntryDept === normFormDept;
+      });
+
+      if (allocation) {
+        const inchargeName = allocation.data['Incharge Name'] || allocation.data['incharge_name'];
+        if (inchargeName) {
+          setFormData(prev => ({ ...prev, incharge_name: inchargeName }));
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse shift allocation", e);
+    }
+  }, [formData.date, formData.shift, department.name, department.fields]);
+
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
