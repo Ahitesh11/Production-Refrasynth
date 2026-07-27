@@ -114,12 +114,14 @@ export default function Sidebar({
         ...(user?.type === 'Admin' ? [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }] : []),
         ...(user?.type === 'Admin' ? [{ id: 'mis_report', name: 'MIS Report', icon: BarChart3 }] : []),
         ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm_entry', name: 'RM Entry', icon: Zap }] : []),
-        ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'RM Workflow', icon: Activity }] : []),
         ...(departments.some(d => d.id === 'sb3_ground' || d.id === 'inventory') ? [{ id: 'inventory', name: 'Issue To SB3', icon: Database }] : []),
       ]
     },
     {
       name: 'Lab',
+      items: [
+        ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'RM Workflow', icon: Activity }] : []),
+      ],
       depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm'),
       icon: FlaskConical
     },

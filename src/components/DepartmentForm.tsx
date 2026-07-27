@@ -120,8 +120,10 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
   const lbdFields = department.fields.filter(f => f.name.startsWith('lbd_h'));
   const apFields = department.fields.filter(f => /^ap_h\d$/.test(f.name));
   const bdFields = department.fields.filter(f => /^bd_h\d$/.test(f.name));
+  const tempFields = department.fields.filter(f => /^temp_h\d$/.test(f.name));
+  const moistureFields = department.fields.filter(f => /^moisture_h\d$/.test(f.name));
 
-  const gridPrefixes = ['fineness_', 'gbm_', 'drop_', 'lbd_h', 'ap_h', 'bd_h'];
+  const gridPrefixes = ['fineness_', 'gbm_', 'drop_', 'lbd_h', 'ap_h', 'bd_h', 'temp_h', 'moisture_h'];
 
   const otherFields = department.fields.filter(f => {
     const isGrid = gridPrefixes.some(p => f.name.startsWith(p));
@@ -148,6 +150,14 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
         return f.name !== 'shift'; // Hide Shift selection in Daily mode
       }
     }
+    
+    if (department.id === 'mixer') {
+      const mode = formData.entry_type || 'Shift';
+      if (mode === 'Daily') {
+        return f.name !== 'shift';
+      }
+    }
+
     return true;
   });
 
@@ -162,7 +172,9 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     { fields: dropFields, title: 'Drop Test Data', labelPrefixes: ['Drop ', 'Drop Test '], accent: 'bg-brand-600' },
     { fields: lbdFields, title: 'LBD Readings', labelPrefixes: ['LBD '], accent: 'bg-brand-400' },
     { fields: apFields, title: 'AP Measurements', labelPrefixes: ['AP '], accent: 'bg-emerald-600' },
-    { fields: bdFields, title: 'BD Measurements', labelPrefixes: ['BD '], accent: 'bg-brand-700' }
+    { fields: bdFields, title: 'BD Measurements', labelPrefixes: ['BD '], accent: 'bg-brand-700' },
+    { fields: tempFields, title: 'Temperature Data', labelPrefixes: ['Temperature '], accent: 'bg-rose-500' },
+    { fields: moistureFields, title: 'Moisture Data', labelPrefixes: ['Moisture '], accent: 'bg-cyan-500' }
   ].filter(grid => {
     if (grid.fields.length === 0) return false;
     const mode = formData.entry_type || 'Shift';
@@ -172,6 +184,9 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
 
     // DGU logic: Hide Fineness in Daily mode
     if (department.id === 'dgu' && mode === 'Daily' && grid.title === 'Fineness Data') return false;
+
+    // Mixer logic: Hide Temperature and Moisture in Daily mode
+    if (department.id === 'mixer' && mode === 'Daily' && (grid.title === 'Temperature Data' || grid.title === 'Moisture Data')) return false;
 
     return true;
   });
@@ -203,11 +218,11 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
 
       <form onSubmit={handleSubmit} className="flex flex-col">
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {/* Protocol Selector for Kiln and DGU */}
-          {(department.id === 'kiln' || department.id === 'dgu') && (
+          {/* Protocol Selector for Kiln, DGU, and Mixer */}
+          {(department.id === 'kiln' || department.id === 'dgu' || department.id === 'mixer') && (
             <div className="flex flex-col items-center space-y-3 pt-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                {department.id === 'kiln' ? 'Kiln Protocol' : 'DGU Protocol'}
+                {department.id === 'kiln' ? 'Kiln Protocol' : department.id === 'mixer' ? 'Mixer Protocol' : 'DGU Protocol'}
               </span>
               <div className="inline-flex p-1 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm">
                 {(department.id === 'kiln' ? ['Shift', 'Composite'] : ['Shift', 'Daily']).map((mode) => (
