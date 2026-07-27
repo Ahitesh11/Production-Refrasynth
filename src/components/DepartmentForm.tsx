@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Department } from '../types';
 import { X, Loader2, Database, Activity, Settings, FileText, ChevronRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -29,6 +29,55 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  useEffect(() => {
+    if (!['sb3_ground', 'sb3_hopper', 'ppt'].includes(department.id)) return;
+
+    const saved = localStorage.getItem('erp_entries');
+    const entries = saved ? JSON.parse(saved) : [];
+    
+    // Sort entries by timestamp (latest first)
+    const deptEntries = entries.filter((e: any) => e.departmentId === department.id)
+                               .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    // Only set opening_balance if it hasn't been manually edited and is currently empty
+    setFormData(prev => {
+      if (prev.opening_balance === undefined || prev.opening_balance === '') {
+        const lastEntry = deptEntries[0];
+        const lastClosing = lastEntry ? (parseFloat(lastEntry.data.closing_balance || lastEntry.data['Closing Balance'] || lastEntry.data['Closing Balance (MT)']) || 0) : 0;
+        return { ...prev, opening_balance: lastClosing };
+      }
+      return prev;
+    });
+  }, [department.id, formData.date, formData.shift]);
+
+  // Auto-calculate closing balance
+  useEffect(() => {
+    if (!['sb3_ground', 'ppt'].includes(department.id)) return;
+    
+    setFormData(prev => {
+      const opening = parseFloat(prev.opening_balance) || 0;
+      let closing = opening;
+      
+      if (department.id === 'sb3_ground') {
+        const qty1 = parseFloat(prev.qty1) || 0;
+        const qty2 = parseFloat(prev.qty2) || 0;
+        const qty3 = parseFloat(prev.qty3) || 0;
+        const qty4 = parseFloat(prev.qty4) || 0;
+        const qty5 = parseFloat(prev.qty5) || 0;
+        const qty6 = parseFloat(prev.qty6) || 0;
+        closing = opening + qty1 + qty2 + qty3 + qty4 + qty5 + qty6;
+      } else if (department.id === 'ppt') {
+        const ispileg = parseFloat(prev.ispileg_qty) || 0;
+        closing = opening + ispileg;
+      }
+      
+      if (prev.closing_balance !== closing) {
+        return { ...prev, closing_balance: closing };
+      }
+      return prev;
+    });
+  }, [formData.opening_balance, formData.qty1, formData.qty2, formData.qty3, formData.qty4, formData.qty5, formData.qty6, formData.ispileg_qty, department.id]);
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -112,7 +161,10 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
   // Every field must be filled before submitting, except free-text notes/remarks —
   // those are genuinely optional annotations, not core data.
   const OPTIONAL_FIELD_NAMES = ['note', 'remarks_physical', 'remarks_chemical'];
-  const isRequiredField = (name: string) => !OPTIONAL_FIELD_NAMES.includes(name);
+  const isRequiredField = (name: string) => {
+    if (department.id === 'kiln') return false;
+    return !OPTIONAL_FIELD_NAMES.includes(name);
+  };
 
   const finenessFields = department.fields.filter(f => f.name.startsWith('fineness_'));
   const gbmFields = department.fields.filter(f => f.name.startsWith('gbm_'));
@@ -154,7 +206,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     if (department.id === 'mixer') {
       const mode = formData.entry_type || 'Shift';
       if (mode === 'Daily') {
-        return f.name !== 'shift';
+        return f.name !== 'shift' && f.name !== 'viscosity';
       }
     }
 
@@ -185,8 +237,8 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     // DGU logic: Hide Fineness in Daily mode
     if (department.id === 'dgu' && mode === 'Daily' && grid.title === 'Fineness Data') return false;
 
-    // Mixer logic: Hide Temperature and Moisture in Daily mode
-    if (department.id === 'mixer' && mode === 'Daily' && (grid.title === 'Temperature Data' || grid.title === 'Moisture Data')) return false;
+    // Mixer logic: Hide Temperature and Moisture in Shift mode
+    if (department.id === 'mixer' && mode === 'Shift' && (grid.title === 'Temperature Data' || grid.title === 'Moisture Data')) return false;
 
     return true;
   });

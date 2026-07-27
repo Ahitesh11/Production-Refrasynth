@@ -176,8 +176,14 @@ export const DEPARTMENTS: Department[] = [
       { name: 'date', label: 'Date', type: 'date' },
       { name: 'name', label: 'Name', type: 'text' },
       { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] },
-      { name: 'ap', label: 'AP', type: 'number' },
-      { name: 'bd', label: 'BD', type: 'number' },
+      { name: 'ap_h2', label: 'AP H2', type: 'number' },
+      { name: 'ap_h4', label: 'AP H4', type: 'number' },
+      { name: 'ap_h6', label: 'AP H6', type: 'number' },
+      { name: 'ap_h8', label: 'AP H8', type: 'number' },
+      { name: 'bd_h2', label: 'BD H2', type: 'number' },
+      { name: 'bd_h4', label: 'BD H4', type: 'number' },
+      { name: 'bd_h6', label: 'BD H6', type: 'number' },
+      { name: 'bd_h8', label: 'BD H8', type: 'number' },
     ]
   },
   {
@@ -210,6 +216,8 @@ export const DEPARTMENTS: Department[] = [
       { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'date', label: 'Date', type: 'date' },
+      { name: 'opening_balance', label: 'Opening Balance (MT)', type: 'number' },
+      { name: 'closing_balance', label: 'Closing Balance (MT)', type: 'number' },
       { name: 'Image Of Weight Slip', label: 'Image Of Weight Slip', type: 'file' },
       { name: 'mat1', label: 'Material 1', type: 'select', options: [] },
       { name: 'qty1', label: 'Qty1', type: 'number' },
@@ -234,6 +242,8 @@ export const DEPARTMENTS: Department[] = [
       { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'date', label: 'Date', type: 'date' },
+      { name: 'opening_balance', label: 'Opening Balance (MT)', type: 'number' },
+      { name: 'closing_balance', label: 'Closing Balance (MT)', type: 'number' },
       { name: 'rm1', label: 'RM1', type: 'select', options: [] },
       { name: 'hopper3', label: 'Hopper 3', type: 'number' },
       { name: 'rm2', label: 'RM2', type: 'select', options: [] },
@@ -256,6 +266,8 @@ export const DEPARTMENTS: Department[] = [
     fields: [
       { name: 'campaign_no', label: 'Campaign No.', type: 'select', options: [] },
       { name: 'date', label: 'Date', type: 'date' },
+      { name: 'opening_balance', label: 'Opening Balance (MT)', type: 'number' },
+      { name: 'closing_balance', label: 'Closing Balance (MT)', type: 'number' },
       { name: 'semi_finished_name', label: 'Semi Finished Product Name', type: 'text' },
       { name: 'ispileg_qty', label: 'Ispileg Re-feeded Qty', type: 'number' },
     ]

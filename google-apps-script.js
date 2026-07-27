@@ -416,9 +416,20 @@ function doPost(e) {
 
     if (rowIndex > -1) {
       if (partialData) {
-        // Selective Update
         for (var key in partialData) {
           var colIdx = headers.indexOf(key);
+          
+          if (colIdx === -1) {
+            var normKey = key.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (var c = 0; c < headers.length; c++) {
+              var normH = headers[c].toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (normH === normKey || normH === normKey.replace('mt', '')) {
+                colIdx = c;
+                break;
+              }
+            }
+          }
+
           if (colIdx > -1) {
             var val = partialData[key];
             if (val !== undefined && val !== null) {
@@ -466,6 +477,18 @@ function doPost(e) {
       if (partialData && Object.keys(partialData).length > 0 && (!values || values.length === 0)) {
         for (var key in partialData) {
           var colIdx = headers.indexOf(key);
+          
+          if (colIdx === -1) {
+            var normKey = key.toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+            for (var c = 0; c < headers.length; c++) {
+              var normH = headers[c].toString().toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (normH === normKey || normH === normKey.replace('mt', '')) {
+                colIdx = c;
+                break;
+              }
+            }
+          }
+
           if (colIdx > -1) {
             var val = partialData[key];
             var colHeader = headers[colIdx];
