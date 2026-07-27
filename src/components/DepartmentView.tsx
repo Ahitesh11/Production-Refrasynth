@@ -242,7 +242,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
               <select
                 value={selectedCampaign}
                 onChange={(e) => setSelectedCampaign(e.target.value)}
-                className="form-input w-auto shrink-0 py-2 text-xs font-bold"
+                className="form-input w-[160px] shrink-0 py-2 text-xs font-bold"
               >
                 <option value="All">All Campaigns</option>
                 {uniqueCampaigns.map(c => (

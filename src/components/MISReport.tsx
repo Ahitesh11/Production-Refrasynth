@@ -408,7 +408,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
               <select
                 value={selectedCampaign}
                 onChange={(e) => setSelectedCampaign(e.target.value)}
-                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer shrink-0"
+                className="w-[160px] px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer shrink-0"
               >
                 <option value="All">All Campaigns</option>
                 {uniqueCampaigns.map(c => (
@@ -421,7 +421,7 @@ export default function MISReport({ entries, departments, parameterRanges }: MIS
               <select
                 value={selectedName}
                 onChange={(e) => setSelectedName(e.target.value)}
-                className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer shrink-0"
+                className="w-[160px] px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-500 focus:border-transparent outline-none transition-all shadow-sm cursor-pointer shrink-0"
               >
                 <option value="All">All Names</option>
                 {uniqueNames.map(n => (

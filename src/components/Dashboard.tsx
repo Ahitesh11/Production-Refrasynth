@@ -570,11 +570,20 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   }, [stats, dateFilter]);
 
   const campaignSummary = useMemo(() => {
-    const summary: Record<string, { ground_total: number; inputs: Record<string, number>; products: Record<string, number>; status: 'Active' | 'Closed' }> = {};
+    const summary: Record<string, { 
+      ground_total: number; 
+      inputs: Record<string, number>; 
+      products: Record<string, number>; 
+      status: 'Active' | 'Closed';
+      opening_stock: number;
+      closing_stock: number;
+    }> = {};
+    
     filteredEntries.forEach(entry => {
       const campaign = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
       if (!campaign || typeof campaign !== 'string') return;
-      if (!summary[campaign]) summary[campaign] = { ground_total: 0, inputs: {}, products: {}, status: 'Active' };
+      if (!summary[campaign]) summary[campaign] = { ground_total: 0, inputs: {}, products: {}, status: 'Active', opening_stock: 0, closing_stock: 0 };
+      
       const d = entry.data;
       if (entry.departmentId === 'sb3_ground') {
         const mats = [
@@ -594,10 +603,24 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         const prodQty = parseFloat(d.qty || d.Qty) || 0;
         if (!summary[campaign].products[prodName]) summary[campaign].products[prodName] = 0;
         summary[campaign].products[prodName] += prodQty;
+      } else if (entry.departmentId === 'campaign_opening') {
+        const stockFields = ['sb3_hopper3', 'sb3_hopper4', 'sb3_hopper5', 'ppt_qty', 'sb4_qty', 'ball_mill', 'bc_10', 'bc_11', 'bc_12', 'bc_13', 'mixture_balling_dics', 'balling_disc_4nos', 'tg_beg', 'kiln', 'cooler'];
+        let total = 0;
+        stockFields.forEach(f => {
+          total += parseFloat(d[f] || d[f.toUpperCase()] || '0') || 0;
+        });
+        summary[campaign].opening_stock = total;
       } else if (entry.departmentId === 'campaign_closing') {
         summary[campaign].status = 'Closed';
+        const stockFields = ['sb3_hopper3', 'sb3_hopper4', 'sb3_hopper5', 'ppt_qty', 'sb4_qty', 'ball_mill', 'bc_10', 'bc_11', 'bc_12', 'bc_13', 'mixture_balling_dics', 'balling_disc_4nos', 'tg_beg', 'kiln', 'cooler'];
+        let total = 0;
+        stockFields.forEach(f => {
+          total += parseFloat(d[f] || d[f.toUpperCase()] || '0') || 0;
+        });
+        summary[campaign].closing_stock = total;
       }
     });
+    
     return Object.entries(summary).map(([id, stats]) => ({ id, ...stats }));
   }, [filteredEntries]);
 
@@ -1372,7 +1395,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <select
                 value={campaignFilter}
                 onChange={(e) => setCampaignFilter(e.target.value)}
-                className="bg-transparent text-slate-700 text-xs font-semibold outline-none cursor-pointer pr-1"
+                className="w-[160px] bg-transparent text-slate-700 text-xs font-semibold outline-none cursor-pointer pr-1"
               >
                 <option value="All">All Campaigns</option>
                 {allCampaigns.map(c => <option key={c} value={c}>{c}</option>)}
@@ -1743,6 +1766,51 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           </div>
         ))}
       </div>
+
+      {/* -- CAMPAIGN LEDGER (PURA HISAB) */}
+      {campaignSummary.length > 0 && (
+        <div className="glass-card overflow-hidden mb-6">
+          <div className="px-5 sm:px-7 py-5 bg-gradient-to-r from-brand-50 to-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-brand-100">
+            <div>
+              <h2 className="text-xl font-black text-brand-900 tracking-tight">Campaign Ledger (Stock Account)</h2>
+              <p className="text-[11px] font-medium text-slate-500 mt-0.5">Real-time material consumption per campaign</p>
+            </div>
+          </div>
+          <div className="p-4 sm:p-6 overflow-x-auto custom-scrollbar">
+            <div className="flex gap-4 pb-2" style={{ minWidth: '800px' }}>
+              {campaignSummary.map((campaign, idx) => {
+                const consumption = campaign.opening_stock + campaign.ground_total - campaign.closing_stock;
+                return (
+                  <div key={idx} className="flex-1 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-[300px]">
+                    <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
+                      <h3 className="text-lg font-black text-brand-800">{campaign.id}</h3>
+                      <StatusBadge status={campaign.status === 'Active' ? 'Active' : 'Moderate'} />
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Opening Stock</span>
+                        <span className="text-sm font-black text-slate-700">{campaign.opening_stock.toFixed(2)} MT</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">+ Receipts (Ground)</span>
+                        <span className="text-sm font-black text-emerald-600">+{campaign.ground_total.toFixed(2)} MT</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">- Closing Stock</span>
+                        <span className="text-sm font-black text-red-500">-{campaign.closing_stock.toFixed(2)} MT</span>
+                      </div>
+                      <div className="pt-3 mt-3 border-t border-slate-100 flex justify-between items-center">
+                        <span className="text-[11px] font-black text-brand-600 uppercase tracking-wider">Total Consumed</span>
+                        <span className="text-lg font-black text-brand-700">{consumption.toFixed(2)} MT</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* -- PRODUCTION ACCOUNTING */}
       <div className="glass-card overflow-hidden mb-6">

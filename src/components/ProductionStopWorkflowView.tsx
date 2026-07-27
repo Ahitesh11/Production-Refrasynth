@@ -618,7 +618,7 @@ export default function ProductionStopWorkflowView({ department, entries, onAddE
                                     <select
                                         value={selectedCampaign}
                                         onChange={(e) => setSelectedCampaign(e.target.value)}
-                                        className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-800/5 transition-all outline-none cursor-pointer shrink-0"
+                                        className="w-[160px] px-4 py-2 bg-slate-50 border border-slate-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-800/5 transition-all outline-none cursor-pointer shrink-0"
                                     >
                                         <option value="All">All Campaigns</option>
                                         {uniqueCampaigns.map(c => (
