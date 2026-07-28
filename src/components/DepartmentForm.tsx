@@ -200,7 +200,14 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     setIsSubmitting(true);
 
     try {
-      await onSuccess(formData);
+      const submitData = { ...formData };
+      if (department.id === 'production_flow' && !submitData.type) {
+        submitData.type = 'SB3';
+      }
+      if (department.id === 'shift_allocation' && !submitData.department) {
+        submitData.department = 'DGU';
+      }
+      await onSuccess(submitData);
     } catch (err) {
       console.error('Submission error:', err);
     } finally {
@@ -231,6 +238,8 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     const isGrid = gridPrefixes.some(p => f.name.startsWith(p));
     if (isGrid) return false;
     if (f.name === 'entry_type' || f.readonly) return false;
+    if (department.id === 'production_flow' && f.name === 'type') return false;
+    if (department.id === 'shift_allocation' && f.name === 'department') return false;
 
     if (department.id === 'kiln') {
       const mode = formData.entry_type || 'Shift';
@@ -257,6 +266,18 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
       const mode = formData.entry_type || 'Shift';
       if (mode === 'Daily') {
         return f.name !== 'shift' && f.name !== 'viscosity';
+      }
+    }
+
+    if (department.id === 'production_flow') {
+      const mode = formData.type || 'SB3';
+      const sb3Fields = ['rm1', 'wf3', 'rm2', 'wf4', 'rm3', 'wf5'];
+      const pptFields = ['liw1', 'liw2', 'liw3', 'liw4', 'liw5'];
+      
+      if (mode === 'SB3') {
+        return !pptFields.includes(f.name);
+      } else if (mode === 'PPT') {
+        return !sb3Fields.includes(f.name);
       }
     }
 
@@ -320,28 +341,44 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
 
       <form onSubmit={handleSubmit} className="flex flex-col">
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {/* Protocol Selector for Kiln, DGU, and Mixer */}
-          {(department.id === 'kiln' || department.id === 'dgu' || department.id === 'mixer') && (
+          {/* Protocol Selector for Kiln, DGU, Mixer, Production Flow, and Shift Allocation */}
+          {(department.id === 'kiln' || department.id === 'dgu' || department.id === 'mixer' || department.id === 'production_flow' || department.id === 'shift_allocation') && (
             <div className="flex flex-col items-center space-y-3 pt-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                {department.id === 'kiln' ? 'Kiln Protocol' : department.id === 'mixer' ? 'Mixer Protocol' : 'DGU Protocol'}
+                {department.id === 'kiln' ? 'Kiln Protocol' : department.id === 'mixer' ? 'Mixer Protocol' : department.id === 'production_flow' ? 'Production Type' : department.id === 'shift_allocation' ? 'Department' : 'DGU Protocol'}
               </span>
-              <div className="inline-flex p-1 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm">
-                {(department.id === 'kiln' ? ['Shift', 'Composite'] : ['Shift', 'Daily']).map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, entry_type: mode }))}
-                    className={cn(
-                      "px-6 py-2 rounded-lg text-[11px] font-bold transition-all duration-300",
-                      (formData.entry_type || 'Shift') === mode
-                        ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/25 scale-105"
-                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
-                    )}
-                  >
-                    {mode}
-                  </button>
-                ))}
+              <div className="inline-flex flex-wrap justify-center p-1 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm gap-1">
+                {(department.id === 'kiln' ? ['Shift', 'Composite'] : department.id === 'production_flow' ? ['SB3', 'PPT'] : department.id === 'shift_allocation' ? ['DGU', 'Mixer', 'Balling Disc', 'Kiln', 'Cooler', 'Product House', 'SB3 Ground', 'SB3 Hopper', 'Production Flow'] : ['Shift', 'Daily']).map((mode) => {
+                  const isSelected = department.id === 'production_flow' 
+                    ? (formData.type || 'SB3') === mode
+                    : department.id === 'shift_allocation'
+                    ? (formData.department || 'DGU') === mode
+                    : (formData.entry_type || 'Shift') === mode;
+                    
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => {
+                        if (department.id === 'production_flow') {
+                          setFormData(prev => ({ ...prev, type: mode }));
+                        } else if (department.id === 'shift_allocation') {
+                          setFormData(prev => ({ ...prev, department: mode }));
+                        } else {
+                          setFormData(prev => ({ ...prev, entry_type: mode }));
+                        }
+                      }}
+                      className={cn(
+                        "px-6 py-2 rounded-lg text-[11px] font-bold transition-all duration-300",
+                        isSelected
+                          ? "bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md shadow-indigo-500/25 scale-105"
+                          : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
+                      )}
+                    >
+                      {mode}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

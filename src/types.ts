@@ -18,7 +18,8 @@ export type DepartmentId =
   | 'opening_closing'
   | 'inventory'
   | 'campaign_opening'
-  | 'shift_allocation';
+  | 'shift_allocation'
+  | 'production_flow';
 
 export interface User {
   username: string;
@@ -535,8 +536,32 @@ export const DEPARTMENTS: Department[] = [
     fields: [
       { name: 'date', label: 'Date', type: 'date' },
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
-      { name: 'department', label: 'Department', type: 'select', options: ['DGU', 'Mixer', 'Balling Disc', 'Kiln', 'Cooler', 'Product House', 'SB3 Ground', 'SB3 Hopper'] },
+      { name: 'department', label: 'Department', type: 'select', options: ['DGU', 'Mixer', 'Balling Disc', 'Kiln', 'Cooler', 'Product House', 'SB3 Ground', 'SB3 Hopper', 'Production Flow'] },
       { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] }
+    ]
+  },
+  {
+    id: 'production_flow',
+    name: 'Production Flow',
+    category: 'Stock',
+    fields: [
+      { name: 'campaign_no', label: 'Campaign No.', type: 'select', options: [] },
+      { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
+      { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
+      { name: 'date', label: 'Date', type: 'date' },
+      { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] },
+      { name: 'type', label: 'Type', type: 'select', options: ['SB3', 'PPT'] },
+      { name: 'rm1', label: 'RM1', type: 'select', options: [] },
+      { name: 'wf3', label: 'WF3', type: 'number' },
+      { name: 'rm2', label: 'RM2', type: 'select', options: [] },
+      { name: 'wf4', label: 'WF4', type: 'number' },
+      { name: 'rm3', label: 'RM3', type: 'select', options: [] },
+      { name: 'wf5', label: 'WF5', type: 'number' },
+      { name: 'liw1', label: 'LIW1', type: 'number' },
+      { name: 'liw2', label: 'LIW2', type: 'number' },
+      { name: 'liw3', label: 'LIW3', type: 'number' },
+      { name: 'liw4', label: 'LIW4', type: 'number' },
+      { name: 'liw5', label: 'LIW5', type: 'number' },
     ]
   }
 ];
