@@ -651,12 +651,12 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     rows.forEach(e => {
       const d = e.data;
       [
-        { name: d.rm1 || d.RM1 || 'RM1', qty: parseFloat(d['Used RM1'] || 0) },
-        { name: d.rm2 || d.RM2 || 'RM2', qty: parseFloat(d['Used RM2'] || 0) },
-        { name: d.rm3 || d.RM3 || 'RM3', qty: parseFloat(d['Used RM3'] || 0) },
-        { name: d.rm4 || d.RM4 || 'RM4', qty: parseFloat(d['Used RM4'] || 0) },
-        { name: d.rm5 || d.RM5 || 'RM5', qty: parseFloat(d['Used RM5'] || 0) },
-        { name: d.rm6 || d.RM6 || 'RM6', qty: parseFloat(d['Used RM6'] || 0) }
+        { name: d.rm1 || d.RM1 || 'RM1', qty: parseFloat(d['Used RM1'] || d.hopper3 || d['Hopper 3'] || 0) },
+        { name: d.rm2 || d.RM2 || 'RM2', qty: parseFloat(d['Used RM2'] || d.hopper4 || d['Hopper 4'] || 0) },
+        { name: d.rm3 || d.RM3 || 'RM3', qty: parseFloat(d['Used RM3'] || d.hopper5 || d['Hopper 5'] || 0) },
+        { name: d.rm4 || d.RM4 || 'RM4', qty: parseFloat(d['Used RM4'] || d.hopper6 || d['Hopper 6'] || 0) },
+        { name: d.rm5 || d.RM5 || 'RM5', qty: parseFloat(d['Used RM5'] || d.hopper7 || d['Hopper 7'] || 0) },
+        { name: d.rm6 || d.RM6 || 'RM6', qty: parseFloat(d['Used RM6'] || d.hopper8 || d['Hopper 8'] || 0) }
       ].forEach(({ name, qty }) => {
         if (name && !isNaN(qty) && qty > 0) {
           const key = String(name).trim();
@@ -772,10 +772,23 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
     const consumptionRows = filteredEntries.filter(e => (e.departmentId as string) === 'consumption');
     const totalConsumption = consumptionRows.reduce((sum, e) => sum + (parseFloat(e.data.Total || e.data.total) || 0), 0);
-    const totalInput = totalConsumption > 0 ? totalConsumption : totalHopper;
-    const consumptionLogic = totalConsumption > 0
-      ? `Sum of "Total" column from Consumption sheet (${consumptionRows.length} entries)`
-      : `Sum of Used RM1-RM6 cols (${hopperStats.count} entries)`;
+
+    const prodFlowRows = filteredEntries.filter(e => e.departmentId === 'production_flow');
+    const totalLIW = prodFlowRows.reduce((sum, e) => {
+      const liw1 = parseFloat(e.data['LIW1'] || e.data['liw1']) || 0;
+      const liw2 = parseFloat(e.data['LIW2'] || e.data['liw2']) || 0;
+      const liw3 = parseFloat(e.data['LIW3'] || e.data['liw3']) || 0;
+      const liw4 = parseFloat(e.data['LIW4'] || e.data['liw4']) || 0;
+      const liw5 = parseFloat(e.data['LIW5'] || e.data['liw5']) || 0;
+      return sum + liw1 + liw2 + liw3 + liw4 + liw5;
+    }, 0);
+
+    const totalInput = totalLIW > 0 ? totalLIW : (totalConsumption > 0 ? totalConsumption : totalHopper);
+    const consumptionLogic = totalLIW > 0
+      ? `Sum of LIW1-LIW5 from Production Flow (${prodFlowRows.length} entries)`
+      : (totalConsumption > 0
+        ? `Sum of "Total" column from Consumption sheet (${consumptionRows.length} entries)`
+        : `Sum of Used RM1-RM6 cols (${hopperStats.count} entries)`);
 
     const netSpillage = totalSpillage - totalPPT;
 
@@ -1267,32 +1280,46 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     
     const makeStat = (key: string, altKey: string, rmName: string) => {
       let entriesWithData = 0;
-      let totalSum = 0;
+      let totalPctSum = 0;
+      let totalMT = 0;
       let outOfLimit = 0;
 
       rows.forEach(e => {
-        const val = parseFloat(e.data[key] || e.data[altKey]);
-        if (!isNaN(val) && val > 0) {
-          entriesWithData++;
-          totalSum += val;
+        const wf3 = parseFloat(e.data['wf3'] || e.data['WF3']) || 0;
+        const wf4 = parseFloat(e.data['wf4'] || e.data['WF4']) || 0;
+        const wf5 = parseFloat(e.data['wf5'] || e.data['WF5']) || 0;
+        const rowTotal = wf3 + wf4 + wf5;
 
-          const rowMin = parseFloat(e.data[`${rmName} Min`] || e.data[`${key} Min`]);
-          const rowMax = parseFloat(e.data[`${rmName} Max`] || e.data[`${key} Max`]);
+        const valMT = parseFloat(e.data[key] || e.data[altKey]);
+
+        if (!isNaN(valMT) && valMT > 0) {
+          totalMT += valMT;
+        }
+
+        if (rowTotal > 0 && !isNaN(valMT)) {
+          const valPct = (valMT / rowTotal) * 100;
           
-          if (!isNaN(rowMin) && !isNaN(rowMax)) {
-            if (val < rowMin || val > rowMax) outOfLimit++;
-          } else {
-            const configured = parameterRanges ? parseRange(parameterRanges[rmName] || parameterRanges[key.toUpperCase()]) : null;
-            if (configured && (val < configured.min || val > configured.max)) outOfLimit++;
+          if (valPct > 0) {
+            entriesWithData++;
+            totalPctSum += valPct;
+
+            const rowMin = parseFloat(e.data[`${rmName} Min`] || e.data[`${key} Min`]);
+            const rowMax = parseFloat(e.data[`${rmName} Max`] || e.data[`${key} Max`]);
+            
+            if (!isNaN(rowMin) && !isNaN(rowMax)) {
+              if (valPct < rowMin || valPct > rowMax) outOfLimit++;
+            } else {
+              const configured = parameterRanges ? parseRange(parameterRanges[rmName] || parameterRanges[key.toUpperCase()]) : null;
+              if (configured && (valPct < configured.min || valPct > configured.max)) outOfLimit++;
+            }
           }
         }
       });
 
-      const avgVal = entriesWithData ? (totalSum / entriesWithData).toFixed(1) : '-';
-      const totalVal = totalSum > 0 ? totalSum.toFixed(1) : '-';
+      const avgPct = entriesWithData ? (totalPctSum / entriesWithData).toFixed(1) : '-';
       const efficiency = entriesWithData ? (((entriesWithData - outOfLimit) / entriesWithData) * 100).toFixed(1) : '0.0';
 
-      return { avg: avgVal, total: totalVal, count: entriesWithData, outOfLimit, efficiency };
+      return { avg: avgPct, total: totalMT.toFixed(1), count: entriesWithData, outOfLimit, efficiency };
     };
 
     const rm1 = getRmName('rm1', 'RM1') || 'RM1';
@@ -1702,16 +1729,24 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             )
           },
           {
-            title: 'Production Flow (SB3)',
+            title: 'Production Flow (WF SB3)',
             icon: Layers,
             color: 'violet',
             component: (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
-                  { label: productionFlowSb3Avg.rm1Name, stat: productionFlowSb3Avg.wf3, color: 'text-violet-600' },
-                  { label: productionFlowSb3Avg.rm2Name, stat: productionFlowSb3Avg.wf4, color: 'text-fuchsia-600' },
-                  { label: productionFlowSb3Avg.rm3Name, stat: productionFlowSb3Avg.wf5, color: 'text-indigo-600' },
-                ].map(row => (
+                  { dtLabel: dropTestAvg.rm1Name, color: 'text-red-600' },
+                  { dtLabel: dropTestAvg.rm2Name, color: 'text-brand-600' },
+                  { dtLabel: dropTestAvg.rm3Name, color: 'text-yellow-600' },
+                ].map((dt, i) => {
+                  const pfItems = [
+                    { label: productionFlowSb3Avg.rm1Name, stat: productionFlowSb3Avg.wf3 },
+                    { label: productionFlowSb3Avg.rm2Name, stat: productionFlowSb3Avg.wf4 },
+                    { label: productionFlowSb3Avg.rm3Name, stat: productionFlowSb3Avg.wf5 },
+                  ];
+                  const match = pfItems.find(p => p.label === dt.dtLabel) || pfItems[i];
+                  return { label: match.label, stat: match.stat, color: dt.color };
+                }).map(row => (
                   <div key={row.label} className="bg-slate-50 rounded-2xl p-5 border border-slate-100/50 flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{row.label}</p>
@@ -2081,186 +2116,260 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       </div>
 
       {/* -- MATERIAL INTELLIGENCE */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-6 gap-5 mb-6">
         {/* SB3 Ground */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Material Total Input</p>
-              <h3 className="text-sm font-black text-brand-900 mt-0.5">SB3 Ground</h3>
-              <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Input minus hopper usage</p>
+        <div className="glass-card p-6 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-brand-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 z-0"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Material Total Input</p>
+                <h3 className="text-sm font-black text-brand-900 mt-0.5">SB3 Ground</h3>
+                <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Input minus hopper usage</p>
+              </div>
+              <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center shadow-sm">
+                <Layers className="w-3.5 h-3.5 text-brand-500" />
+              </div>
             </div>
-            <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
-              <Layers className="w-3.5 h-3.5 text-brand-500" />
-            </div>
+            {materialStats.totals.length === 0 ? (
+              <p className="text-center text-xs text-slate-300 italic py-8">No ground data</p>
+            ) : (
+              <div className="space-y-5">
+                {materialStats.totals.map(([name, qty]) => {
+                  const pct = Math.round((qty / materialStats.totals[0][1]) * 100);
+                  const hopperQty = (hopperStats.totals.find(h => h[0] === name) || [])[1] || 0;
+                  const stock = qty - hopperQty;
+                  return (
+                    <div key={name}>
+                      <div className="flex justify-between text-xs font-semibold mb-1">
+                        <span className="text-slate-700 font-black truncate max-w-[140px] uppercase text-[10px] tracking-wider">{name}</span>
+                        <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT In</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[9px] mb-2 pl-2 border-l-2 border-slate-100">
+                        <span className="text-slate-500 font-bold">
+                          <span className="text-red-400 mr-1">↓</span>To Hopper: {hopperQty.toFixed(1)} MT
+                        </span>
+                        <span className="text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm">
+                          Stock: {stock.toFixed(1)} MT
+                        </span>
+                      </div>
+                      <ProgressBar pct={pct} color="bg-brand-400" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          {materialStats.totals.length === 0 ? (
-            <p className="text-center text-xs text-slate-300 italic py-8">No ground data</p>
-          ) : (
-            <div className="space-y-5">
-              {materialStats.totals.map(([name, qty]) => {
-                const pct = Math.round((qty / materialStats.totals[0][1]) * 100);
-                const hopperQty = (hopperStats.totals.find(h => h[0] === name) || [])[1] || 0;
-                const stock = qty - hopperQty;
-                return (
-                  <div key={name}>
-                    <div className="flex justify-between text-xs font-semibold mb-1">
-                      <span className="text-slate-700 font-black truncate max-w-[140px] uppercase text-[10px] tracking-wider">{name}</span>
-                      <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT In</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[9px] mb-2 pl-2 border-l-2 border-slate-100">
-                      <span className="text-slate-500 font-bold">
-                        <span className="text-red-400 mr-1">↓</span>To Hopper: {hopperQty.toFixed(1)} MT
-                      </span>
-                      <span className="text-emerald-700 font-black bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100/50 shadow-sm">
-                        Stock: {stock.toFixed(1)} MT
-                      </span>
-                    </div>
-                    <ProgressBar pct={pct} color="bg-brand-400" />
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
 
         {/* SB3 Hopper */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-[9px] font-black text-brand-400 uppercase tracking-widest">Raw Material Hopper</p>
-              <h3 className="text-sm font-black text-brand-900 mt-0.5">SB3 Hopper</h3>
-              <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of RM fed to hopper</p>
-            </div>
-            <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
-              <Box className="w-3.5 h-3.5 text-brand-500" />
-            </div>
+        <div className="glass-card p-6 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 z-0"></div>
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full border border-slate-100 flex items-center justify-center shadow-sm z-20 hidden xl:flex text-slate-300">
+            <span className="text-[10px] font-black tracking-tighter">▶</span>
           </div>
-          {hopperStats.totals.length === 0 ? (
-            <p className="text-center text-xs text-slate-300 italic py-8">No hopper data</p>
-          ) : (
-            <div className="space-y-4">
-              {hopperStats.totals.map(([name, qty]) => {
-                const pct = Math.round((qty / hopperStats.totals[0][1]) * 100);
-                return (
-                  <div key={name}>
-                    <div className="flex justify-between text-[10px] tracking-wider uppercase font-semibold mb-1.5">
-                      <span className="text-slate-700 font-black truncate max-w-[140px]">{name}</span>
-                      <span className="text-brand-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
-                    </div>
-                    <ProgressBar pct={pct} color="bg-brand-400" />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Product Output */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Actual Production</p>
-              <h3 className="text-sm font-black text-brand-900 mt-0.5">Product Output</h3>
-              <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of all finished product</p>
-            </div>
-            <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-            </div>
-          </div>
-          {productStats.totals.length === 0 ? (
-            <p className="text-center text-xs text-slate-300 italic py-8">No production data</p>
-          ) : (
-            <div className="space-y-4">
-              {productStats.totals.map(([name, qty]) => {
-                const pct = Math.round((qty / productStats.totals[0][1]) * 100);
-                return (
-                  <div key={name}>
-                    <div className="flex justify-between text-xs font-semibold mb-1.5">
-                      <span className="text-slate-600 truncate max-w-[140px]">{name}</span>
-                      <span className="text-emerald-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
-                    </div>
-                    <ProgressBar pct={pct} color="bg-emerald-500" />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* PPT Re-feed */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest">{pptStats.count} entries</p>
-              <h3 className="text-sm font-black text-brand-900 mt-0.5">PPT (Re-feed)</h3>
-              <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of Ispileg re-feeded qty</p>
-            </div>
-            <div className="w-7 h-7 bg-brand-50 rounded-lg flex items-center justify-center">
-              <RotateCw className="w-3.5 h-3.5 text-brand-500" />
-            </div>
-          </div>
-          {pptStats.count === 0 ? (
-            <p className="text-center text-xs text-slate-300 italic py-8">No PPT data</p>
-          ) : (
-            <div className="space-y-4">
-              <div className="rounded-xl bg-brand-50/50 border border-brand-100 p-4">
-                <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">Total Ispileg</p>
-                <p className="text-2xl font-black text-brand-700 tracking-tight">{pptStats.totalQty.toFixed(1)}</p>
-                <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[9px] font-black text-sky-500 uppercase tracking-widest">Raw Material Hopper</p>
+                <h3 className="text-sm font-black text-brand-900 mt-0.5">SB3 Hopper</h3>
+                <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of RM fed to hopper</p>
               </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Re-feed Ratio</span>
-                <span className="text-sm font-black text-brand-900">
-                  {accountingSummary.totalProduction > 0 ? ((pptStats.totalQty / accountingSummary.totalProduction) * 100).toFixed(1) : '0.0'} %
+              <div className="w-7 h-7 bg-sky-50 rounded-lg flex items-center justify-center shadow-sm">
+                <Box className="w-3.5 h-3.5 text-sky-500" />
+              </div>
+            </div>
+            {hopperStats.totals.length === 0 ? (
+              <p className="text-center text-xs text-slate-300 italic py-8">No hopper data</p>
+            ) : (
+              <div className="space-y-4">
+                {hopperStats.totals.map(([name, qty]) => {
+                  const pct = Math.round((qty / hopperStats.totals[0][1]) * 100);
+                  return (
+                    <div key={name}>
+                      <div className="flex justify-between text-[10px] tracking-wider uppercase font-semibold mb-1.5">
+                        <span className="text-slate-700 font-black truncate max-w-[140px]">{name}</span>
+                        <span className="text-sky-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
+                      </div>
+                      <ProgressBar pct={pct} color="bg-sky-400" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Total WF (SB3) */}
+        <div className="glass-card p-6 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 z-0"></div>
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full border border-slate-100 flex items-center justify-center shadow-sm z-20 hidden xl:flex text-slate-300">
+            <span className="text-[10px] font-black tracking-tighter">▶</span>
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[9px] font-black text-violet-500 uppercase tracking-widest">Weight Feeders</p>
+                <h3 className="text-sm font-black text-brand-900 mt-0.5">Total WF (SB3)</h3>
+                <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of WF3-WF5</p>
+              </div>
+              <div className="w-7 h-7 bg-violet-50 rounded-lg flex items-center justify-center shadow-sm">
+                <Activity className="w-3.5 h-3.5 text-violet-500" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              {[
+                { name: productionFlowSb3Avg.rm1Name || 'WF3', qty: parseFloat(productionFlowAvg.wf3.sum) },
+                { name: productionFlowSb3Avg.rm2Name || 'WF4', qty: parseFloat(productionFlowAvg.wf4.sum) },
+                { name: productionFlowSb3Avg.rm3Name || 'WF5', qty: parseFloat(productionFlowAvg.wf5.sum) }
+              ].map((item, idx, arr) => {
+                const total = arr.reduce((acc, curr) => acc + curr.qty, 0);
+                const pct = total > 0 ? Math.round((item.qty / total) * 100) : 0;
+                return (
+                  <div key={item.name}>
+                    <div className="flex justify-between text-[10px] tracking-wider uppercase font-semibold mb-1.5">
+                      <span className="text-slate-700 font-black truncate max-w-[140px]">{item.name}</span>
+                      <span className="text-violet-600 font-black text-[11px]">{item.qty.toFixed(1)} MT</span>
+                    </div>
+                    <ProgressBar pct={pct} color="bg-violet-400" />
+                  </div>
+                );
+              })}
+              <div className="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Total WF Output</span>
+                <span className="text-sm font-black text-violet-900">
+                  {(parseFloat(productionFlowAvg.wf3.sum) + parseFloat(productionFlowAvg.wf4.sum) + parseFloat(productionFlowAvg.wf5.sum)).toFixed(1)} MT
                 </span>
               </div>
             </div>
-          )}
+          </div>
+        </div>
+
+        {/* Total LIW (PPT) */}
+        <div className="glass-card p-6 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 z-0"></div>
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full border border-slate-100 flex items-center justify-center shadow-sm z-20 hidden xl:flex text-slate-300">
+            <span className="text-[10px] font-black tracking-tighter">▶</span>
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Loss In Weight</p>
+                <h3 className="text-sm font-black text-brand-900 mt-0.5">Total LIW (PPT)</h3>
+                <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of LIW1-LIW5</p>
+              </div>
+              <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center shadow-sm">
+                <Database className="w-3.5 h-3.5 text-indigo-500" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { name: 'LIW 1', qty: parseFloat(productionFlowAvg.liw1.sum) },
+                  { name: 'LIW 2', qty: parseFloat(productionFlowAvg.liw2.sum) },
+                  { name: 'LIW 3', qty: parseFloat(productionFlowAvg.liw3.sum) },
+                  { name: 'LIW 4', qty: parseFloat(productionFlowAvg.liw4.sum) },
+                  { name: 'LIW 5', qty: parseFloat(productionFlowAvg.liw5.sum) }
+                ].map((item) => (
+                  <div key={item.name} className="bg-indigo-50/30 rounded-lg p-2.5 border border-indigo-100/50 shadow-[inset_0_1px_3px_rgba(0,0,0,0.02)]">
+                    <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest mb-0.5">{item.name}</p>
+                    <p className="text-[11px] font-black text-indigo-700">{item.qty.toFixed(1)} MT</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Total LIW Output</span>
+                <span className="text-sm font-black text-indigo-900">
+                  {(parseFloat(productionFlowAvg.liw1.sum) + parseFloat(productionFlowAvg.liw2.sum) + parseFloat(productionFlowAvg.liw3.sum) + parseFloat(productionFlowAvg.liw4.sum) + parseFloat(productionFlowAvg.liw5.sum)).toFixed(1)} MT
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Product Output */}
+        <div className="glass-card p-6 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 z-0"></div>
+          <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white rounded-full border border-slate-100 flex items-center justify-center shadow-sm z-20 hidden xl:flex text-slate-300">
+            <span className="text-[10px] font-black tracking-tighter">▶</span>
+          </div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Actual Production</p>
+                <h3 className="text-sm font-black text-brand-900 mt-0.5">Product Output</h3>
+                <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of all finished product</p>
+              </div>
+              <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center shadow-sm">
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+              </div>
+            </div>
+            {productStats.totals.length === 0 ? (
+              <p className="text-center text-xs text-slate-300 italic py-8">No production data</p>
+            ) : (
+              <div className="space-y-4">
+                {productStats.totals.map(([name, qty]) => {
+                  const pct = Math.round((qty / productStats.totals[0][1]) * 100);
+                  return (
+                    <div key={name}>
+                      <div className="flex justify-between text-xs font-semibold mb-1.5">
+                        <span className="text-slate-700 font-black uppercase text-[10px] tracking-wider truncate max-w-[140px]">{name}</span>
+                        <span className="text-emerald-600 font-black text-[11px]">{qty.toFixed(1)} MT</span>
+                      </div>
+                      <ProgressBar pct={pct} color="bg-emerald-500" />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Spillage */}
-        <div className="glass-card p-6">
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest">{spillageStats.count} entries</p>
-              <h3 className="text-sm font-black text-brand-900 mt-0.5">Spillage</h3>
-              <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of all spillage streams</p>
+        <div className="glass-card p-6 relative group overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full -mr-16 -mt-16 blur-2xl opacity-50 z-0"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-5">
+              <div>
+                <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">{spillageStats.count} entries</p>
+                <h3 className="text-sm font-black text-brand-900 mt-0.5">Spillage</h3>
+                <p className="text-[9px] text-slate-500 italic font-medium mt-1">Logic: Sum of all spillage streams</p>
+              </div>
+              <div className="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center shadow-sm">
+                <Droplets className="w-3.5 h-3.5 text-rose-500" />
+              </div>
             </div>
-            <div className="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center">
-              <Droplets className="w-3.5 h-3.5 text-rose-500" />
-            </div>
+            {spillageStats.count === 0 ? (
+              <p className="text-center text-xs text-slate-300 italic py-8">No spillage data</p>
+            ) : (
+              <div className="space-y-3">
+                <div className="rounded-xl bg-amber-50/50 border border-amber-100/50 p-4">
+                  <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Hot Screen</p>
+                  <p className="text-2xl font-black text-amber-700 tracking-tight">{spillageStats.hotScreen.toFixed(1)}</p>
+                  <p className="text-[9px] text-amber-400 font-bold mt-0.5">Total MT</p>
+                </div>
+                <div className="rounded-xl bg-rose-50/50 border border-rose-100/50 p-4">
+                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Multi Cyclone</p>
+                  <p className="text-2xl font-black text-rose-700 tracking-tight">{spillageStats.multiCyclone.toFixed(1)}</p>
+                  <p className="text-[9px] text-rose-400 font-bold mt-0.5">Total MT</p>
+                </div>
+                <div className="rounded-xl bg-brand-50/50 border border-brand-100/50 p-4">
+                  <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">House Keeping</p>
+                  <p className="text-2xl font-black text-brand-700 tracking-tight">{spillageStats.houseKeeping.toFixed(1)}</p>
+                  <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
+                </div>
+                <div className="rounded-xl bg-brand-50/50 border border-brand-100/50 p-4">
+                  <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">Road Side</p>
+                  <p className="text-2xl font-black text-brand-700 tracking-tight">{spillageStats.roadSide.toFixed(1)}</p>
+                  <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-100 mt-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase">Total Spillage</span>
+                  <span className="text-sm font-black text-rose-900">{spillageStats.total.toFixed(1)} MT</span>
+                </div>
+              </div>
+            )}
           </div>
-          {spillageStats.count === 0 ? (
-            <p className="text-center text-xs text-slate-300 italic py-8">No spillage data</p>
-          ) : (
-            <div className="space-y-3">
-              <div className="rounded-xl bg-amber-50 border border-amber-100 p-4">
-                <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest mb-1">Hot Screen</p>
-                <p className="text-2xl font-black text-amber-700 tracking-tight">{spillageStats.hotScreen.toFixed(1)}</p>
-                <p className="text-[9px] text-amber-400 font-bold mt-0.5">Total MT</p>
-              </div>
-              <div className="rounded-xl bg-rose-50 border border-rose-100 p-4">
-                <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest mb-1">Multi Cyclone</p>
-                <p className="text-2xl font-black text-rose-700 tracking-tight">{spillageStats.multiCyclone.toFixed(1)}</p>
-                <p className="text-[9px] text-rose-400 font-bold mt-0.5">Total MT</p>
-              </div>
-              <div className="rounded-xl bg-brand-50 border border-brand-100 p-4">
-                <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">House Keeping</p>
-                <p className="text-2xl font-black text-brand-700 tracking-tight">{spillageStats.houseKeeping.toFixed(1)}</p>
-                <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
-              </div>
-              <div className="rounded-xl bg-brand-50 border border-brand-100 p-4">
-                <p className="text-[9px] font-black text-brand-500 uppercase tracking-widest mb-1">Road Side</p>
-                <p className="text-2xl font-black text-brand-700 tracking-tight">{spillageStats.roadSide.toFixed(1)}</p>
-                <p className="text-[9px] text-brand-400 font-bold mt-0.5">Total MT</p>
-              </div>
-              <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Total Spillage</span>
-                <span className="text-sm font-black text-brand-900">{spillageStats.total.toFixed(1)} MT</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
@@ -2288,26 +2397,55 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {consumptionStats.map((item, idx) => (
-                <div key={idx} className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 group hover:border-brand-200 transition-all duration-300">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{item.name}</span>
-                      <h4 className="text-2xl font-black text-brand-900 tracking-tight">{item.consumption} <span className="text-[10px] text-brand-500 uppercase">MT</span></h4>
+              {(() => {
+                const totalRatio = consumptionStats.reduce((sum, item) => sum + parseFloat(item.consumption || '0'), 0).toFixed(3);
+                const totalUsedOverall = consumptionStats.reduce((sum, item) => sum + parseFloat(item.totalUsed || '0'), 0).toFixed(1);
+
+                return (
+                  <>
+                    {consumptionStats.map((item, idx) => (
+                      <div key={idx} className="bg-slate-50/50 rounded-2xl p-6 border border-slate-100 group hover:border-brand-200 transition-all duration-300">
+                        <div className="flex items-start justify-between mb-4">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{item.name}</span>
+                            <h4 className="text-2xl font-black text-brand-900 tracking-tight">{item.consumption} <span className="text-[10px] text-brand-500 uppercase">MT</span></h4>
+                          </div>
+                          <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 group-hover:bg-brand-600 transition-colors duration-300">
+                            <Activity className="w-3.5 h-3.5 text-brand-500 group-hover:text-white" />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <ProgressBar pct={Math.min(parseFloat(item.consumption) * 100, 100)} color="bg-brand-500" />
+                          <div className="flex items-center justify-between">
+                            <p className="text-[8px] font-bold text-slate-400 uppercase">Ratio per 1 MT</p>
+                            <p className="text-[10px] font-black text-brand-900">Total: {item.totalUsed} MT</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    
+                    {/* TOTAL CARD */}
+                    <div className="bg-brand-50/50 rounded-2xl p-6 border border-brand-200 group hover:border-brand-300 transition-all duration-300 shadow-sm">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-brand-600 uppercase tracking-[0.2em] mb-1">TOTAL RM RATIO</span>
+                          <h4 className="text-2xl font-black text-brand-900 tracking-tight">{totalRatio} <span className="text-[10px] text-brand-500 uppercase">MT</span></h4>
+                        </div>
+                        <div className="bg-brand-600 p-2 rounded-xl shadow-sm border border-brand-500 transition-colors duration-300">
+                          <PieChartIcon className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <ProgressBar pct={100} color="bg-brand-600" />
+                        <div className="flex items-center justify-between">
+                          <p className="text-[8px] font-bold text-brand-600 uppercase">Total RM Consumed</p>
+                          <p className="text-[10px] font-black text-brand-900">Total: {totalUsedOverall} MT</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-100 group-hover:bg-brand-600 transition-colors duration-300">
-                      <Activity className="w-3.5 h-3.5 text-brand-500 group-hover:text-white" />
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    <ProgressBar pct={Math.min(parseFloat(item.consumption) * 100, 100)} color="bg-brand-500" />
-                    <div className="flex items-center justify-between">
-                      <p className="text-[8px] font-bold text-slate-400 uppercase">Ratio per 1 MT</p>
-                      <p className="text-[10px] font-black text-brand-900">Total: {item.totalUsed} MT</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
+                  </>
+                );
+              })()}
             </div>
           )}
         </div>
