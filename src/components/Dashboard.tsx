@@ -577,12 +577,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       status: 'Active' | 'Closed';
       opening_stock: number;
       closing_stock: number;
+      production_flow_consumption: number;
     }> = {};
     
     filteredEntries.forEach(entry => {
       const campaign = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
       if (!campaign || typeof campaign !== 'string') return;
-      if (!summary[campaign]) summary[campaign] = { ground_total: 0, inputs: {}, products: {}, status: 'Active', opening_stock: 0, closing_stock: 0 };
+      if (!summary[campaign]) summary[campaign] = { ground_total: 0, inputs: {}, products: {}, status: 'Active', opening_stock: 0, closing_stock: 0, production_flow_consumption: 0 };
       
       const d = entry.data;
       if (entry.departmentId === 'sb3_ground') {
@@ -618,6 +619,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           total += parseFloat(d[f] || d[f.toUpperCase()] || '0') || 0;
         });
         summary[campaign].closing_stock = total;
+      } else if (entry.departmentId === 'production_flow') {
+        const consumptionFields = ['wf3', 'wf4', 'wf5', 'liw1', 'liw2', 'liw3', 'liw4', 'liw5'];
+        let total = 0;
+        consumptionFields.forEach(f => {
+          total += parseFloat(d[f] || d[f.toUpperCase()] || '0') || 0;
+        });
+        summary[campaign].production_flow_consumption += total;
       }
     });
     
@@ -1318,6 +1326,21 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     };
   }, [filteredEntries, parameterRanges]);
 
+  const productionFlowAvg = useMemo(() => {
+    const rows = filteredEntries.filter(e => e.departmentId === 'production_flow');
+    const getStat = (key: string) => {
+      const nums = rows.map(e => parseFloat(e.data[key] || e.data[key.toUpperCase()] || e.data[key.toLowerCase()])).filter(v => !isNaN(v));
+      const count = nums.length;
+      const sum = nums.reduce((a, b) => a + b, 0);
+      const avg = count ? (sum / count) : 0;
+      return { sum: sum.toFixed(2), avg: avg.toFixed(2), count };
+    };
+    return {
+      wf3: getStat('WF3'), wf4: getStat('WF4'), wf5: getStat('WF5'),
+      liw1: getStat('LIW1'), liw2: getStat('LIW2'), liw3: getStat('LIW3'), liw4: getStat('LIW4'), liw5: getStat('LIW5')
+    };
+  }, [filteredEntries]);
+
   const handleExportExcel = () => {
     if (misReportData.length === 0) return;
     const dataToExport = misReportData.map(item => ({ 'Department': item.name, 'Category': item.category, 'Total Target': item.target, 'Actual (Shift)': item.actual, 'Gap (Pending)': item.gap, 'Efficiency (%)': item.efficiency, 'Status': item.status }));
@@ -1684,6 +1707,42 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             )
           },
           {
+            title: 'Production Flow (Sums & Avgs)',
+            icon: Box,
+            color: 'purple',
+            component: (
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+                {[
+                  { label: 'WF3', stat: productionFlowAvg.wf3 },
+                  { label: 'WF4', stat: productionFlowAvg.wf4 },
+                  { label: 'WF5', stat: productionFlowAvg.wf5 },
+                  { label: 'LIW1', stat: productionFlowAvg.liw1 },
+                  { label: 'LIW2', stat: productionFlowAvg.liw2 },
+                  { label: 'LIW3', stat: productionFlowAvg.liw3 },
+                  { label: 'LIW4', stat: productionFlowAvg.liw4 },
+                  { label: 'LIW5', stat: productionFlowAvg.liw5 },
+                ].map(item => (
+                  <div key={item.label} className="bg-purple-50/50 border border-purple-100/50 rounded-2xl p-4 hover:border-purple-200 transition-all">
+                    <p className="text-[10px] font-black text-purple-500 uppercase tracking-widest mb-2">{item.label}</p>
+                    <div className="flex flex-col gap-1 mb-2">
+                      <div className="flex justify-between items-end">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Sum</span>
+                        <span className="text-lg font-black text-purple-700 leading-none">{item.stat.sum}</span>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <span className="text-[9px] font-black text-slate-400 uppercase">Avg</span>
+                        <span className="text-sm font-bold text-slate-600 leading-none">{item.stat.avg}</span>
+                      </div>
+                    </div>
+                    <div className="text-right border-t border-purple-100 pt-2 mt-2">
+                      <span className="text-[9px] font-bold text-slate-500">{item.stat.count} Entries</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          },
+          {
             title: 'Kiln Average / Eff',
             icon: Flame,
             color: 'orange',
@@ -1779,7 +1838,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           <div className="p-4 sm:p-6 overflow-x-auto custom-scrollbar">
             <div className="flex gap-4 pb-2" style={{ minWidth: '800px' }}>
               {campaignSummary.map((campaign, idx) => {
-                const consumption = campaign.opening_stock + campaign.ground_total - campaign.closing_stock;
+                const theoreticalClosing = campaign.opening_stock + campaign.ground_total - campaign.production_flow_consumption;
+                const variance = campaign.closing_stock > 0 ? (theoreticalClosing - campaign.closing_stock) : 0;
+                
                 return (
                   <div key={idx} className="flex-1 bg-white border border-slate-200 rounded-2xl p-5 shadow-sm min-w-[300px]">
                     <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-3">
@@ -1796,13 +1857,33 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                         <span className="text-sm font-black text-emerald-600">+{campaign.ground_total.toFixed(2)} MT</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">- Closing Stock</span>
-                        <span className="text-sm font-black text-red-500">-{campaign.closing_stock.toFixed(2)} MT</span>
+                        <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">- Consumption (Prod. Flow)</span>
+                        <span className="text-sm font-black text-amber-500">-{campaign.production_flow_consumption.toFixed(2)} MT</span>
                       </div>
-                      <div className="pt-3 mt-3 border-t border-slate-100 flex justify-between items-center">
-                        <span className="text-[11px] font-black text-brand-600 uppercase tracking-wider">Total Consumed</span>
-                        <span className="text-lg font-black text-brand-700">{consumption.toFixed(2)} MT</span>
-                      </div>
+                      
+                      {campaign.closing_stock > 0 ? (
+                        <>
+                          <div className="pt-2 flex justify-between items-center">
+                            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Theoretical Stock</span>
+                            <span className="text-sm font-black text-slate-500">{theoreticalClosing.toFixed(2)} MT</span>
+                          </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">- Actual Closing Stock</span>
+                            <span className="text-sm font-black text-red-500">-{campaign.closing_stock.toFixed(2)} MT</span>
+                          </div>
+                          <div className="pt-3 mt-3 border-t border-slate-100 flex justify-between items-center">
+                            <span className="text-[11px] font-black text-brand-600 uppercase tracking-wider">Variance (Loss/Gain)</span>
+                            <span className={cn("text-lg font-black", variance > 0 ? "text-red-600" : "text-emerald-600")}>
+                              {variance > 0 ? '-' : '+'}{Math.abs(variance).toFixed(2)} MT
+                            </span>
+                          </div>
+                        </>
+                      ) : (
+                        <div className="pt-3 mt-3 border-t border-slate-100 flex justify-between items-center">
+                          <span className="text-[11px] font-black text-brand-600 uppercase tracking-wider">Current Stock (Theo.)</span>
+                          <span className="text-lg font-black text-brand-700">{theoreticalClosing.toFixed(2)} MT</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 );

@@ -342,10 +342,10 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
       <form onSubmit={handleSubmit} className="flex flex-col">
         <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
           {/* Protocol Selector for Kiln, DGU, Mixer, Production Flow, and Shift Allocation */}
-          {(department.id === 'kiln' || department.id === 'dgu' || department.id === 'mixer' || department.id === 'production_flow' || department.id === 'shift_allocation') && (
+          {['kiln', 'dgu', 'mixer', 'production_flow', 'shift_allocation'].includes(department.id) && (
             <div className="flex flex-col items-center space-y-3 pt-1">
               <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                {department.id === 'kiln' ? 'Kiln Protocol' : department.id === 'mixer' ? 'Mixer Protocol' : department.id === 'production_flow' ? 'Production Type' : department.id === 'shift_allocation' ? 'Department' : 'DGU Protocol'}
+                Step 1: {department.id === 'kiln' ? 'Kiln Protocol' : department.id === 'mixer' ? 'Mixer Protocol' : department.id === 'production_flow' ? 'Production Type' : department.id === 'shift_allocation' ? 'Department' : 'DGU Protocol'}
               </span>
               <div className="inline-flex flex-wrap justify-center p-1 bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-xl shadow-sm gap-1">
                 {(department.id === 'kiln' ? ['Shift', 'Composite'] : department.id === 'production_flow' ? ['SB3', 'PPT'] : department.id === 'shift_allocation' ? ['DGU', 'Mixer', 'Balling Disc', 'Kiln', 'Cooler', 'Product House', 'SB3 Ground', 'SB3 Hopper', 'Production Flow'] : ['Shift', 'Daily']).map((mode) => {
@@ -354,7 +354,19 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                     : department.id === 'shift_allocation'
                     ? (formData.department || 'DGU') === mode
                     : (formData.entry_type || 'Shift') === mode;
-                    
+                  
+                  let displayLabel = mode;
+                  if (department.id === 'dgu' || department.id === 'mixer') {
+                    if (mode === 'Shift') displayLabel = 'Step 1';
+                    if (mode === 'Daily') displayLabel = 'Step 2';
+                  } else if (department.id === 'kiln') {
+                    if (mode === 'Shift') displayLabel = 'Step 1';
+                    if (mode === 'Composite') displayLabel = 'Step 2';
+                  } else if (department.id === 'production_flow') {
+                    if (mode === 'SB3') displayLabel = 'Step 1';
+                    if (mode === 'PPT') displayLabel = 'Step 2';
+                  }
+
                   return (
                     <button
                       key={mode}
@@ -375,7 +387,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                           : "text-slate-500 hover:text-slate-800 hover:bg-slate-50"
                       )}
                     >
-                      {mode}
+                      {displayLabel}
                     </button>
                   );
                 })}
@@ -390,7 +402,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
               <div className="w-6 h-6 rounded-full bg-indigo-50 flex items-center justify-center">
                 <Settings className="w-3.5 h-3.5 text-indigo-500" />
               </div>
-              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em]">Configuration</h3>
+              <h3 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.15em]">{['kiln', 'dgu', 'mixer', 'production_flow', 'shift_allocation'].includes(department.id) ? 'Step 2: ' : ''}Configuration</h3>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 relative z-10">
               {otherFields.map((field) => (

@@ -353,6 +353,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                 </th>
                 {visibleFields.map(field => {
                   let avgStr: string | null = null;
+                  let sumStr: string | null = null;
                   
                   if (field.type === 'number' || ['Al2O3', 'Fe2O3', 'TiO2', 'Loi', 'SiO2', 'CaO', 'MgO', 'Fineness', 'Drop Test'].some(k => field.label.includes(k))) {
                     const nums = displayedEntries
@@ -360,17 +361,25 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                       .filter(v => !isNaN(v));
                     
                     if (nums.length > 0) {
-                      const avgNum = nums.reduce((a, b) => a + b, 0) / nums.length;
+                      const sumNum = nums.reduce((a, b) => a + b, 0);
+                      const avgNum = sumNum / nums.length;
                       avgStr = avgNum.toFixed(2);
+                      sumStr = sumNum.toFixed(2);
                     }
                   }
 
                   return (
                     <th key={field.name} style={{whiteSpace:'nowrap'}}>
-                      {avgStr !== null && (
-                        <div style={{marginBottom:'4px'}}>
-                          <span style={{fontSize:'11px', fontWeight:900, color:'oklch(0.44 0.14 145)', marginRight:'3px'}}>{avgStr}</span>
-                          <span style={{fontSize:'8px', color:'oklch(0.62 0.04 240)', textTransform:'uppercase', opacity:0.7}}>Avg</span>
+                      {avgStr !== null && sumStr !== null && (
+                        <div style={{marginBottom:'4px', display:'flex', gap:'8px'}}>
+                          <div>
+                            <span style={{fontSize:'11px', fontWeight:900, color:'oklch(0.55 0.2 260)', marginRight:'2px'}}>{sumStr}</span>
+                            <span style={{fontSize:'8px', color:'oklch(0.65 0.1 260)', textTransform:'uppercase', opacity:0.8}}>Sum</span>
+                          </div>
+                          <div>
+                            <span style={{fontSize:'11px', fontWeight:900, color:'oklch(0.44 0.14 145)', marginRight:'2px'}}>{avgStr}</span>
+                            <span style={{fontSize:'8px', color:'oklch(0.62 0.04 240)', textTransform:'uppercase', opacity:0.8}}>Avg</span>
+                          </div>
                         </div>
                       )}
                       {field.label}
