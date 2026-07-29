@@ -1031,11 +1031,32 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       } catch { return sum; }
     }, 0);
 
+    const productionFlowEntries = filteredEntries.filter(e => e.departmentId === 'production_flow');
+    const totalLIW = productionFlowEntries.reduce((sum, e) => {
+      const d = e.data;
+      const liw1 = parseFloat(d.liw1 || d.LIW1) || 0;
+      const liw2 = parseFloat(d.liw2 || d.LIW2) || 0;
+      const liw3 = parseFloat(d.liw3 || d.LIW3) || 0;
+      const liw4 = parseFloat(d.liw4 || d.LIW4) || 0;
+      const liw5 = parseFloat(d.liw5 || d.LIW5) || 0;
+      return sum + liw1 + liw2 + liw3 + liw4 + liw5;
+    }, 0);
+
+    const totalWF = productionFlowEntries.reduce((sum, e) => {
+      const d = e.data;
+      const wf3 = parseFloat(d.wf3 || d.WF3) || 0;
+      const wf4 = parseFloat(d.wf4 || d.WF4) || 0;
+      const wf5 = parseFloat(d.wf5 || d.WF5) || 0;
+      return sum + wf3 + wf4 + wf5;
+    }, 0);
+
     return {
       totalFuel, totalElec, totalQty, totalHours, count: prodEntries.length,
       fuelPerMT: totalQty > 0 ? (totalFuel / totalQty).toFixed(2) : '0',
       elecPerMT: totalQty > 0 ? (totalElec / totalQty).toFixed(2) : '0',
-      totalStopDuration: totalStopDuration.toFixed(1)
+      totalStopDuration: totalStopDuration.toFixed(1),
+      totalLIW,
+      totalWF
     };
   }, [filteredEntries]);
 
@@ -1232,6 +1253,59 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       rm1Name: getRmName('rm1', 'Rm 1') || 'Rm 1 %',
       rm2Name: getRmName('rm2', 'Rm 2') || 'Rm 2 %',
       rm3Name: getRmName('rm3', 'Rm 3') || 'Rm 3 %',
+      count: rows.length
+    };
+  }, [filteredEntries, parameterRanges]);
+
+  const productionFlowSb3Avg = useMemo(() => {
+    const rows = filteredEntries.filter(e => e.departmentId === 'production_flow' && (e.data.type === 'SB3' || e.data.Type === 'SB3' || e.data.type === 'sb3' || !e.data.type));
+    
+    const getRmName = (k1: string, k2: string) => {
+      const row = [...rows].reverse().find(e => e.data[k1] || e.data[k2]);
+      return row ? String(row.data[k1] || row.data[k2]) : null;
+    };
+    
+    const makeStat = (key: string, altKey: string, rmName: string) => {
+      let entriesWithData = 0;
+      let totalSum = 0;
+      let outOfLimit = 0;
+
+      rows.forEach(e => {
+        const val = parseFloat(e.data[key] || e.data[altKey]);
+        if (!isNaN(val) && val > 0) {
+          entriesWithData++;
+          totalSum += val;
+
+          const rowMin = parseFloat(e.data[`${rmName} Min`] || e.data[`${key} Min`]);
+          const rowMax = parseFloat(e.data[`${rmName} Max`] || e.data[`${key} Max`]);
+          
+          if (!isNaN(rowMin) && !isNaN(rowMax)) {
+            if (val < rowMin || val > rowMax) outOfLimit++;
+          } else {
+            const configured = parameterRanges ? parseRange(parameterRanges[rmName] || parameterRanges[key.toUpperCase()]) : null;
+            if (configured && (val < configured.min || val > configured.max)) outOfLimit++;
+          }
+        }
+      });
+
+      const avgVal = entriesWithData ? (totalSum / entriesWithData).toFixed(1) : '-';
+      const totalVal = totalSum > 0 ? totalSum.toFixed(1) : '-';
+      const efficiency = entriesWithData ? (((entriesWithData - outOfLimit) / entriesWithData) * 100).toFixed(1) : '0.0';
+
+      return { avg: avgVal, total: totalVal, count: entriesWithData, outOfLimit, efficiency };
+    };
+
+    const rm1 = getRmName('rm1', 'RM1') || 'RM1';
+    const rm2 = getRmName('rm2', 'RM2') || 'RM2';
+    const rm3 = getRmName('rm3', 'RM3') || 'RM3';
+
+    return {
+      rm1Name: rm1,
+      rm2Name: rm2,
+      rm3Name: rm3,
+      wf3: makeStat('wf3', 'WF3', rm1),
+      wf4: makeStat('wf4', 'WF4', rm2),
+      wf5: makeStat('wf5', 'WF5', rm3),
       count: rows.length
     };
   }, [filteredEntries, parameterRanges]);
@@ -1532,6 +1606,8 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               { label: 'Electric / MT', val: energyStats.elecPerMT, unit: 'u/MT', accent: 'bg-rose-500', text: 'text-rose-600', logic: '' },
               { label: 'Running Hours', val: String(energyStats.totalHours.toFixed(1)), unit: 'hours', accent: 'bg-brand-500', text: 'text-brand-600', logic: '' },
               { label: 'Total Stop Dur.', val: String(energyStats.totalStopDuration), unit: 'hours', accent: 'bg-emerald-500', text: 'text-emerald-600', logic: '' },
+              { label: 'Total LIW (PPT)', val: energyStats.totalLIW.toFixed(1), unit: 'MT', accent: 'bg-indigo-500', text: 'text-indigo-600', logic: 'LIW 1-5' },
+              { label: 'Total WF (SB3)', val: energyStats.totalWF.toFixed(1), unit: 'MT', accent: 'bg-violet-500', text: 'text-violet-600', logic: 'WF 3-5' },
             ].map((card) => (
               <div key={card.label} className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-xl hover:border-slate-200 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col group">
                 <div className={`absolute top-0 left-0 w-full h-1.5 ${card.accent} opacity-80 group-hover:opacity-100 transition-opacity`}></div>
@@ -1609,6 +1685,32 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   { label: dropTestAvg.rm1Name, stat: dropTestAvg.rm1, color: 'text-red-600' },
                   { label: dropTestAvg.rm2Name, stat: dropTestAvg.rm2, color: 'text-brand-600' },
                   { label: dropTestAvg.rm3Name, stat: dropTestAvg.rm3, color: 'text-yellow-600' },
+                ].map(row => (
+                  <div key={row.label} className="bg-slate-50 rounded-2xl p-5 border border-slate-100/50 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{row.label}</p>
+                      <p className={`text-2xl font-black ${row.color}`}>{row.stat.avg}%</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-slate-500 uppercase">{row.stat.count} Entries</p>
+                      <p className="text-[10px] font-black text-red-400 uppercase">{row.stat.outOfLimit} Outside Limit</p>
+                      <p className="text-[10px] font-black text-emerald-600 uppercase mt-1">{row.stat.efficiency}% Eff.</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          },
+          {
+            title: 'Production Flow (SB3)',
+            icon: Layers,
+            color: 'violet',
+            component: (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {[
+                  { label: productionFlowSb3Avg.rm1Name, stat: productionFlowSb3Avg.wf3, color: 'text-violet-600' },
+                  { label: productionFlowSb3Avg.rm2Name, stat: productionFlowSb3Avg.wf4, color: 'text-fuchsia-600' },
+                  { label: productionFlowSb3Avg.rm3Name, stat: productionFlowSb3Avg.wf5, color: 'text-indigo-600' },
                 ].map(row => (
                   <div key={row.label} className="bg-slate-50 rounded-2xl p-5 border border-slate-100/50 flex items-center justify-between">
                     <div>
