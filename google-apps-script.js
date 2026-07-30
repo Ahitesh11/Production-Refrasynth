@@ -69,11 +69,38 @@ function doGet(e) {
       }
     }
 
+    var kycRates = {};
+    var kycSheet = null;
+    for (var s = 0; s < allSheets.length; s++) {
+      if (allSheets[s].getName().trim().toLowerCase() === "final kyc") {
+        kycSheet = allSheets[s];
+        break;
+      }
+    }
+    
+    if (kycSheet) {
+      var kycData = kycSheet.getDataRange().getValues();
+      for (var k = 1; k < kycData.length; k++) {
+        var matName = String(kycData[k][0]).trim();
+        if (matName) {
+          kycRates[matName] = {
+            rate: parseFloat(kycData[k][8]) || 0, // I is 8
+            fuel_rate: parseFloat(kycData[k][9]) || 0, // J is 9
+            electric_rate: parseFloat(kycData[k][10]) || 0, // K is 10
+            hr_cost_per_mt: parseFloat(kycData[k][11]) || 0, // L is 11
+            ground_loss: parseFloat(kycData[k][12]) || 0, // M is 12
+            loi: parseFloat(kycData[k][13]) || 0 // N is 13
+          };
+        }
+      }
+    }
+
     return createJsonResponse({
       campaigns: campaigns.filter(String),
       products: products.filter(String),
       materials: materials.filter(String),
       inchargeNames: inchargeNames.filter(String),
+      kycRates: kycRates,
       status: "success"
     });
   }

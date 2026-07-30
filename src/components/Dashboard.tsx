@@ -98,7 +98,7 @@ interface Props {
   entries: Entry[];
   compositionData: any[];
   onSelect: (dept: Department) => void;
-  masterData: { campaigns: string[] };
+  masterData: any;
   parameterRanges?: Record<string, string>;
 }
 
@@ -790,18 +790,16 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const totalConsumption = consumptionRows.reduce((sum, e) => sum + (parseFloat(e.data.Total || e.data.total) || 0), 0);
 
     const prodFlowRows = filteredEntries.filter(e => e.departmentId === 'production_flow');
-    const totalLIW = prodFlowRows.reduce((sum, e) => {
-      const liw1 = parseFloat(e.data['LIW1'] || e.data['liw1']) || 0;
-      const liw2 = parseFloat(e.data['LIW2'] || e.data['liw2']) || 0;
-      const liw3 = parseFloat(e.data['LIW3'] || e.data['liw3']) || 0;
-      const liw4 = parseFloat(e.data['LIW4'] || e.data['liw4']) || 0;
-      const liw5 = parseFloat(e.data['LIW5'] || e.data['liw5']) || 0;
-      return sum + liw1 + liw2 + liw3 + liw4 + liw5;
+    const totalWF = prodFlowRows.reduce((sum, e) => {
+      const wf3 = parseFloat(e.data['WF3'] || e.data['wf3']) || 0;
+      const wf4 = parseFloat(e.data['WF4'] || e.data['wf4']) || 0;
+      const wf5 = parseFloat(e.data['WF5'] || e.data['wf5']) || 0;
+      return sum + wf3 + wf4 + wf5;
     }, 0);
 
-    const totalInput = totalLIW > 0 ? totalLIW : (totalConsumption > 0 ? totalConsumption : totalHopper);
-    const consumptionLogic = totalLIW > 0
-      ? `Sum of LIW1-LIW5 from Production Flow (${prodFlowRows.length} entries)`
+    const totalInput = totalWF > 0 ? totalWF : (totalConsumption > 0 ? totalConsumption : totalHopper);
+    const consumptionLogic = totalWF > 0
+      ? `Sum of WF3-WF5 from Production Flow (${prodFlowRows.length} entries)`
       : (totalConsumption > 0
         ? `Sum of "Total" column from Consumption sheet (${consumptionRows.length} entries)`
         : `Sum of Used RM1-RM6 cols (${hopperStats.count} entries)`);
@@ -1095,18 +1093,42 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const totalFuel = energyStats.totalFuel || 0;
     const totalElec = energyStats.totalElec || 0;
 
+    let fuelRate = COST_FACTORS.FUEL_RATE;
+    let elecRate = COST_FACTORS.ELECTRIC_RATE;
+    let procCost = COST_FACTORS.PROCESSING_COST_PER_MT;
+
+    if (masterData.kycRates) {
+      for (const key in masterData.kycRates) {
+        if (masterData.kycRates[key].fuel_rate) fuelRate = masterData.kycRates[key].fuel_rate;
+        if (masterData.kycRates[key].electric_rate) elecRate = masterData.kycRates[key].electric_rate;
+        if (masterData.kycRates[key].hr_cost_per_mt) procCost = masterData.kycRates[key].hr_cost_per_mt;
+      }
+    }
+
     let totalRmCost = 0;
     const breakdown = hopperStats.totals.map(([name, qty]) => {
-      const rate = RM_RATES[name] || RM_RATES[name.toUpperCase()] || 0;
+      let rate = RM_RATES[name] || RM_RATES[name.toUpperCase()] || 0;
+      if (masterData.kycRates) {
+        // Find matching key case-insensitively
+        const matchedKey = Object.keys(masterData.kycRates).find(k => k.toLowerCase() === name.toLowerCase());
+        if (matchedKey && masterData.kycRates[matchedKey].rate) {
+          rate = masterData.kycRates[matchedKey].rate;
+        }
+      }
+      
       const cost = qty * rate;
       totalRmCost += cost;
-      return { name, qty, rate, cost };
+      return { name, qty, rate, cost, type: 'rm' };
     });
 
-    const totalFuelCost = totalFuel * COST_FACTORS.FUEL_RATE;
-    const totalElecCost = totalElec * COST_FACTORS.ELECTRIC_RATE;
-    const totalProcessingCost = totalProd * COST_FACTORS.PROCESSING_COST_PER_MT;
+    const totalFuelCost = totalFuel * fuelRate;
+    const totalElecCost = totalElec * elecRate;
+    const totalProcessingCost = totalProd * procCost;
     const totalOperatingCost = totalRmCost + totalFuelCost + totalElecCost + totalProcessingCost;
+
+    if (totalFuelCost > 0 || totalFuel > 0) breakdown.push({ name: 'Total Fuel', qty: totalFuel, rate: fuelRate, cost: totalFuelCost, type: 'fuel' });
+    if (totalElecCost > 0 || totalElec > 0) breakdown.push({ name: 'Total Electricity', qty: totalElec, rate: elecRate, cost: totalElecCost, type: 'elec' });
+    if (totalProcessingCost > 0) breakdown.push({ name: 'Processing (Hr Cost)', qty: totalProd, rate: procCost, cost: totalProcessingCost, type: 'proc' });
 
     return {
       totalRmCost,
@@ -1117,7 +1139,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       costPerMt: totalProd > 0 ? (totalOperatingCost / totalProd) : 0,
       breakdown
     };
-  }, [hopperStats, accountingSummary.totalProduction, energyStats]);
+  }, [hopperStats, accountingSummary.totalProduction, energyStats, masterData]);
 
   const dguDetailedAvg = useMemo(() => {
     const dguRows = filteredEntries.filter(e => e.departmentId === 'dgu');
@@ -2514,9 +2536,9 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                   <TrendingUp className="w-10 h-10 text-emerald-500/20" />
                 </div>
               </div>
-              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2">Total Production Cost (RM)</p>
+              <p className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] mb-2">Total Production Cost</p>
               <h2 className="text-3xl font-black text-brand-900 tracking-tighter mb-2">
-                {productionCost.totalRmCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                {productionCost.totalOperatingCost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
               </h2>
               <div className="flex items-center gap-2 mt-2">
                 <span className="text-[11px] font-bold text-emerald-700 bg-white px-2 py-0.5 rounded-lg border border-emerald-100 shadow-sm">
@@ -2533,10 +2555,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-right">Subtotal ()</span>
               </div>
               {productionCost.breakdown.map((item, idx) => (
-                <div key={idx} className="bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between hover:shadow-md hover:border-emerald-200 transition-all duration-300">
+                <div key={idx} className={`bg-white border border-slate-100 rounded-2xl p-4 flex items-center justify-between hover:shadow-md transition-all duration-300 ${item.type !== 'rm' ? 'bg-slate-50/50' : 'hover:border-emerald-200'}`}>
                   <div className="grid grid-cols-4 gap-4 w-full items-center">
-                    <span className="text-xs font-black text-brand-900 uppercase tracking-wider">{item.name}</span>
-                    <span className="text-sm font-bold text-slate-600 text-right">{item.qty.toFixed(1)}</span>
+                    <span className={`text-xs font-black uppercase tracking-wider ${item.type === 'rm' ? 'text-brand-900' : 'text-slate-700'}`}>{item.name}</span>
+                    <span className="text-sm font-bold text-slate-600 text-right">{item.qty.toLocaleString('en-IN', { maximumFractionDigits: 1 })}</span>
                     <span className="text-[11px] font-bold text-slate-400 text-right"> {item.rate.toLocaleString('en-IN')}</span>
                     <span className="text-sm font-black text-emerald-700 text-right"> {item.cost.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
                   </div>
