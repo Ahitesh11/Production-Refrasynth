@@ -122,7 +122,7 @@ export default function Sidebar({
       items: [
         ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'RM Workflow', icon: Activity }] : []),
       ],
-      depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm'),
+      depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm' && d.id !== 'cooler'),
       icon: FlaskConical
     },
     {
