@@ -242,6 +242,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   const [appliedCustomDateRange, setAppliedCustomDateRange] = useState({ start: '', startShift: 'All', end: '', endShift: 'All' });
   const [activeRmTab, setActiveRmTab] = useState<string>('');
   const [campaignFilter, setCampaignFilter] = useState<string>('All');
+  const [productFilter, setProductFilter] = useState<string>('All');
   const [compositionSearch, setCompositionSearch] = useState('');
 
   const allCampaigns = useMemo(() => {
@@ -253,12 +254,27 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     return Array.from(caps).sort();
   }, [entries]);
 
+  const allProducts = useMemo(() => {
+    const prods = new Set<string>();
+    entries.forEach(entry => {
+      const p = entry.data.product_name || entry.data['Product Name'] || entry.data.product || entry.data.Product;
+      if (p && typeof p === 'string') prods.add(p.trim());
+    });
+    return Array.from(prods).sort();
+  }, [entries]);
+
   const filteredEntries = useMemo(() => {
     let result = entries;
     if (campaignFilter !== 'All') {
       result = result.filter(entry => {
         const campaign = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
         return campaign === campaignFilter;
+      });
+    }
+    if (productFilter !== 'All') {
+      result = result.filter(entry => {
+        const p = entry.data.product_name || entry.data['Product Name'] || entry.data.product || entry.data.Product;
+        return p && typeof p === 'string' && p.trim() === productFilter;
       });
     }
     if (dateFilter !== 'all') {
@@ -296,7 +312,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       });
     }
     return result;
-  }, [entries, campaignFilter, dateFilter, appliedCustomDateRange]);
+  }, [entries, campaignFilter, productFilter, dateFilter, appliedCustomDateRange]);
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
@@ -931,12 +947,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const totalElec = prodEntries.reduce((s, e) => s + (parseFloat(e.data.electric_used || e.data['Electric Used']) || 0), 0);
     const totalQty = prodEntries.reduce((s, e) => s + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
 
-    const dguDates = new Set(dguEntries.map(e => {
+    const productionFlowEntriesForHours = filteredEntries.filter(e => e.departmentId === 'production_flow');
+    const prodFlowDates = new Set(productionFlowEntriesForHours.map(e => {
       let dateVal = String(e.data.date || e.data.Date || e.timestamp);
       if (dateVal.includes(' ')) dateVal = dateVal.split(' ')[0];
       return dateVal.trim();
     }));
-    const totalHours = dguDates.size * 24;
+    const totalHours = prodFlowDates.size * 24;
 
     const totalStopDuration = stopEntries.reduce((sum, e) => {
       // ✅ Check for manual "Duration" from sheet first
@@ -1518,11 +1535,28 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <Filter className="w-3.5 h-3.5 text-slate-400" />
               <select
                 value={campaignFilter}
-                onChange={(e) => setCampaignFilter(e.target.value)}
+                onChange={(e) => {
+                  setCampaignFilter(e.target.value);
+                  if (e.target.value !== 'All') {
+                    setDateFilter('all');
+                  }
+                }}
                 className="w-[160px] bg-transparent text-slate-700 text-xs font-semibold outline-none cursor-pointer pr-1"
               >
                 <option value="All">All Campaigns</option>
                 {allCampaigns.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm">
+              <Package className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                value={productFilter}
+                onChange={(e) => setProductFilter(e.target.value)}
+                className="w-[140px] bg-transparent text-slate-700 text-xs font-semibold outline-none cursor-pointer pr-1"
+              >
+                <option value="All">All Products</option>
+                {allProducts.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
 
@@ -1744,10 +1778,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
                     { label: productionFlowSb3Avg.rm2Name, stat: productionFlowSb3Avg.wf4 },
                     { label: productionFlowSb3Avg.rm3Name, stat: productionFlowSb3Avg.wf5 },
                   ];
-                  const match = pfItems.find(p => p.label === dt.dtLabel) || pfItems[i];
-                  return { label: match.label, stat: match.stat, color: dt.color };
-                }).map(row => (
-                  <div key={row.label} className="bg-slate-50 rounded-2xl p-5 border border-slate-100/50 flex items-center justify-between">
+                  const match = pfItems.find(p => p.label === dt.dtLabel);
+                  const emptyStat = { avg: '-', total: '0.0', count: 0, outOfLimit: 0, efficiency: '0.0' };
+                  return { label: dt.dtLabel, stat: match ? match.stat : emptyStat, color: dt.color };
+                }).map((row, i) => (
+                  <div key={`${row.label}-${i}`} className="bg-slate-50 rounded-2xl p-5 border border-slate-100/50 flex items-center justify-between">
                     <div>
                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{row.label}</p>
                       <p className={`text-2xl font-black ${row.color}`}>{row.stat.avg}%</p>
