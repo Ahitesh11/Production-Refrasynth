@@ -9,6 +9,7 @@ import InventoryView from './components/InventoryView';
 import ManageUsers from './components/ManageUsers';
 import MISReport from './components/MISReport';
 import DepartmentForm from './components/DepartmentForm';
+import LabAudit from './components/LabAudit';
 
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
@@ -19,7 +20,7 @@ export default function App() {
     const saved = localStorage.getItem('erp_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry'>(() => {
+  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit'>(() => {
     const saved = localStorage.getItem('erp_user');
     const savedUser = saved ? JSON.parse(saved) : null;
     if (!savedUser || savedUser.type === 'Admin') return 'dashboard';
@@ -393,6 +394,8 @@ export default function App() {
                 </button>
               </div>
             )
+          ) : activeId === 'lab_audit' ? (
+            <LabAudit entries={entries} masterData={masterData} />
           ) : activeId === 'mis_report' ? (
             <MISReport
               entries={entries}

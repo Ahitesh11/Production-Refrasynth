@@ -2798,7 +2798,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
               <FileSpreadsheet className="w-4 h-4 text-white" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Historical Data</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest"></p>
               <h3 className="text-base font-black text-brand-900">Composition Archives</h3>
               <p className="text-[9px] text-slate-400 font-bold italic mt-1">Logic: Filtered historical records from all facility departments</p>
             </div>

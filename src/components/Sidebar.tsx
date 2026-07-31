@@ -28,8 +28,8 @@ import { Department, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
-  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | null;
-  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry') => void;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | null;
+  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit') => void;
   departments: Department[];
   user: User | null;
   onLogout: () => void;
@@ -41,10 +41,10 @@ interface Props {
 }
 
 interface NavItemProps {
-  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users' | 'mis_report' | 'rm_entry';
+  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit';
   name: string;
   icon: any;
-  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | null;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | null;
   onSelect: (id: any) => void;
   isCollapsed: boolean;
   key?: React.Key;
@@ -120,6 +120,7 @@ export default function Sidebar({
     {
       name: 'Lab',
       items: [
+        ...(user?.type === 'Admin' ? [{ id: 'lab_audit', name: 'Lab Audit', icon: ShieldCheck }] : []),
         ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'RM Workflow', icon: Activity }] : []),
       ],
       depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm' && d.id !== 'cooler'),
@@ -141,7 +142,7 @@ export default function Sidebar({
     }] : []),
   ];
 
-  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry') => {
+  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit') => {
     onSelect(id);
     setIsOpen(false);
   };
