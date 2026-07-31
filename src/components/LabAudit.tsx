@@ -120,11 +120,14 @@ export default function LabAudit({ entries, masterData }: Props) {
     });
 
     // Product House (AP, BD, Chem once daily)
-    // Product House (AP, BD, Chem once daily)
     const phEntries = filteredEntries.filter(e => e.departmentId === 'product_house');
-    let phDaily = false;
+    let phAp = false;
+    let phBd = false;
+    let phChem = false;
     phEntries.forEach(e => {
-      if (hasValue(e.data.al2o3) || hasValue(e.data['Al2O3']) || hasValue(e.data.ap) || hasValue(e.data['AP'])) phDaily = true;
+      if (hasValue(e.data.ap) || hasValue(e.data['AP'])) phAp = true;
+      if (hasValue(e.data.bd) || hasValue(e.data['BD'])) phBd = true;
+      if (hasValue(e.data.al2o3) || hasValue(e.data['Al2O3']) || hasValue(e.data.fe2o3) || hasValue(e.data['Fe2O3'])) phChem = true;
     });
     
     // Scale expectations by shift filter
@@ -191,7 +194,9 @@ export default function LabAudit({ entries, masterData }: Props) {
         color: 'from-cyan-500 to-blue-500',
         bg: 'bg-cyan-50/50',
         rules: [
-          { name: 'AP, BD & Chemical Analysis', expectedStr: `Once daily`, expectedNum: 1, actualNum: phDaily ? 1 : 0, status: phDaily ? 'pass' : 'fail', detail: phDaily ? 'Completed' : 'Missing' }
+          { name: 'AP', expectedStr: `Once daily`, expectedNum: 1, actualNum: phAp ? 1 : 0, status: phAp ? 'pass' : 'fail', detail: phAp ? 'Completed' : 'Missing' },
+          { name: 'BD', expectedStr: `Once daily`, expectedNum: 1, actualNum: phBd ? 1 : 0, status: phBd ? 'pass' : 'fail', detail: phBd ? 'Completed' : 'Missing' },
+          { name: 'Chemical Analysis', expectedStr: `Once daily`, expectedNum: 1, actualNum: phChem ? 1 : 0, status: phChem ? 'pass' : 'fail', detail: phChem ? 'Completed' : 'Missing' }
         ]
       }
     ];
