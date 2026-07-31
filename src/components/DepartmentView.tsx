@@ -212,15 +212,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           <p className="text-sm text-slate-500 mt-1">Manage and track {department.category.toLowerCase()} entries.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {userType === 'Admin' && (department.id === 'dgu' || department.id === 'balling_disc' || department.id === 'product_house') && (
-            <button
-              onClick={() => setIsAdminLimitOpen(true)}
-              className="flex items-center px-4 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl font-medium text-xs uppercase tracking-wider hover:bg-slate-50 transition-all shadow-sm hover:shadow"
-            >
-              <Settings className="w-4 h-4 mr-2 text-brand-500" />
-              Configure Limits
-            </button>
-          )}
+
           {canAdd && (
             <button
               onClick={() => setIsModalOpen(true)}
