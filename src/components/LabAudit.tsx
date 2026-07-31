@@ -17,7 +17,7 @@ export default function LabAudit({ entries, masterData }: Props) {
     const now = new Date();
     return entries.filter(e => {
       try {
-        const dStr = e.data.date_of_production || e.data.date || e.timestamp;
+        const dStr = e.data.date_of_production || e.data.date || e.data['Date'] || e.timestamp;
         const eDate = new Date(dStr);
         if (isNaN(eDate.getTime())) return false;
         
@@ -50,40 +50,44 @@ export default function LabAudit({ entries, masterData }: Props) {
 
   const requirements = useMemo(() => {
     // SB3 Drop Test (Twice per shift)
+    // SB3 Drop Test (Twice per shift)
     const dropTestEntries = filteredEntries.filter(e => e.departmentId === 'drop_test');
     let dropTestCount = 0;
     dropTestEntries.forEach(e => {
-      if (hasValue(e.data.dt1)) dropTestCount++;
-      if (hasValue(e.data.dt2)) dropTestCount++;
-      if (hasValue(e.data.dt3)) dropTestCount++;
+      if (hasValue(e.data.dt1) || hasValue(e.data['Drop Test 1'])) dropTestCount++;
+      if (hasValue(e.data.dt2) || hasValue(e.data['Drop Test 2'])) dropTestCount++;
+      if (hasValue(e.data.dt3) || hasValue(e.data['Drop Test 3'])) dropTestCount++;
     });
     
+    // DGU (Fineness Every hour, Chem Once per shift)
     // DGU (Fineness Every hour, Chem Once per shift)
     const dguEntries = filteredEntries.filter(e => e.departmentId === 'dgu');
     let dguFinenessFields = 0;
     let dguChem = false;
     dguEntries.forEach(e => {
       [1,2,3,4,5,6,7,8].forEach(i => {
-        if (hasValue(e.data[`fineness_${i}`])) dguFinenessFields++;
+        if (hasValue(e.data[`fineness_${i}`]) || hasValue(e.data[`Fineness %${i}`]) || hasValue(e.data[`Fineness ${i}`])) dguFinenessFields++;
       });
-      if (hasValue(e.data.al2o3) || hasValue(e.data.fe2o3) || hasValue(e.data.tio2)) {
+      if (hasValue(e.data.al2o3) || hasValue(e.data['Al2O3']) || hasValue(e.data.fe2o3) || hasValue(e.data['Fe2O3']) || hasValue(e.data.tio2) || hasValue(e.data['TiO2'])) {
         dguChem = true;
       }
     });
 
+    // Mixer (Viscosity once per shift, Temp once per shift, Moisture every hour)
     // Mixer (Viscosity once per shift, Temp once per shift, Moisture every hour)
     const mixerEntries = filteredEntries.filter(e => e.departmentId === 'mixer');
     let mixerViscosity = false;
     let mixerTempFields = 0;
     let mixerMoistureFields = 0;
     mixerEntries.forEach(e => {
-      if (hasValue(e.data.viscosity)) mixerViscosity = true;
+      if (hasValue(e.data.viscosity) || hasValue(e.data['Viscosity'])) mixerViscosity = true;
       [1,2,3,4,5,6,7,8].forEach(i => {
-        if (hasValue(e.data[`temp_h${i}`])) mixerTempFields++;
-        if (hasValue(e.data[`moisture_h${i}`])) mixerMoistureFields++;
+        if (hasValue(e.data[`temp_h${i}`]) || hasValue(e.data[`Temp H${i}`])) mixerTempFields++;
+        if (hasValue(e.data[`moisture_h${i}`]) || hasValue(e.data[`Moisture H${i}`])) mixerMoistureFields++;
       });
     });
 
+    // Balling Disc (Moisture every hour, Drop test every 2 hours, Chem once daily)
     // Balling Disc (Moisture every hour, Drop test every 2 hours, Chem once daily)
     const bdEntries = filteredEntries.filter(e => e.departmentId === 'balling_disc');
     let bdMoistureFields = 0;
@@ -91,28 +95,30 @@ export default function LabAudit({ entries, masterData }: Props) {
     let bdChem = false;
     bdEntries.forEach(e => {
       [1,2,3,4,5,6,7,8].forEach(i => {
-        if (hasValue(e.data[`gbm_h${i}`])) bdMoistureFields++;
+        if (hasValue(e.data[`gbm_h${i}`]) || hasValue(e.data[`GBM H${i}`])) bdMoistureFields++;
       });
-      if (hasValue(e.data.drop_test)) bdDropTest++;
-      if (hasValue(e.data.al2o3) || hasValue(e.data.fe2o3)) bdChem = true;
+      if (hasValue(e.data.drop_test) || hasValue(e.data['Drop Test'])) bdDropTest++;
+      if (hasValue(e.data.al2o3) || hasValue(e.data['Al2O3']) || hasValue(e.data.fe2o3) || hasValue(e.data['Fe2O3'])) bdChem = true;
     });
 
+    // Kiln (LBD every hour, Chem every shift - mapped to LBD/AP Composite for now)
     // Kiln (LBD every hour, Chem every shift - mapped to LBD/AP Composite for now)
     const kilnEntries = filteredEntries.filter(e => e.departmentId === 'kiln');
     let kilnLbdFields = 0;
     let kilnChem = false;
     kilnEntries.forEach(e => {
       [1,2,3,4,5,6,7,8].forEach(i => {
-        if (hasValue(e.data[`lbd_h${i}`])) kilnLbdFields++;
+        if (hasValue(e.data[`lbd_h${i}`]) || hasValue(e.data[`LBD H${i}`])) kilnLbdFields++;
       });
-      if (hasValue(e.data.ap_composite) || hasValue(e.data.lbd_ap_composite)) kilnChem = true;
+      if (hasValue(e.data.ap_composite) || hasValue(e.data['AP Composite (24hr)']) || hasValue(e.data.lbd_ap_composite) || hasValue(e.data['LBD AP Composite (24hr)'])) kilnChem = true;
     });
 
+    // Product House (AP, BD, Chem once daily)
     // Product House (AP, BD, Chem once daily)
     const phEntries = filteredEntries.filter(e => e.departmentId === 'product_house');
     let phDaily = false;
     phEntries.forEach(e => {
-      if (hasValue(e.data.al2o3) || hasValue(e.data.ap)) phDaily = true;
+      if (hasValue(e.data.al2o3) || hasValue(e.data['Al2O3']) || hasValue(e.data.ap) || hasValue(e.data['AP'])) phDaily = true;
     });
     
     // Scale expectations by shift filter
