@@ -198,6 +198,18 @@ export default function LabAudit({ entries, masterData }: Props) {
 
   }, [filteredEntries, shiftFilter]);
 
+  const totalMissing = useMemo(() => {
+    let count = 0;
+    requirements.forEach(dept => {
+      dept.rules.forEach(rule => {
+        if (rule.expectedNum > rule.actualNum) {
+          count += (rule.expectedNum - rule.actualNum);
+        }
+      });
+    });
+    return count;
+  }, [requirements]);
+
   const getStatusIcon = (status: string) => {
     if (status === 'pass') return <CheckCircle2 className="w-5 h-5 text-emerald-500 drop-shadow-sm" />;
     if (status === 'partial') return <AlertCircle className="w-5 h-5 text-amber-500 drop-shadow-sm" />;
@@ -214,11 +226,16 @@ export default function LabAudit({ entries, masterData }: Props) {
     <div className="max-w-6xl mx-auto space-y-6 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-3 mb-1">
             <CheckCircle2 className="w-6 h-6 text-brand-600" />
             <h2 className="text-xl font-bold text-slate-800">Lab Audit & Compliance</h2>
+            {totalMissing > 0 && (
+              <span className="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 text-xs font-bold ring-1 ring-inset ring-rose-600/20">
+                {totalMissing} Missing Entries
+              </span>
+            )}
           </div>
-          <p className="text-sm text-slate-500 ml-8">Verify testing completion against the official Lab Testing Plan</p>
+          <p className="text-sm text-slate-500 ml-9">Verify testing completion against the official Lab Testing Plan</p>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto custom-scrollbar pb-2 md:pb-0">
