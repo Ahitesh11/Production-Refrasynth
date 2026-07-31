@@ -196,35 +196,33 @@ export default function LabAudit({ entries, masterData }: Props) {
   };
 
   const getStatusClass = (status: string) => {
-    if (status === 'pass') return 'bg-emerald-50/50 border-emerald-200 shadow-[0_0_15px_rgba(16,185,129,0.1)]';
-    if (status === 'partial') return 'bg-amber-50/50 border-amber-200 shadow-[0_0_15px_rgba(245,158,11,0.1)]';
-    return 'bg-rose-50/50 border-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.1)]';
+    if (status === 'pass') return 'bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20';
+    if (status === 'partial') return 'bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20';
+    return 'bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20';
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xl shadow-brand-500/5">
+    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/20">
-              <CheckCircle2 className="w-5 h-5 text-white" />
-            </div>
-            <h2 className="text-2xl font-black text-brand-900 tracking-tight">Lab Audit & Compliance</h2>
+          <div className="flex items-center gap-2 mb-1">
+            <CheckCircle2 className="w-6 h-6 text-brand-600" />
+            <h2 className="text-xl font-bold text-slate-800">Lab Audit & Compliance</h2>
           </div>
-          <p className="text-sm font-medium text-slate-500 ml-13">Verify testing completion against the official Lab Testing Plan</p>
+          <p className="text-sm text-slate-500 ml-8">Verify testing completion against the official Lab Testing Plan</p>
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto custom-scrollbar pb-2 md:pb-0">
-          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
             {(['today', 'yesterday', '7d'] as const).map(filter => (
               <button
                 key={filter}
                 onClick={() => setDateFilter(filter)}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+                  "px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap",
                   dateFilter === filter
-                    ? "bg-white text-brand-700 shadow-md shadow-slate-200/50 ring-1 ring-slate-900/5"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                 )}
               >
                 {filter === 'today' ? 'Today' : filter === 'yesterday' ? 'Yesterday' : 'Last 7 Days'}
@@ -232,16 +230,16 @@ export default function LabAudit({ entries, masterData }: Props) {
             ))}
           </div>
 
-          <div className="flex items-center gap-1.5 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50">
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
             {(['All', 'Shift A', 'Shift B', 'Shift C'] as const).map(filter => (
               <button
                 key={filter}
                 onClick={() => setShiftFilter(filter)}
                 className={cn(
-                  "px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap",
+                  "px-3 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap",
                   shiftFilter === filter
-                    ? "bg-white text-brand-700 shadow-md shadow-slate-200/50 ring-1 ring-slate-900/5"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/50"
                 )}
               >
                 {filter}
@@ -251,61 +249,48 @@ export default function LabAudit({ entries, masterData }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {requirements.map((dept, idx) => (
-          <div key={idx} className="group relative bg-white rounded-3xl border border-slate-200/60 shadow-md hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 overflow-hidden flex flex-col">
-            <div className={cn("px-6 py-5 border-b border-slate-100 flex items-center gap-4 relative overflow-hidden", dept.bg)}>
-              <div className={cn("absolute inset-0 opacity-10 bg-gradient-to-br", dept.color)} />
-              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center bg-white shadow-sm ring-1 ring-slate-900/5 z-10")}>
-                {dept.icon}
-              </div>
-              <h3 className="text-xl font-black text-slate-800 z-10 tracking-tight">{dept.department}</h3>
+          <div key={idx} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div className="px-5 py-4 bg-slate-50/80 border-b border-slate-200 flex items-center gap-3">
+              {dept.icon}
+              <h3 className="font-semibold text-slate-800">{dept.department}</h3>
             </div>
             
-            <div className="p-6 flex-1 space-y-5">
+            <div className="divide-y divide-slate-100 flex-1">
               {dept.rules.map((rule, ridx) => {
-                // Calculate progress percentage
                 const progress = rule.expectedNum > 0 ? Math.min(100, Math.round((rule.actualNum / rule.expectedNum) * 100)) : 0;
                 
                 return (
-                  <div key={ridx} className={cn(
-                    "relative p-5 rounded-2xl border transition-all duration-300 hover:scale-[1.02]",
-                    getStatusClass(rule.status)
-                  )}>
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-start gap-3.5">
-                        <div className="mt-0.5">
-                          {getStatusIcon(rule.status)}
+                  <div key={ridx} className="p-5 flex items-center justify-between gap-4 hover:bg-slate-50/50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800">{rule.name}</p>
+                      <p className="text-xs text-slate-500 mt-1 uppercase tracking-wider">Target: {rule.expectedStr}</p>
+                      
+                      <div className="flex items-center gap-3 mt-3">
+                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                          <div 
+                            className={cn(
+                              "h-full transition-all duration-500",
+                              rule.status === 'pass' ? "bg-emerald-500" :
+                              rule.status === 'partial' ? "bg-amber-500" :
+                              "bg-rose-500"
+                            )}
+                            style={{ width: `${progress}%` }}
+                          />
                         </div>
-                        <div>
-                          <p className="font-bold text-slate-800 tracking-tight leading-tight">{rule.name}</p>
-                          <p className="text-xs font-semibold opacity-60 mt-1 uppercase tracking-wider">Target: {rule.expectedStr}</p>
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end">
-                        <span className={cn(
-                          "px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase",
-                          rule.status === 'pass' ? "bg-emerald-100 text-emerald-700" :
-                          rule.status === 'partial' ? "bg-amber-100 text-amber-700" :
-                          "bg-rose-100 text-rose-700"
-                        )}>
-                          {rule.status === 'pass' ? 'Completed' : rule.status === 'partial' ? 'Partial' : 'Missing'}
-                        </span>
-                        <span className="text-sm font-bold text-slate-600 mt-2">{rule.detail}</span>
+                        <span className="text-[11px] font-semibold text-slate-500 w-8 text-right">{progress}%</span>
                       </div>
                     </div>
                     
-                    {/* Progress Bar */}
-                    <div className="w-full h-2.5 bg-black/5 rounded-full overflow-hidden flex">
-                      <div 
-                        className={cn(
-                          "h-full transition-all duration-1000 ease-out",
-                          rule.status === 'pass' ? "bg-emerald-500" :
-                          rule.status === 'partial' ? "bg-amber-500" :
-                          "bg-rose-500"
-                        )}
-                        style={{ width: `${progress}%` }}
-                      />
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <span className={cn(
+                        "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold uppercase tracking-wider",
+                        getStatusClass(rule.status)
+                      )}>
+                        {rule.status === 'pass' ? 'Completed' : rule.status === 'partial' ? 'Partial' : 'Missing'}
+                      </span>
+                      <span className="text-xs font-semibold text-slate-600">{rule.detail}</span>
                     </div>
                   </div>
                 );
