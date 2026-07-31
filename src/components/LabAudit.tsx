@@ -102,15 +102,21 @@ export default function LabAudit({ entries, masterData }: Props) {
     });
 
     // Kiln (LBD every hour, Chem every shift - mapped to LBD/AP Composite for now)
-    // Kiln (LBD every hour, Chem every shift - mapped to LBD/AP Composite for now)
+    // Kiln (LBD every hour, Composites once daily)
     const kilnEntries = filteredEntries.filter(e => e.departmentId === 'kiln');
     let kilnLbdFields = 0;
-    let kilnChem = false;
+    let kilnApComp = false;
+    let kilnBdComp = false;
+    let kilnLbdApComp = false;
+    let kilnLbdBdComp = false;
     kilnEntries.forEach(e => {
       [1,2,3,4,5,6,7,8].forEach(i => {
         if (hasValue(e.data[`lbd_h${i}`]) || hasValue(e.data[`LBD H${i}`])) kilnLbdFields++;
       });
-      if (hasValue(e.data.ap_composite) || hasValue(e.data['AP Composite (24hr)']) || hasValue(e.data.lbd_ap_composite) || hasValue(e.data['LBD AP Composite (24hr)'])) kilnChem = true;
+      if (hasValue(e.data.ap_composite) || hasValue(e.data['AP Composite (24hr)'])) kilnApComp = true;
+      if (hasValue(e.data.bd_composite) || hasValue(e.data['BD Composite (24hr)'])) kilnBdComp = true;
+      if (hasValue(e.data.lbd_ap_composite) || hasValue(e.data['LBD AP Composite (24hr)'])) kilnLbdApComp = true;
+      if (hasValue(e.data.lbd_bd_composite) || hasValue(e.data['LBD BD Composite (24hr)'])) kilnLbdBdComp = true;
     });
 
     // Product House (AP, BD, Chem once daily)
@@ -173,7 +179,10 @@ export default function LabAudit({ entries, masterData }: Props) {
         bg: 'bg-purple-50/50',
         rules: [
           { name: 'LBD (Every hour)', expectedStr: `${8 * shiftMultiplier} readings`, expectedNum: 8 * shiftMultiplier, actualNum: kilnLbdFields, status: kilnLbdFields >= (8 * shiftMultiplier) ? 'pass' : kilnLbdFields > 0 ? 'partial' : 'fail', detail: `${kilnLbdFields} readings` },
-          { name: 'Chemical Analysis', expectedStr: `1 per shift`, expectedNum: 1 * shiftMultiplier, actualNum: kilnChem ? 1 * shiftMultiplier : 0, status: kilnChem ? 'pass' : 'fail', detail: kilnChem ? 'Completed' : 'Missing' }
+          { name: 'AP Composite (24hr)', expectedStr: `Once daily`, expectedNum: 1, actualNum: kilnApComp ? 1 : 0, status: kilnApComp ? 'pass' : 'fail', detail: kilnApComp ? 'Completed' : 'Missing' },
+          { name: 'BD Composite (24hr)', expectedStr: `Once daily`, expectedNum: 1, actualNum: kilnBdComp ? 1 : 0, status: kilnBdComp ? 'pass' : 'fail', detail: kilnBdComp ? 'Completed' : 'Missing' },
+          { name: 'LBD AP Composite (24hr)', expectedStr: `Once daily`, expectedNum: 1, actualNum: kilnLbdApComp ? 1 : 0, status: kilnLbdApComp ? 'pass' : 'fail', detail: kilnLbdApComp ? 'Completed' : 'Missing' },
+          { name: 'LBD BD Composite (24hr)', expectedStr: `Once daily`, expectedNum: 1, actualNum: kilnLbdBdComp ? 1 : 0, status: kilnLbdBdComp ? 'pass' : 'fail', detail: kilnLbdBdComp ? 'Completed' : 'Missing' }
         ]
       },
       {
