@@ -106,10 +106,12 @@ export default function Sidebar({
   onToggleCollapse
 }: Props) {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [expandedCategory, setExpandedCategory] = React.useState<string | null>(null);
 
   const categories = [
     {
       name: 'Main',
+      icon: LayoutDashboard,
       items: [
         ...(user?.type === 'Admin' ? [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }] : []),
         ...(user?.type === 'Admin' ? [{ id: 'mis_report', name: 'MIS Report', icon: BarChart3 }] : []),
@@ -138,13 +140,31 @@ export default function Sidebar({
     },
     ...(user?.type === 'Admin' ? [{
       name: 'Admin',
+      icon: ShieldCheck,
       items: [{ id: 'manage_users', name: 'Manage Users', icon: Users }]
     }] : []),
   ];
 
+  // Auto-expand whichever category contains the active item; default to the first category.
+  React.useEffect(() => {
+    const activeCat = categories.find(cat =>
+      cat.items?.some((i: any) => i.id === activeId) || cat.depts?.some((d: any) => d.id === activeId)
+    );
+    if (activeCat) {
+      setExpandedCategory(activeCat.name);
+    } else if (expandedCategory === null && categories.length > 0) {
+      setExpandedCategory(categories[0].name);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId]);
+
   const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit') => {
     onSelect(id);
     setIsOpen(false);
+  };
+
+  const toggleCategory = (name: string) => {
+    setExpandedCategory(prev => (prev === name ? null : name));
   };
 
   return (
@@ -216,44 +236,78 @@ export default function Sidebar({
 
         {/* Navigation */}
         <div className={cn(
-          "flex-1 overflow-y-auto py-3 space-y-5 custom-scrollbar",
-          isCollapsed ? "px-2" : "px-3"
+          "flex-1 overflow-y-auto py-3 custom-scrollbar",
+          isCollapsed ? "px-2 space-y-3" : "px-3 space-y-1"
         )}>
-          {categories.map((cat, idx) => (
-            (cat.items && cat.items.length > 0) || (cat.depts && cat.depts.length > 0) ? (
-              <div key={cat.name} className="space-y-2">
+          {categories.map((cat) => {
+            const hasContent = (cat.items && cat.items.length > 0) || (cat.depts && cat.depts.length > 0);
+            if (!hasContent) return null;
+            const CategoryIcon = cat.icon;
+            const isExpanded = isCollapsed || expandedCategory === cat.name;
+
+            return (
+              <div key={cat.name}>
                 {!isCollapsed && (
-                  <div className="px-3">
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{cat.name}</p>
-                  </div>
+                  <button
+                    onClick={() => toggleCategory(cat.name)}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50/80 transition-colors duration-200 group"
+                  >
+                    <div className="flex items-center gap-2">
+                      {CategoryIcon && (
+                        <CategoryIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors duration-200" />
+                      )}
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors duration-200">
+                        {cat.name}
+                      </p>
+                    </div>
+                    <ChevronDown
+                      className={cn(
+                        "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
+                        isExpanded ? "rotate-180" : ""
+                      )}
+                    />
+                  </button>
                 )}
-                <div className="space-y-0.5">
-                  {cat.items?.map(item => (
-                    <NavItem
-                      key={item.id}
-                      id={item.id as any}
-                      name={item.name}
-                      icon={item.icon}
-                      activeId={activeId}
-                      onSelect={handleSelect}
-                      isCollapsed={isCollapsed}
-                    />
-                  ))}
-                  {cat.depts?.map(dept => (
-                    <NavItem
-                      key={dept.id}
-                      id={dept.id}
-                      name={dept.name}
-                      icon={cat.icon || Activity}
-                      activeId={activeId}
-                      onSelect={handleSelect}
-                      isCollapsed={isCollapsed}
-                    />
-                  ))}
-                </div>
+                <AnimatePresence initial={false}>
+                  {isExpanded && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      className="overflow-hidden"
+                    >
+                      <div className={cn("space-y-0.5", !isCollapsed && "pt-0.5 pb-1")}>
+                        {cat.items?.map(item => (
+                          <NavItem
+                            key={item.id}
+                            id={item.id as any}
+                            name={item.name}
+                            icon={item.icon}
+                            activeId={activeId}
+                            onSelect={handleSelect}
+                            isCollapsed={isCollapsed}
+                          />
+                        ))}
+                        {cat.depts?.map(dept => (
+                          <NavItem
+                            key={dept.id}
+                            id={dept.id}
+                            name={dept.name}
+                            icon={cat.icon || Activity}
+                            activeId={activeId}
+                            onSelect={handleSelect}
+                            isCollapsed={isCollapsed}
+                          />
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
-            ) : null
-          ))}
+            );
+          })}
         </div>
 
         {/* User Module */}
