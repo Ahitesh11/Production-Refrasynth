@@ -30,6 +30,9 @@ export interface User {
 export interface Department {
   id: DepartmentId;
   name: string;
+  // Optional friendlier label for the sidebar/header — `name` itself must stay untouched
+  // since it's used verbatim as the Google Sheet tab name for reads/writes.
+  displayName?: string;
   category: 'Lab' | 'Stock' | 'Process';
   fields: Field[];
 }
@@ -145,6 +148,7 @@ export const DEPARTMENTS: Department[] = [
       { name: 'name', label: 'Name', type: 'text' },
       { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] },
       { name: 'entry_type', label: 'Entry Type', type: 'select', options: ['Shift', 'Composite'] },
+      { name: 'flow_meter_kl', label: 'Flow Meter (KL)', type: 'number' },
       { name: 'lbd_h1', label: 'LBD H1', type: 'number' },
       { name: 'lbd_h2', label: 'LBD H2', type: 'number' },
       { name: 'lbd_h3', label: 'LBD H3', type: 'number' },
@@ -499,9 +503,11 @@ export const DEPARTMENTS: Department[] = [
   {
     id: 'opening_closing',
     name: 'Opning Closing',
+    displayName: 'Main Tank / Kiln Day Tank / TG Day Tank',
     category: 'Stock',
     fields: [
       { name: 'campaign_no', label: 'Campaign No.', type: 'select', options: [] },
+      { name: 'date', label: 'Date', type: 'date' },
       { name: 'type', label: 'Type', type: 'select', options: ['Opening', 'Closing'] },
       { name: 'main_tank', label: 'Main Tank', type: 'number' },
       { name: 'day_tank_kiln', label: 'Day Tank Kiln', type: 'number' },

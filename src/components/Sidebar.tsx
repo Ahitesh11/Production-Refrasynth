@@ -21,15 +21,16 @@ import {
   Globe,
   Users,
   Sparkles,
-  ChevronDown
+  ChevronDown,
+  ClipboardList
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Department, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 
 interface Props {
-  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | null;
-  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit') => void;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod' | null;
+  onSelect: (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod') => void;
   departments: Department[];
   user: User | null;
   onLogout: () => void;
@@ -41,10 +42,10 @@ interface Props {
 }
 
 interface NavItemProps {
-  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit';
+  id: DepartmentId | 'dashboard' | 'rm' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod';
   name: string;
   icon: any;
-  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | null;
+  activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod' | null;
   onSelect: (id: any) => void;
   isCollapsed: boolean;
   key?: React.Key;
@@ -115,6 +116,7 @@ export default function Sidebar({
       items: [
         ...(user?.type === 'Admin' ? [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }] : []),
         ...(user?.type === 'Admin' ? [{ id: 'mis_report', name: 'MIS Report', icon: BarChart3 }] : []),
+        ...(user?.type === 'Admin' ? [{ id: 'daily_mod', name: 'Daily Meeting Report', icon: ClipboardList }] : []),
         ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm_entry', name: 'RM Entry', icon: Zap }] : []),
         ...(departments.some(d => d.id === 'sb3_ground' || d.id === 'inventory') ? [{ id: 'inventory', name: 'Issue To SB3', icon: Database }] : []),
       ]
@@ -158,7 +160,7 @@ export default function Sidebar({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeId]);
 
-  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit') => {
+  const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod') => {
     onSelect(id);
     setIsOpen(false);
   };
@@ -172,7 +174,7 @@ export default function Sidebar({
       {/* Mobile Toggle Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed bottom-8 right-8 z-[60] w-14 h-14 bg-brand-600 text-white rounded-2xl shadow-2xl shadow-brand-200/50 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 border border-white/20"
+        className="no-print lg:hidden fixed bottom-8 right-8 z-[60] w-14 h-14 bg-brand-600 text-white rounded-2xl shadow-2xl shadow-brand-200/50 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95 border border-white/20"
       >
         {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
       </button>
@@ -192,7 +194,7 @@ export default function Sidebar({
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed lg:sticky top-0 left-0 z-[56] h-screen bg-white flex flex-col transition-[width,transform] duration-300 ease-out border-r border-slate-200/80 shadow-2xl shadow-slate-200/20",
+        "no-print fixed lg:sticky top-0 left-0 z-[56] h-screen bg-white flex flex-col transition-[width,transform] duration-300 ease-out border-r border-slate-200/80 shadow-2xl shadow-slate-200/20",
         isCollapsed ? "w-16" : "w-60",
         isOpen ? "translate-x-0" : "max-lg:-translate-x-full"
       )}>
@@ -294,7 +296,7 @@ export default function Sidebar({
                           <NavItem
                             key={dept.id}
                             id={dept.id}
-                            name={dept.name}
+                            name={dept.displayName || dept.name}
                             icon={cat.icon || Activity}
                             activeId={activeId}
                             onSelect={handleSelect}

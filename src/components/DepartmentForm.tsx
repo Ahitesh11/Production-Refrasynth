@@ -327,7 +327,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
               <span className="text-[0.625rem] font-bold uppercase tracking-widest text-accent">Department Protocol</span>
               <span className="w-1.5 h-1.5 rounded-full bg-primary status-dot-connected" />
             </div>
-            <h2 className="text-xl font-bold text-foreground tracking-tight">{department.name}</h2>
+            <h2 className="text-xl font-bold text-foreground tracking-tight">{department.displayName || department.name}</h2>
           </div>
         </div>
         <button

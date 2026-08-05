@@ -38,7 +38,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { format, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
-import { cn, getDepartmentAverage } from '../lib/utils';
+import { cn, getDepartmentAverage, parseRange } from '../lib/utils';
 import {
   LineChart,
   Line,
@@ -102,34 +102,6 @@ interface Props {
   parameterRanges?: Record<string, string>;
 }
 
-const parseRange = (rangeStr: string, rangeKey: string = ''): { min: number; max: number } | null => {
-  if (!rangeStr) return null;
-  const getRepeatedValue = (s: string): number | null => {
-    if (!s) return null;
-    const val = parseFloat(s);
-    return isNaN(val) ? null : val;
-  };
-  const clean = rangeStr.replace(/\s/g, '');
-  if (clean.toLowerCase().includes('to')) {
-    const parts = clean.toLowerCase().split('to');
-    const min = getRepeatedValue(parts[0]);
-    const max = getRepeatedValue(parts[1]);
-    if (min !== null && max !== null) return { min, max };
-  }
-  const numbers = rangeStr.match(/-?\d+(\.\d+)?/g);
-  if (numbers && numbers.length >= 2) {
-    return { min: parseFloat(numbers[0]), max: parseFloat(numbers[1]) };
-  }
-  if (numbers && numbers.length === 1) {
-    const val = parseFloat(numbers[0]);
-    const key = rangeKey.toLowerCase();
-    if (key.includes('moisture') || key.includes('gbm') || key.includes('cbm') || key.includes('loi') || key.includes('iron') || key.includes('fe2o3') || key.includes('tio2') || key.includes('ap')) {
-      return { min: 0, max: val };
-    }
-    return { min: val, max: 1000 };
-  }
-  return null;
-};
 
 const avg = (arr: number[]): string => {
   return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : '-';

@@ -587,7 +587,7 @@ function getHeadersForDepartment(name) {
       midHeaders = ["Campaign", "Shift", "Date", "Name", "GBM H1", "GBM H2", "GBM H3", "GBM H4", "GBM H5", "GBM H6", "GBM H7", "GBM H8", "Drop Test", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note"];
       break;
     case "Kiln":
-      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "LBD H1", "LBD H2", "LBD H3", "LBD H4", "LBD H5", "LBD H6", "LBD H7", "LBD H8", "AP H2", "AP H4", "AP H6", "AP H8", "BD H2", "BD H4", "BD H6", "BD H8", "AP Composite (24hr)", "BD Composite (24hr)", "LBD AP Composite (24hr)", "LBD BD Composite (24hr)", "Note"];
+      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Flow Meter (KL)", "LBD H1", "LBD H2", "LBD H3", "LBD H4", "LBD H5", "LBD H6", "LBD H7", "LBD H8", "AP H2", "AP H4", "AP H6", "AP H8", "BD H2", "BD H4", "BD H6", "BD H8", "AP Composite (24hr)", "BD Composite (24hr)", "LBD AP Composite (24hr)", "LBD BD Composite (24hr)", "Note"];
       break;
     case "Cooler":
       midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "AP", "BD"];
@@ -596,7 +596,7 @@ function getHeadersForDepartment(name) {
       midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Al2O3", "Fe2O3", "SiO2", "TiO2", "CaO", "MgO", "AP", "BD", "Note"];
       break;
     case "SB3 Ground":
-      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Material 1", "Qty1", "Material 2", "Qty2", "Material 3", "Qty3", "Material 4", "Qty4", "Material 5", "Qty5", "Material 6", "Qty6"];
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Image Of Weight Slip", "Material 1", "Qty1", "Material 2", "Qty2", "Material 3", "Qty3", "Material 4", "Qty4", "Material 5", "Qty5", "Material 6", "Qty6"];
       break;
     case "SB3 Hopper":
       midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "RM1", "Hopper 3", "RM2", "Hopper 4", "RM3", "Hopper 5", "RM4", "Hopper 6", "RM5", "Hopper 7", "RM6", "Hopper 8", "Note"];
@@ -637,7 +637,7 @@ function getHeadersForDepartment(name) {
       break;
     case "Campaign Opening Closing":
     case "Opning Closing":
-      midHeaders = ["Campaign No.", "Type", "Main Tank", "Day Tank Kiln", "Day Tank TG", "Note"];
+      midHeaders = ["Campaign No.", "Date", "Type", "Main Tank", "Day Tank Kiln", "Day Tank TG", "Note"];
       break;
     case "Check List":
       midHeaders = ["Task ID", "Given By", "Name", "Task Description", "Task Start Date", "Freq", "Planned1", "Actual1", "Delay1", "Status1", "Planned2", "Actual2", "Delay2", "Status2"];

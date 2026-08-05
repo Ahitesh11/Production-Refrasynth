@@ -10,6 +10,7 @@ import ManageUsers from './components/ManageUsers';
 import MISReport from './components/MISReport';
 import DepartmentForm from './components/DepartmentForm';
 import LabAudit from './components/LabAudit';
+import DailyMODMeeting from './components/DailyMODMeeting';
 
 import { DEPARTMENTS, DepartmentId, Entry, User } from './types';
 import { format } from 'date-fns';
@@ -20,7 +21,7 @@ export default function App() {
     const saved = localStorage.getItem('erp_user');
     return saved ? JSON.parse(saved) : null;
   });
-  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit'>(() => {
+  const [activeId, setActiveId] = useState<DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod'>(() => {
     const saved = localStorage.getItem('erp_user');
     const savedUser = saved ? JSON.parse(saved) : null;
     if (!savedUser || savedUser.type === 'Admin') return 'dashboard';
@@ -317,7 +318,7 @@ export default function App() {
         <button
           onClick={() => fetchData(true)}
           disabled={isRefreshing}
-          className={`fixed bottom-24 right-8 lg:bottom-8 lg:right-8 z-[55] w-14 h-14 bg-brand-800 text-white rounded-full flex items-center justify-center shadow-2xl shadow-slate-900/30 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 border border-slate-700 ${isRefreshing ? 'opacity-70 cursor-not-allowed scale-100 hover:scale-100' : ''}`}
+          className={`no-print fixed bottom-24 right-8 lg:bottom-8 lg:right-8 z-[55] w-14 h-14 bg-brand-800 text-white rounded-full flex items-center justify-center shadow-2xl shadow-slate-900/30 hover:bg-slate-800 transition-all hover:scale-105 active:scale-95 border border-slate-700 ${isRefreshing ? 'opacity-70 cursor-not-allowed scale-100 hover:scale-100' : ''}`}
           title="Refresh Data"
         >
           <RefreshCw className={`w-6 h-6 ${isRefreshing ? 'animate-spin text-brand-400' : ''}`} />
@@ -396,6 +397,8 @@ export default function App() {
             )
           ) : activeId === 'lab_audit' ? (
             <LabAudit entries={entries} masterData={masterData} />
+          ) : activeId === 'daily_mod' ? (
+            <DailyMODMeeting entries={entries} parameterRanges={parameterRanges} />
           ) : activeId === 'mis_report' ? (
             <MISReport
               entries={entries}
@@ -503,22 +506,22 @@ export default function App() {
                     data
                   };
 
-                  // Construct the values array for Google Sheets
+                  // Write by matching the sheet's actual column headers (not by position) — the sheet's
+                  // column layout can drift from this department's field list (e.g. columns removed/reordered
+                  // on the sheet itself), and a positional values[] array would then land in the wrong columns.
                   const dept = departmentsWithMaster.find(d => d.id === 'sb3_ground')!;
-                  const values = [
-                    timestamp,
-                    ...dept.fields
-                      .filter(f => f.name !== 'entry_type' && !f.readonly)
-                      .map(f => {
-                        let val = data[f.label] || data[f.name] || '';
-                        if (f.type === 'date' && val && !/^\d{2}\/\d{2}\/\d{4}/.test(String(val))) {
-                          try {
-                            val = format(new Date(String(val)), 'MM/dd/yyyy');
-                          } catch (e) { }
-                        }
-                        return val;
-                      })
-                  ];
+                  const partialData: Record<string, any> = { 'Timestamp': timestamp };
+                  dept.fields
+                    .filter(f => f.name !== 'entry_type' && !f.readonly)
+                    .forEach(f => {
+                      let val = data[f.label] || data[f.name] || '';
+                      if (f.type === 'date' && val && !/^\d{2}\/\d{2}\/\d{4}/.test(String(val))) {
+                        try {
+                          val = format(new Date(String(val)), 'MM/dd/yyyy');
+                        } catch (e) { }
+                      }
+                      partialData[f.label] = val;
+                    });
 
                   // POST to Google Sheets
                   try {
@@ -529,7 +532,8 @@ export default function App() {
                       body: JSON.stringify({
                         sheetName: 'SB3 Ground',
                         entryId: timestamp,
-                        values: values
+                        values: [],
+                        partialData
                       }),
                     });
 

@@ -208,7 +208,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-brand-900">{department.name}</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-brand-900">{department.displayName || department.name}</h2>
           <p className="text-sm text-slate-500 mt-1">Manage and track {department.category.toLowerCase()} entries.</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
