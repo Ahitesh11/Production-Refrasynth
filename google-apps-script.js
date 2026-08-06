@@ -578,22 +578,22 @@ function getHeadersForDepartment(name) {
 
   switch (normalizedName) {
     case "DGU":
-      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note", "Fineness %1", "Fineness %2", "Fineness %3", "Fineness %4", "Fineness %5", "Fineness %6", "Fineness %7", "Fineness %8"];
+      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Incharge Name", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note", "Fineness %1", "Fineness %2", "Fineness %3", "Fineness %4", "Fineness %5", "Fineness %6", "Fineness %7", "Fineness %8"];
       break;
     case "Mixer":
-      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Temperature", "Viscosity", "Moisture"];
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Name", "Incharge Name", "Viscosity", "Temp H1", "Temp H2", "Temp H3", "Temp H4", "Temp H5", "Temp H6", "Temp H7", "Temp H8", "Moisture H1", "Moisture H2", "Moisture H3", "Moisture H4", "Moisture H5", "Moisture H6", "Moisture H7", "Moisture H8"];
       break;
     case "Balling Disc":
-      midHeaders = ["Campaign", "Shift", "Date", "Name", "GBM H1", "GBM H2", "GBM H3", "GBM H4", "GBM H5", "GBM H6", "GBM H7", "GBM H8", "Drop Test", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note"];
+      midHeaders = ["Campaign", "Shift", "Date", "Name", "Incharge Name", "GBM H1", "GBM H2", "GBM H3", "GBM H4", "GBM H5", "GBM H6", "GBM H7", "GBM H8", "Drop Test", "Al2O3", "Fe2O3", "TiO2", "Loi", "Note"];
       break;
     case "Kiln":
-      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Flow Meter (KL)", "LBD H1", "LBD H2", "LBD H3", "LBD H4", "LBD H5", "LBD H6", "LBD H7", "LBD H8", "AP H2", "AP H4", "AP H6", "AP H8", "BD H2", "BD H4", "BD H6", "BD H8", "AP Composite (24hr)", "BD Composite (24hr)", "LBD AP Composite (24hr)", "LBD BD Composite (24hr)", "Note"];
+      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Incharge Name", "Flow Meter (KL)", "LBD H1", "LBD H2", "LBD H3", "LBD H4", "LBD H5", "LBD H6", "LBD H7", "LBD H8", "AP H2", "AP H4", "AP H6", "AP H8", "BD H2", "BD H4", "BD H6", "BD H8", "AP Composite (24hr)", "BD Composite (24hr)", "LBD AP Composite (24hr)", "LBD BD Composite (24hr)", "Note"];
       break;
     case "Cooler":
-      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "AP", "BD"];
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Name", "Incharge Name", "AP H2", "AP H4", "AP H6", "AP H8", "BD H2", "BD H4", "BD H6", "BD H8"];
       break;
     case "Product House":
-      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Al2O3", "Fe2O3", "SiO2", "TiO2", "CaO", "MgO", "AP", "BD", "Note"];
+      midHeaders = ["Campaign No.", "Shift", "Date", "Name", "Incharge Name", "Al2O3", "Fe2O3", "SiO2", "TiO2", "CaO", "MgO", "AP", "BD", "Note"];
       break;
     case "SB3 Ground":
       midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Image Of Weight Slip", "Material 1", "Qty1", "Material 2", "Qty2", "Material 3", "Qty3", "Material 4", "Qty4", "Material 5", "Qty5", "Material 6", "Qty6"];
@@ -605,14 +605,17 @@ function getHeadersForDepartment(name) {
       midHeaders = ["Campaign No.", "Date", "Semi Finished Product Name", "Ispileg Re-feeded Qty"];
       break;
     case "Actual Production":
-      midHeaders = ["Campaign No.", "Shift", "Product Name", "Date Of Production", "Qty", "Fuel Qty Used", "Electric Used", "Remark"];
+      midHeaders = ["Campaign No.", "Shift", "Product Name", "Date Of Production", "Incharge Name", "Qty", "Fuel Qty Used", "Electric Used", "Remark"];
+      break;
+    case "Campaign Opening":
+      midHeaders = ["Campaign No.", "Date of Opening of kiln", "Start Time", "Date Of Calculation", "Incharge Name", "SB3 Hopper3", "SB3 Hopper4", "SB3 Hopper5", "PPT Qty", "SB4 Qty", "Ball Mill", "BC 10", "BC 11", "BC 12", "BC 13", "Mixture (Balling Dics)", "Balling Disc X 4Nos.", "Tg Beg", "Kiln", "Cooler", "Remarks/Reason"];
       break;
     case "Campaign Closing":
-      midHeaders = ["Campaign No.", "Date of Closure of kiln", "Shutdown Time", "Date Of Calculation", "Semi Finished Name", "SB3 Hopper 1", "SB3 Hopper 2", "SB3 Hopper 3", "Ispileg Qty", "PPT Qty", "SB4 Qty", "Balling Disc Hopper Qty", "Semi Finished Recovered Location", "Reason of Closure of Campaign"];
+      midHeaders = ["Campaign No.", "Date of Closure of kiln", "Shutdown Time", "Date Of Calculation", "Semi Finished Name", "SB3 Hopper3", "SB3 Hopper4", "SB3 Hopper5", "PPT Qty", "SB4 Qty", "Ball Mill", "BC 10", "BC 11", "BC 12", "BC 13", "Mixture (Balling Dics)", "Balling Disc X 4Nos.", "Tg Beg", "Kiln", "Cooler", "Reason of Closure of Campaign"];
       break;
     case "Parameter":
       midHeaders = [
-        "Campaign No.", "Shift", "Date", "TG Feed", "TG Avg Bed Level", "TG RPM", "TG Burner Pressure",
+        "Campaign No.", "Shift", "Date", "Incharge Name", "TG Feed", "TG Avg Bed Level", "TG RPM", "TG Burner Pressure",
         "DD1 Temperature", "DD1 Pressure", "PH1 Temperature", "PH1 Pressure", "PH2 Temperature", "PH2 Pressure",
         "PH2 WB4 Temperature", "PH2 WB6 Temperature", "TG Chain Temperature", "Kiln RPM", "Kiln Current",
         "Kiln Oil Flow", "Kiln Inlet Temperature", "Kiln Inlet Pressure", "Kiln Outlet Temperature",
@@ -624,20 +627,23 @@ function getHeadersForDepartment(name) {
       ];
       break;
     case "RM":
-      midHeaders = ["Unique No.", "Party Name", "Truck No.", "Invoice No.", "Raw Material Name", "Truck Qty", "Name of Chemist", "Date Of Testing", "Planned", "Actual", "Delay", "AD", "BD", "Fineness", "Loi", "Moisture", "Remarks", "Planned1", "Actual1", "Delay1", "Al2O3", "Fe2O3", "SiO2", "MgO", "TiO2", "CaO", "Remarks"];
+      midHeaders = ["Unique No.", "Party Name", "Truck No.", "Invoice No.", "Bill Date", "Raw Material Name", "Truck Qty", "Name of Chemist", "Date Of Testing", "Planned", "Actual", "Delay", "AD", "BD", "Fineness", "Loi", "Moisture", "Remarks", "Planned1", "Actual1", "Delay1", "Al2O3", "Fe2O3", "SiO2", "MgO", "TiO2", "CaO", "Remarks"];
       break;
     case "Drop Test":
-      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Rm 1", "Drop Test 1", "Rm 2", "Drop Test 2", "Rm 3", "Drop Test 3", "Note", "Rm 1 %", "Rm 2 %", "Rm 3 %", "Rm 1 Min", "Rm 1 Max", "Rm 2 Min", "Rm 2 Max", "Rm 3 Min", "Rm 3 Max"];
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Incharge Name", "Rm 1", "Drop Test 1", "Rm 2", "Drop Test 2", "Rm 3", "Drop Test 3", "Note", "Rm 1 %", "Rm 2 %", "Rm 3 %", "Rm 1 Min", "Rm 1 Max", "Rm 2 Min", "Rm 2 Max", "Rm 3 Min", "Rm 3 Max"];
       break;
     case "Spillage":
-      midHeaders = ["Campaign No.", "Shift", "Date", "Product Name", "Hot Screen Qty", "Multi Cyclone Qty", "House Keeping", "Road Side"];
+      midHeaders = ["Campaign No.", "Shift", "Date", "Incharge Name", "Product Name", "Hot Screen Qty", "Multi Cyclone Qty", "House Keeping", "Road Side"];
       break;
     case "Why Production Stop":
-      midHeaders = ["Campaign No.", "Date", "Shift", "Time Stop", "Department", "Problem Description", "Machine Name", "Reported By", "Planned", "Actual", "Delay", "Date", "Shift", "Time", "Duration"];
+      midHeaders = ["Campaign No.", "Date", "Shift", "Incharge Name", "Time Stop", "Department", "Problem Description", "Machine Name", "Reported By", "Planned", "Actual", "Delay", "Fix Date", "Shift", "Time"];
       break;
     case "Campaign Opening Closing":
     case "Opning Closing":
       midHeaders = ["Campaign No.", "Date", "Type", "Main Tank", "Day Tank Kiln", "Day Tank TG", "Note"];
+      break;
+    case "Production Flow":
+      midHeaders = ["Campaign No.", "Product Name", "Shift", "Date", "Incharge Name", "Type", "RM1", "WF3", "RM2", "WF4", "RM3", "WF5", "LIW1", "LIW2", "LIW3", "LIW4", "LIW5"];
       break;
     case "Check List":
       midHeaders = ["Task ID", "Given By", "Name", "Task Description", "Task Start Date", "Freq", "Planned1", "Actual1", "Delay1", "Status1", "Planned2", "Actual2", "Delay2", "Status2"];

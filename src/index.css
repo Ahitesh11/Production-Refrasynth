@@ -66,95 +66,100 @@
   animation: statusDot 2s infinite ease-in-out;
 }
 
-/* Component Styles */
-.modal-backdrop {
-  backdrop-filter: blur(4px);
-  background-color: rgba(15, 23, 42, 0.5);
-}
+/* Component Styles — layered so a utility class (e.g. w-[160px]) applied alongside one of these
+   can still win. Unlayered CSS always outranks Tailwind's utilities layer regardless of source
+   order, which was silently breaking every `form-input w-[...]` combo in the app (e.g. the
+   Campaign filter select rendering at its unconstrained content width instead of 160px). */
+@layer components {
+  .modal-backdrop {
+    backdrop-filter: blur(4px);
+    background-color: rgba(15, 23, 42, 0.5);
+  }
 
-.modal-container {
-  animation: slideUp 200ms ease-out forwards;
-}
+  .modal-container {
+    animation: slideUp 200ms ease-out forwards;
+  }
 
-.btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  border-radius: 0.5rem;
-  background-color: var(--primary);
-  color: white;
-  font-weight: 600;
-  transition: all 150ms ease;
-}
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--primary);
+    color: white;
+    font-weight: 600;
+    transition: all 150ms ease;
+  }
 
-.btn-primary:active {
-  transform: scale(0.97);
-}
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
 
-.form-input {
-  width: 100%;
-  padding: 0.625rem 0.75rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border);
-  background: var(--input);
-  font-size: 0.875rem;
-  transition: all 150ms ease;
-  outline: none;
-}
+  .form-input {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    background: var(--input);
+    font-size: 0.875rem;
+    transition: all 150ms ease;
+    outline: none;
+  }
 
-.form-input:focus {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
-}
+  .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+  }
 
-.nav-item-active {
-  background: linear-gradient(135deg, var(--primary-light), #bbf7d0);
-  color: var(--primary-dark);
-  border-left: 3px solid var(--primary);
-}
+  .nav-item-active {
+    background: linear-gradient(135deg, var(--primary-light), #bbf7d0);
+    color: var(--primary-dark);
+    border-left: 3px solid var(--primary);
+  }
 
-.badge-shift-a {
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-radius: 9999px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
+  .badge-shift-a {
+    background: #dbeafe;
+    color: #1d4ed8;
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
 
-.badge-shift-b {
-  background: #fef3c7;
-  color: #b45309;
-  border-radius: 9999px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
+  .badge-shift-b {
+    background: #fef3c7;
+    color: #b45309;
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
 
-.badge-shift-c {
-  background: #fce7f3;
-  color: #be185d;
-  border-radius: 9999px;
-  padding: 2px 8px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
+  .badge-shift-c {
+    background: #fce7f3;
+    color: #be185d;
+    border-radius: 9999px;
+    padding: 2px 8px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
 
-.gradient-green {
-  background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
-}
+  .gradient-green {
+    background: linear-gradient(135deg, #16a34a 0%, #15803d 50%, #166534 100%);
+  }
 
-.gradient-accent {
-  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
-}
+  .gradient-accent {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 12px;
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 12px;
+  }
 }
 
 /* Custom modern scrollbar */
@@ -298,9 +303,31 @@
   background: #ffffff; /* crisp white for table body */
 }
 
+/* Subtle zebra striping — helps track a row across wide, many-column tables */
+.premium-table tbody tr:nth-child(even) {
+  background: #fbfcfd;
+}
+
 /* Clean Hover State */
 .premium-table tbody tr:hover {
   background: #f8fafc !important; /* extremely subtle highlight */
+}
+
+/* ── Sortable column headers ─────────────────────────────────── */
+.premium-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.premium-table th.sortable:hover {
+  background: #e8edf3;
+}
+.premium-table th .sort-icon {
+  opacity: 0.35;
+  transition: opacity 0.15s ease;
+}
+.premium-table th.sortable:hover .sort-icon,
+.premium-table th .sort-icon.sort-active {
+  opacity: 1;
 }
 
 /* ── Body cells ───────────────────────────────────────────────── */

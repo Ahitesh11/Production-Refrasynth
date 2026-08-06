@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Department, Entry } from '../types';
-import { Settings, Plus, Download, Filter, FileSpreadsheet, ListTodo, Search, History, TestTube2, AlertCircle, FileText, CheckCircle2, FlaskConical, Beaker, Check, Save, Loader2, X, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Settings, Plus, Download, Filter, FileSpreadsheet, ListTodo, Search, History, TestTube2, AlertCircle, FileText, CheckCircle2, FlaskConical, Beaker, Check, Save, Loader2, X, TrendingUp, TrendingDown, Minus, ChevronUp, ChevronDown, ArrowUpDown } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import DepartmentForm from './DepartmentForm';
 import { motion, AnimatePresence } from 'motion/react';
@@ -79,6 +79,19 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCampaign, setSelectedCampaign] = useState<string>('All');
   const [protocolFilter, setProtocolFilter] = useState<string>('All');
+  // Column sort — null means "use the default latest-first date sort" (sortedEntries below).
+  const [sortField, setSortField] = useState<string | null>(null);
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
+  const TIMESTAMP_SORT_KEY = '__timestamp__';
+
+  const toggleSort = (fieldKey: string) => {
+    if (sortField === fieldKey) {
+      setSortDir(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(fieldKey);
+      setSortDir('asc');
+    }
+  };
 
   React.useEffect(() => {
     if (initialRanges) setLocalRanges(initialRanges);
@@ -135,9 +148,9 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
 
     if (department.id !== 'dgu') return base;
     if (dguReport === 'fineness') {
-      return base.filter(f =>
-        ['campaign_no', 'shift', 'date', 'name', 'note'].includes(f.name) || f.name.startsWith('fineness_')
-      );
+      // One averaged column instead of 8 raw hourly ones (Fineness %1..%8) — easier to scan per entry.
+      const core = base.filter(f => ['campaign_no', 'shift', 'date', 'name', 'note'].includes(f.name));
+      return [...core, { name: '__fineness_avg__', label: 'Fineness Avg %', type: 'number' as const }];
     }
     if (dguReport === 'lab') {
       return base.filter(f =>
@@ -200,6 +213,32 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
     return filtered;
   }, [sortedEntries, searchTerm, selectedCampaign, protocolFilter, hasProtocol, dguReport, department.id]);
 
+  // User-picked column sort layered on top of the filtered set; falls back to displayedEntries'
+  // default latest-first order when no column has been clicked.
+  const finalEntries = useMemo(() => {
+    if (!sortField) return displayedEntries;
+    const list = [...displayedEntries];
+    list.sort((a, b) => {
+      const getRaw = (e: Entry) => sortField === TIMESTAMP_SORT_KEY ? e.timestamp : (e.data[sortField] ?? '');
+      const va = getRaw(a);
+      const vb = getRaw(b);
+      let cmp: number;
+      if (sortField === TIMESTAMP_SORT_KEY) {
+        cmp = parseGlobalDate(String(va)) - parseGlobalDate(String(vb));
+      } else {
+        const na = parseFloat(va);
+        const nb = parseFloat(vb);
+        if (va !== '' && vb !== '' && !isNaN(na) && !isNaN(nb)) {
+          cmp = na - nb;
+        } else {
+          cmp = String(va).localeCompare(String(vb));
+        }
+      }
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return list;
+  }, [displayedEntries, sortField, sortDir]);
+
   const canAdd = userType === 'Entry' || userType === 'Admin';
   const canMarkDone = userType === 'Mark Done' || userType === 'Admin';
 
@@ -229,7 +268,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
       <div className="glass-card overflow-hidden">
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row items-center gap-3 px-4 py-3 border-b border-slate-200/80 bg-slate-50/30">
-          <div className="flex items-center gap-3 w-full flex-1">
+          <div className="flex items-center gap-3 w-full flex-1 min-w-0">
             {uniqueCampaigns.length > 0 && (
               <select
                 value={selectedCampaign}
@@ -242,7 +281,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                 ))}
               </select>
             )}
-            <div className="relative flex-1 w-full">
+            <div className="relative flex-1 min-w-0">
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
@@ -340,8 +379,19 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
           <table className="premium-table">
             <thead>
               <tr>
-                <th className="col-sticky-left" style={{minWidth:'140px'}}>
-                  Timestamp
+                <th
+                  className="col-sticky-left sortable"
+                  style={{minWidth:'140px'}}
+                  onClick={() => toggleSort(TIMESTAMP_SORT_KEY)}
+                >
+                  <span style={{display:'inline-flex', alignItems:'center', gap:'4px'}}>
+                    Timestamp
+                    {sortField === TIMESTAMP_SORT_KEY ? (
+                      sortDir === 'asc' ? <ChevronUp className="w-3 h-3 sort-icon sort-active" /> : <ChevronDown className="w-3 h-3 sort-icon sort-active" />
+                    ) : (
+                      <ArrowUpDown className="w-3 h-3 sort-icon" />
+                    )}
+                  </span>
                 </th>
                 {visibleFields.map(field => {
                   let avgStr: string | null = null;
@@ -361,7 +411,12 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   }
 
                   return (
-                    <th key={field.name} style={{whiteSpace:'nowrap'}}>
+                    <th
+                      key={field.name}
+                      className="sortable"
+                      style={{whiteSpace:'nowrap'}}
+                      onClick={() => toggleSort(field.name)}
+                    >
                       {avgStr !== null && sumStr !== null && (
                         <div style={{marginBottom:'4px', display:'flex', gap:'8px'}}>
                           <div>
@@ -374,14 +429,21 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                           </div>
                         </div>
                       )}
-                      {field.label}
+                      <span style={{display:'inline-flex', alignItems:'center', gap:'4px'}}>
+                        {field.label}
+                        {sortField === field.name ? (
+                          sortDir === 'asc' ? <ChevronUp className="w-3 h-3 sort-icon sort-active" /> : <ChevronDown className="w-3 h-3 sort-icon sort-active" />
+                        ) : (
+                          <ArrowUpDown className="w-3 h-3 sort-icon" />
+                        )}
+                      </span>
                     </th>
                   );
                 })}
               </tr>
             </thead>
             <tbody>
-              {displayedEntries.length === 0 ? (
+              {finalEntries.length === 0 ? (
                 <tr className="tbl-empty">
                   <td colSpan={visibleFields.length + 1}>
                     <div className="flex flex-col items-center gap-3">
@@ -393,13 +455,25 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   </td>
                 </tr>
               ) : (
-                displayedEntries.map((entry) => (
+                finalEntries.map((entry) => (
                   <tr key={entry.id}>
                     <td className="col-sticky-left tbl-ts">
                       {formatDisplayDate(entry.timestamp)}
                     </td>
                     {visibleFields.map(field => {
                       let value = entry.data[field.label] || entry.data[field.name];
+
+                      if (field.name === '__fineness_avg__') {
+                        const nums: number[] = [];
+                        for (let i = 1; i <= 8; i++) {
+                          const raw = entry.data[`fineness_${i}`] ?? entry.data[`Fineness %${i}`];
+                          if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+                            const n = parseFloat(String(raw));
+                            if (!isNaN(n)) nums.push(n);
+                          }
+                        }
+                        value = nums.length ? (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2) : undefined;
+                      }
 
                       if (field.type === 'date' && value) {
                         value = formatDisplayDate(value);
@@ -607,7 +681,7 @@ export default function DepartmentView({ department, entries, onAddEntry, onUpda
                   });
 
                   try {
-                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl)}`;
+                    const proxyUrl = `/api/proxy?url=${encodeURIComponent(scriptUrl || '')}`;
                     const response = await fetch(proxyUrl, {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },

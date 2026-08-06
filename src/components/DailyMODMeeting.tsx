@@ -50,6 +50,24 @@ function avgVal(list: Entry[], ...keys: string[]): string {
   return (nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(2);
 }
 
+// Sums a numeric field across a group of entries — used for per-shift totals (production qty,
+// fuel/electric consumption, spillage loss) where the meaningful figure is "how much in total",
+// not an average of readings.
+function sumVal(list: Entry[], ...keys: string[]): string {
+  const nums: number[] = [];
+  list.forEach(e => {
+    for (const k of keys) {
+      const raw = e.data[k];
+      if (raw !== undefined && raw !== null && String(raw).trim() !== '') {
+        const n = parseFloat(String(raw));
+        if (!isNaN(n)) { nums.push(n); break; }
+      }
+    }
+  });
+  if (!nums.length) return '';
+  return nums.reduce((a, b) => a + b, 0).toFixed(2);
+}
+
 // Averages an hourly-logged field (h1..h8) across a group of entries.
 function avgHourly(list: Entry[], nameFmt: (i: number) => string, labelFmt: (i: number) => string): string {
   const nums: number[] = [];
@@ -124,7 +142,19 @@ function AvgEffPanel({ title, items, visibleShifts }: { title: string; items: { 
   );
 }
 
-function Section({ title, subtitle, rows, footnote, visibleShifts }: { title: string; subtitle?: string; rows: Row[]; footnote?: string; visibleShifts: Shift[] }) {
+function Section({ title, subtitle, rows, footnote, visibleShifts, showTotal }: { title: string; subtitle?: string; rows: Row[]; footnote?: string; visibleShifts: Shift[]; showTotal?: boolean }) {
+  // Day total = sum of whichever shift columns are currently visible (respects the "All Shifts" /
+  // single-shift toggle, same as the rest of the report).
+  const rowTotal = (row: Row): string | null => {
+    let sum = 0;
+    let any = false;
+    visibleShifts.forEach(s => {
+      const n = parseFloat(row.values[s]);
+      if (!isNaN(n)) { sum += n; any = true; }
+    });
+    return any ? sum.toFixed(2) : null;
+  };
+
   return (
     <div className="mod-section bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
       <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
@@ -141,6 +171,7 @@ function Section({ title, subtitle, rows, footnote, visibleShifts }: { title: st
                   <span className={SHIFT_BADGE[s]}>{s.replace('Shift ', '')}</span>
                 </th>
               ))}
+              {showTotal && <th className="text-center px-3 py-2.5">Total</th>}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -152,6 +183,11 @@ function Section({ title, subtitle, rows, footnote, visibleShifts }: { title: st
                     {row.values[s] || <span className="text-slate-300">—</span>}
                   </td>
                 ))}
+                {showTotal && (
+                  <td className="px-3 py-2.5 text-center text-xs font-black text-emerald-700">
+                    {rowTotal(row) ?? <span className="text-slate-300">—</span>}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -448,6 +484,38 @@ export default function DailyMODMeeting({ entries, parameterRanges }: Props) {
     { label: 'TG Day Tank', opening: getVal(openingEntry, 'day_tank_tg', 'Day Tank TG'), closing: getVal(closingEntry, 'day_tank_tg', 'Day Tank TG') },
   ];
 
+  // --- 10) Actual Production ---
+  const actualProductionEntries = byDept('actual_production');
+  const apRows = buildRows(actualProductionEntries, [
+    { label: 'Qty Produced (MT)', combine: (shiftList) => sumVal(shiftList, 'qty', 'Qty') },
+    { label: 'Fuel Qty Used', combine: (shiftList) => sumVal(shiftList, 'fuel_qty', 'Fuel Qty Used') },
+    { label: 'Electric Used', combine: (shiftList) => sumVal(shiftList, 'electric_used', 'Electric Used') },
+  ]);
+
+  // --- 11) Spillage ---
+  const spillageEntries = byDept('spillage');
+  const spillageRows = buildRows(spillageEntries, [
+    { label: 'Hot Screen Qty', combine: (shiftList) => sumVal(shiftList, 'hot_screen_qty', 'Hot Screen Qty') },
+    { label: 'Multi Cyclone Qty', combine: (shiftList) => sumVal(shiftList, 'multi_cyclone_qty', 'Multi Cyclone Qty') },
+    { label: 'House Keeping', combine: (shiftList) => sumVal(shiftList, 'house_keeping', 'House Keeping') },
+    { label: 'Road Side', combine: (shiftList) => sumVal(shiftList, 'road_side', 'Road Side') },
+  ]);
+
+  // --- 12) Production Stop — a running log of downtime incidents (possibly several per shift),
+  // so it's rendered as its own incident table rather than the one-row-per-parameter Section layout. ---
+  const productionStopEntries = byDept('production_stop');
+  const productionStopRows = [...productionStopEntries]
+    .sort((a, b) => parseGlobalDate(a.timestamp) - parseGlobalDate(b.timestamp))
+    .map(e => ({
+      time: getVal(e, 'time_stop', 'Time Stop'),
+      shift: getVal(e, 'shift', 'Shift'),
+      department: getVal(e, 'department', 'Department'),
+      problem: getVal(e, 'problem_description', 'Problem Description'),
+      machine: getVal(e, 'machine_name', 'Machine Name'),
+      reportedBy: getVal(e, 'reported_by', 'Reported By'),
+      delay: getVal(e, 'delay', 'Delay'),
+    }));
+
   // --- Data-completeness strip: what's actually been logged today, independent of the shift filter ---
   const completeness = [
     { label: 'SB3', ok: hasLoggedToday('production_flow', sb3Filter) },
@@ -460,6 +528,9 @@ export default function DailyMODMeeting({ entries, parameterRanges }: Props) {
     { label: 'Kiln', ok: hasLoggedToday('kiln') },
     { label: 'Product House', ok: hasLoggedToday('product_house') },
     { label: 'Tanks', ok: hasLoggedToday('opening_closing') },
+    { label: 'Actual Production', ok: hasLoggedToday('actual_production') },
+    { label: 'Spillage', ok: hasLoggedToday('spillage') },
+    { label: 'Production Stop', ok: hasLoggedToday('production_stop') },
   ];
 
   const handleExportCSV = () => {
@@ -481,6 +552,12 @@ export default function DailyMODMeeting({ entries, parameterRanges }: Props) {
     pushSection('6) TG (Traveling Grate)', tgRows);
     pushSection('Kiln', kilnRows);
     pushSection('Kiln Flow Meter', kilnFlowRows);
+    pushSection('Actual Production', apRows);
+    pushSection('Spillage', spillageRows);
+    productionStopRows.forEach(row => rowsOut.push({
+      Section: 'Production Stop', Time: row.time, Shift: row.shift, Department: row.department,
+      Problem: row.problem, Machine: row.machine, 'Reported By': row.reportedBy, Delay: row.delay
+    }));
     tankRows.forEach(r => rowsOut.push({ Section: 'Main Tank / Kiln Day Tank / TG Day Tank', Parameter: r.label, Opening: r.opening || '', Closing: r.closing || '' }));
     [
       { title: 'Production Flow (WF SB3) — Average / Eff', items: [{ label: sb3Avg.rm1Name, stats: sb3Avg.wf3 }, { label: sb3Avg.rm2Name, stats: sb3Avg.wf4 }, { label: sb3Avg.rm3Name, stats: sb3Avg.wf5 }] },
@@ -639,6 +716,53 @@ export default function DailyMODMeeting({ entries, parameterRanges }: Props) {
         visibleShifts={visibleShifts}
         footnote="Reference readings noted on the paper checklist: Shift A – 1.2 KL, Shift B – 1.3 KL, Shift C – 1.9 KL."
       />
+
+      <Section title="Actual Production" rows={apRows} visibleShifts={visibleShifts} showTotal footnote="Qty, Fuel and Electric are totals for the shift (not an average). Total = sum across shifts." />
+      <Section title="Spillage" rows={spillageRows} visibleShifts={visibleShifts} showTotal footnote="Totals for the shift (not an average). Total = sum across shifts." />
+
+      <div className="mod-section bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">
+          <h3 className="text-sm font-bold text-brand-900 tracking-tight">Production Stop</h3>
+          <p className="text-[11px] text-slate-400 mt-0.5">Downtime incidents logged for the selected date.</p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <th className="text-left px-6 py-2.5">Time</th>
+                <th className="text-center px-3 py-2.5">Shift</th>
+                <th className="text-left px-3 py-2.5">Department</th>
+                <th className="text-left px-3 py-2.5">Problem</th>
+                <th className="text-left px-3 py-2.5">Machine</th>
+                <th className="text-left px-3 py-2.5">Reported By</th>
+                <th className="text-center px-3 py-2.5">Delay</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {productionStopRows.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="px-6 py-6 text-center text-xs text-slate-300">No downtime logged.</td>
+                </tr>
+              ) : productionStopRows.map((row, i) => {
+                const shiftKey = SHIFTS.includes(row.shift as Shift) ? (row.shift as Shift) : null;
+                return (
+                  <tr key={i} className="hover:bg-slate-50/60 transition-colors">
+                    <td className="px-6 py-2.5 text-xs font-semibold text-brand-900 whitespace-nowrap">{row.time || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-center">
+                      {shiftKey ? <span className={SHIFT_BADGE[shiftKey]}>{shiftKey.replace('Shift ', '')}</span> : <span className="text-slate-300">—</span>}
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600">{row.department || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600">{row.problem || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600">{row.machine || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-xs text-slate-600">{row.reportedBy || <span className="text-slate-300">—</span>}</td>
+                    <td className="px-3 py-2.5 text-xs text-center font-semibold text-rose-600">{row.delay || <span className="text-slate-300">—</span>}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="mod-section bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60">

@@ -22,11 +22,54 @@ import {
   Users,
   Sparkles,
   ChevronDown,
-  ClipboardList
+  ClipboardList,
+  TestTube2,
+  RotateCw,
+  CircleDot,
+  Flame,
+  Snowflake,
+  Warehouse,
+  Boxes,
+  FileText,
+  TrendingUp,
+  PlayCircle,
+  StopCircle,
+  SlidersHorizontal,
+  Truck,
+  ArrowDownCircle,
+  AlertTriangle,
+  Octagon,
+  Droplets,
+  Workflow
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Department, User } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
+
+// Distinct icon per department so items in the same sidebar category (e.g. "Stock") are visually
+// scannable at a glance instead of all sharing one repeated category icon.
+const DEPT_ICONS: Record<string, any> = {
+  dgu: TestTube2,
+  mixer: RotateCw,
+  balling_disc: CircleDot,
+  kiln: Flame,
+  cooler: Snowflake,
+  product_house: Warehouse,
+  sb3_ground: Boxes,
+  sb3_hopper: Boxes,
+  ppt: FileText,
+  actual_production: TrendingUp,
+  campaign_opening: PlayCircle,
+  campaign_closing: StopCircle,
+  parameter: SlidersHorizontal,
+  rm: Truck,
+  drop_test: ArrowDownCircle,
+  spillage: AlertTriangle,
+  production_stop: Octagon,
+  opening_closing: Droplets,
+  shift_allocation: Users,
+  production_flow: Workflow,
+};
 
 interface Props {
   activeId: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod' | null;
@@ -57,6 +100,7 @@ const NavItem = ({ id, name, icon: Icon, activeId, onSelect, isCollapsed }: NavI
   return (
     <button
       onClick={() => onSelect(id as any)}
+      title={name}
       className={cn(
         "group relative flex items-center w-full transition-all duration-200 rounded-lg mb-0.5",
         isCollapsed ? "justify-center p-2.5" : "px-3 py-2",
@@ -297,7 +341,7 @@ export default function Sidebar({
                             key={dept.id}
                             id={dept.id}
                             name={dept.displayName || dept.name}
-                            icon={cat.icon || Activity}
+                            icon={DEPT_ICONS[dept.id] || cat.icon || Activity}
                             activeId={activeId}
                             onSelect={handleSelect}
                             isCollapsed={isCollapsed}
