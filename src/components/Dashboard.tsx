@@ -221,7 +221,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const caps = new Set<string>();
     entries.forEach(entry => {
       const c = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
-      if (c && typeof c === 'string') caps.add(c);
+      if (c) caps.add(String(c).trim());
     });
     return Array.from(caps).sort();
   }, [entries]);
@@ -230,7 +230,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const prods = new Set<string>();
     entries.forEach(entry => {
       const p = entry.data.product_name || entry.data['Product Name'] || entry.data.product || entry.data.Product;
-      if (p && typeof p === 'string') prods.add(p.trim());
+      if (p) prods.add(String(p).trim());
     });
     return Array.from(prods).sort();
   }, [entries]);
@@ -240,13 +240,13 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     if (campaignFilter !== 'All') {
       result = result.filter(entry => {
         const campaign = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
-        return campaign === campaignFilter;
+        return String(campaign).trim() === String(campaignFilter).trim();
       });
     }
     if (productFilter !== 'All') {
       result = result.filter(entry => {
         const p = entry.data.product_name || entry.data['Product Name'] || entry.data.product || entry.data.Product;
-        return p && typeof p === 'string' && p.trim() === productFilter;
+        return String(p).trim() === String(productFilter).trim();
       });
     }
     if (dateFilter !== 'all') {
@@ -260,9 +260,12 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           if (dateFilter === '7d') return isWithinInterval(entryDate, { start: startOfDay(subDays(now, 7)), end: endOfDay(now) });
           if (dateFilter === '30d') return isWithinInterval(entryDate, { start: startOfDay(subDays(now, 30)), end: endOfDay(now) });
           if (dateFilter === 'custom') {
-            if (!appliedCustomDateRange.start || !appliedCustomDateRange.end) return true;
-            const startD = startOfDay(new Date(appliedCustomDateRange.start));
-            const endD = endOfDay(new Date(appliedCustomDateRange.end));
+            const hasStart = !!appliedCustomDateRange.start;
+            const hasEnd = !!appliedCustomDateRange.end;
+            if (!hasStart && !hasEnd) return true;
+
+            const startD = hasStart ? startOfDay(new Date(appliedCustomDateRange.start)) : new Date(0);
+            const endD = hasEnd ? endOfDay(new Date(appliedCustomDateRange.end)) : new Date(8640000000000000);
             const eD_start = startOfDay(entryDate);
             if (eD_start < startD || eD_start > endD) return false;
 
@@ -271,10 +274,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             const eDShift = appliedCustomDateRange.endShift || 'All';
             const weights: Record<string, number> = { 'Shift A': 1, 'Shift B': 2, 'Shift C': 3, 'All': 0 };
 
-            if (eD_start.getTime() === startD.getTime() && sShift !== 'All') {
+            if (hasStart && eD_start.getTime() === startD.getTime() && sShift !== 'All') {
               if (weights[eShift] && weights[eShift] < weights[sShift]) return false;
             }
-            if (eD_start.getTime() === endD.getTime() && eDShift !== 'All') {
+            if (hasEnd && eD_start.getTime() === endD.getTime() && eDShift !== 'All') {
               if (weights[eShift] && weights[eShift] > weights[eDShift]) return false;
             }
             return true;
@@ -307,9 +310,12 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           if (dateFilter === '7d') return isWithinInterval(d, { start: startOfDay(subDays(now, 7)), end: endOfDay(now) });
           if (dateFilter === '30d') return isWithinInterval(d, { start: startOfDay(subDays(now, 30)), end: endOfDay(now) });
           if (dateFilter === 'custom') {
-            if (!appliedCustomDateRange.start || !appliedCustomDateRange.end) return true;
-            const startD = startOfDay(new Date(appliedCustomDateRange.start));
-            const endD = endOfDay(new Date(appliedCustomDateRange.end));
+            const hasStart = !!appliedCustomDateRange.start;
+            const hasEnd = !!appliedCustomDateRange.end;
+            if (!hasStart && !hasEnd) return true;
+
+            const startD = hasStart ? startOfDay(new Date(appliedCustomDateRange.start)) : new Date(0);
+            const endD = hasEnd ? endOfDay(new Date(appliedCustomDateRange.end)) : new Date(8640000000000000);
             const d_start = startOfDay(d);
             if (d_start < startD || d_start > endD) return false;
 
@@ -318,10 +324,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
             const eDShift = appliedCustomDateRange.endShift || 'All';
             const weights: Record<string, number> = { 'Shift A': 1, 'Shift B': 2, 'Shift C': 3, 'All': 0 };
 
-            if (d_start.getTime() === startD.getTime() && sShift !== 'All') {
+            if (hasStart && d_start.getTime() === startD.getTime() && sShift !== 'All') {
               if (weights[rShift] && weights[rShift] < weights[sShift]) return false;
             }
-            if (d_start.getTime() === endD.getTime() && eDShift !== 'All') {
+            if (hasEnd && d_start.getTime() === endD.getTime() && eDShift !== 'All') {
               if (weights[rShift] && weights[rShift] > weights[eDShift]) return false;
             }
             return true;
@@ -746,12 +752,27 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
     const spillagePct = totalProduction > 0 ? ((totalSpillage / totalProduction) * 100).toFixed(1) : '0';
     const recycledPct = totalSpillage > 0 ? ((totalPPT / totalSpillage) * 100).toFixed(1) : '0';
 
-    const uniqueDays = new Set(filteredEntries.map(e => e.data.date_of_production || e.data['Date Of Production'] || e.data.date || e.data.Date || e.timestamp)).size || 1;
+    const uniqueDays = new Set(filteredEntries.map(e => {
+      let dateVal = String(e.data.date_of_production || e.data['Date Of Production'] || e.data.date || e.data.Date || e.timestamp);
+      if (dateVal.includes(' ')) dateVal = dateVal.split(' ')[0];
+      return dateVal.trim();
+    })).size || 1;
     const dailyTarget = 40.0;
     let periodTarget = dailyTarget;
     if (dateFilter === '7d') periodTarget = dailyTarget * 7;
     else if (dateFilter === '30d') periodTarget = dailyTarget * 30;
     else if (dateFilter === 'all') periodTarget = dailyTarget * uniqueDays;
+    else if (dateFilter === 'custom') {
+      const hasStart = !!appliedCustomDateRange.start;
+      const hasEnd = !!appliedCustomDateRange.end;
+      if (hasStart && hasEnd) {
+        const diffMs = new Date(appliedCustomDateRange.end).getTime() - new Date(appliedCustomDateRange.start).getTime();
+        const diffDays = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1);
+        periodTarget = dailyTarget * diffDays;
+      } else {
+        periodTarget = dailyTarget * uniqueDays;
+      }
+    }
 
     const progressPct = Math.min((totalProduction / periodTarget) * 100, 100).toFixed(1);
     const dailyAvg = (totalProduction / uniqueDays).toFixed(1);

@@ -215,12 +215,12 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
     }
   };
 
-  // Every field must be filled before submitting, except free-text notes/remarks —
-  // those are genuinely optional annotations, not core data.
   const OPTIONAL_FIELD_NAMES = ['note', 'remarks_physical', 'remarks_chemical'];
-  const isRequiredField = (name: string) => {
+  const isRequiredField = (field: any) => {
     if (department.id === 'kiln') return false;
-    return !OPTIONAL_FIELD_NAMES.includes(name);
+    if (OPTIONAL_FIELD_NAMES.includes(field.name)) return false;
+    if (field.type === 'select' && (!field.options || field.options.length === 0)) return false;
+    return true;
   };
 
   const finenessFields = department.fields.filter(f => f.name.startsWith('fineness_'));
@@ -408,7 +408,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
               {otherFields.map((field) => (
                 <div key={field.name} className="space-y-2 group">
                   <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1 flex items-center justify-between">
-                    <span>{field.label} {isRequiredField(field.name) && <span className="text-red-500">*</span>}</span>
+                    <span>{field.label} {isRequiredField(field) && <span className="text-red-500">*</span>}</span>
                   </label>
                   <div className="relative">
                     {field.type === 'select' ? (
@@ -416,7 +416,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         name={field.name}
                         value={formData[field.name] || ''}
                         onChange={handleChange}
-                        required={isRequiredField(field.name)}
+                        required={isRequiredField(field)}
                         className="form-input appearance-none pl-3 pr-8"
                       >
                         <option value="">Select...</option>
@@ -469,7 +469,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         accept="image/*"
                         name={field.name}
                         onChange={handleFileChange}
-                        required={isRequiredField(field.name)}
+                        required={isRequiredField(field)}
                         className="w-full block text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-[10px] file:font-black file:uppercase file:tracking-wider file:bg-indigo-50 file:text-indigo-600 file:shadow-sm border border-slate-200/80 rounded-xl bg-white/50 cursor-pointer hover:file:bg-indigo-100 hover:bg-white/80 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all h-10"
                       />
                     ) : (
@@ -479,7 +479,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                         name={field.name}
                         value={formData[field.name] || ''}
                         onChange={handleChange}
-                        required={isRequiredField(field.name)}
+                        required={isRequiredField(field)}
                         placeholder={field.type === 'number' ? '0.00' : 'Enter value...'}
                         className="form-input px-3"
                       />
@@ -509,7 +509,7 @@ export default function DepartmentForm({ department, onClose, onSuccess, initial
                     {grid.fields.map((field) => (
                       <div key={field.name} className="space-y-1.5">
                         <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider text-center block">
-                          {grid.labelPrefixes.reduce((acc, prefix) => acc.replace(prefix, ''), field.label)} {isRequiredField(field.name) && <span className="text-red-500">*</span>}
+                          {grid.labelPrefixes.reduce((acc, prefix) => acc.replace(prefix, ''), field.label)} {isRequiredField(field) && <span className="text-red-500">*</span>}
                         </label>
                         <input
                           type="number"
