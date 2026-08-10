@@ -107,6 +107,13 @@ const avg = (arr: number[]): string => {
   return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(2) : '-';
 };
 
+// parseFloat(x) || 0 lets Infinity/-Infinity slip through (they're truthy), which then
+// freezes Recharts' axis-tick calculation. This coerces any non-finite parse to 0.
+const safeNum = (v: any): number => {
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const getDetailedStat = (sourceRows: any[], patterns: string[], rangeKey: string, parameterRanges?: Record<string, string>) => {
   let nums: number[] = [];
   let outOfLimit = 0;
@@ -370,7 +377,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), slotHour, 0, 0);
         const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), slotHour + 1, 59, 59);
         const slotEntries = validEntries.filter(e => e.d >= start && e.d <= end);
-        const totalQty = slotEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
+        const totalQty = slotEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + safeNum(e.data.qty || e.data.Qty), 0);
         return { name: format(start, 'HH:mm'), production: parseFloat(totalQty.toFixed(1)), fullDate: format(start, 'MMM dd, HH:mm') };
       });
     }
@@ -380,7 +387,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
         const targetDate = subDays(now, i);
         const dateStr = format(targetDate, 'yyyy-MM-dd');
         const dayEntries = validEntries.filter(e => format(e.d, 'yyyy-MM-dd') === dateStr);
-        const totalQty = dayEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
+        const totalQty = dayEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + safeNum(e.data.qty || e.data.Qty), 0);
         return { name: format(targetDate, 'MMM dd'), production: parseFloat(totalQty.toFixed(1)), fullDate: dateStr };
       }).reverse();
     }
@@ -396,19 +403,24 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           const targetDate = subDays(latest, i);
           const dateStr = format(targetDate, 'yyyy-MM-dd');
           const dayEntries = validEntries.filter(e => format(e.d, 'yyyy-MM-dd') === dateStr);
-          const totalQty = dayEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
+          const totalQty = dayEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + safeNum(e.data.qty || e.data.Qty), 0);
           return { name: format(targetDate, 'MMM dd'), production: parseFloat(totalQty.toFixed(1)), fullDate: dateStr };
         }).reverse();
       }
 
       const months: any[] = [];
       let curr = new Date(earliest.getFullYear(), earliest.getMonth(), 1);
-      while (curr <= latest) {
+      // Bounded so a corrupted/out-of-range date on a single entry (e.g. a typo'd year) can't
+      // send this into a near-infinite iteration and freeze the tab.
+      let safety = 0;
+      const MAX_MONTHS = 1200; // 100 years
+      while (curr <= latest && safety < MAX_MONTHS) {
         const monthStr = format(curr, 'yyyy-MM');
         const monthEntries = validEntries.filter(e => format(e.d, 'yyyy-MM') === monthStr);
-        const totalQty = monthEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + (parseFloat(e.data.qty || e.data.Qty) || 0), 0);
+        const totalQty = monthEntries.filter(e => e.departmentId === 'actual_production').reduce((sum, e) => sum + safeNum(e.data.qty || e.data.Qty), 0);
         months.push({ name: format(curr, 'MMM yy'), production: parseFloat(totalQty.toFixed(1)), fullDate: format(curr, 'MMMM yyyy') });
         curr = new Date(curr.getFullYear(), curr.getMonth() + 1, 1);
+        safety++;
       }
       return months;
     }
