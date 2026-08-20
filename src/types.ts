@@ -287,11 +287,17 @@ export const DEPARTMENTS: Department[] = [
       { name: 'shift', label: 'Shift', type: 'select', options: ['Shift A', 'Shift B', 'Shift C'] },
       { name: 'product_name', label: 'Product Name', type: 'select', options: [] },
       { name: 'date_of_production', label: 'Date Of Production', type: 'date' },
-      { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] },
       { name: 'qty', label: 'Qty', type: 'number' },
       { name: 'fuel_qty', label: 'Fuel Qty Used', type: 'number' },
       { name: 'electric_used', label: 'Electric Used', type: 'number' },
       { name: 'remark', label: 'Remark', type: 'text' },
+      { name: 'incharge_name', label: 'Incharge Name', type: 'select', options: [] },
+      { name: 'rm1', label: 'Rm1', type: 'select', options: [] },
+      { name: 'qty1', label: 'Qty1', type: 'number' },
+      { name: 'rm2', label: 'Rm2', type: 'select', options: [] },
+      { name: 'qty2', label: 'Qty2', type: 'number' },
+      { name: 'rm3', label: 'Rm3', type: 'select', options: [] },
+      { name: 'qty3', label: 'Qty3', type: 'number' },
     ]
   },
   {

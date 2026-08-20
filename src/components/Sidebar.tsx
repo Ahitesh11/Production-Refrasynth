@@ -151,7 +151,6 @@ export default function Sidebar({
   onToggleCollapse
 }: Props) {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [expandedCategory, setExpandedCategory] = React.useState<string | null>(null);
 
   const categories = [
     {
@@ -159,7 +158,7 @@ export default function Sidebar({
       icon: LayoutDashboard,
       items: [
         ...(user?.type === 'Admin' ? [{ id: 'dashboard', name: 'Dashboard', icon: LayoutDashboard }] : []),
-        ...(user?.type === 'Admin' ? [{ id: 'mis_report', name: 'MIS Report', icon: BarChart3 }] : []),
+        // ...(user?.type === 'Admin' ? [{ id: 'mis_report', name: 'MIS Report', icon: BarChart3 }] : []),
         ...(user?.type === 'Admin' ? [{ id: 'daily_mod', name: 'Daily Meeting Report', icon: ClipboardList }] : []),
         ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm_entry', name: 'RM Entry', icon: Zap }] : []),
         ...(departments.some(d => d.id === 'sb3_ground' || d.id === 'inventory') ? [{ id: 'inventory', name: 'Issue To SB3', icon: Database }] : []),
@@ -168,7 +167,7 @@ export default function Sidebar({
     {
       name: 'Lab',
       items: [
-        ...(user?.type === 'Admin' ? [{ id: 'lab_audit', name: 'Lab Audit', icon: ShieldCheck }] : []),
+        // ...(user?.type === 'Admin' ? [{ id: 'lab_audit', name: 'Lab Audit', icon: ShieldCheck }] : []),
         ...(departments.some(d => d.id === 'rm') ? [{ id: 'rm', name: 'RM Workflow', icon: Activity }] : []),
       ],
       depts: departments.filter(d => d.category === 'Lab' && d.id !== 'rm' && d.id !== 'cooler'),
@@ -181,7 +180,7 @@ export default function Sidebar({
     },
     {
       name: 'Operations',
-      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm' && d.id !== 'cooler'),
+      depts: departments.filter(d => d.category === 'Process' && d.id !== 'rm' && d.id !== 'cooler' && d.id !== 'shift_allocation' && d.id !== 'parameter'),
       icon: Gauge
     },
     ...(user?.type === 'Admin' ? [{
@@ -191,26 +190,9 @@ export default function Sidebar({
     }] : []),
   ];
 
-  // Auto-expand whichever category contains the active item; default to the first category.
-  React.useEffect(() => {
-    const activeCat = categories.find(cat =>
-      cat.items?.some((i: any) => i.id === activeId) || cat.depts?.some((d: any) => d.id === activeId)
-    );
-    if (activeCat) {
-      setExpandedCategory(activeCat.name);
-    } else if (expandedCategory === null && categories.length > 0) {
-      setExpandedCategory(categories[0].name);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeId]);
-
   const handleSelect = (id: DepartmentId | 'dashboard' | 'manage_users' | 'mis_report' | 'rm_entry' | 'lab_audit' | 'daily_mod') => {
     onSelect(id);
     setIsOpen(false);
-  };
-
-  const toggleCategory = (name: string) => {
-    setExpandedCategory(prev => (prev === name ? null : name));
   };
 
   return (
@@ -289,30 +271,21 @@ export default function Sidebar({
             const hasContent = (cat.items && cat.items.length > 0) || (cat.depts && cat.depts.length > 0);
             if (!hasContent) return null;
             const CategoryIcon = cat.icon;
-            const isExpanded = isCollapsed || expandedCategory === cat.name;
+            const isExpanded = true;
 
             return (
               <div key={cat.name}>
                 {!isCollapsed && (
-                  <button
-                    onClick={() => toggleCategory(cat.name)}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-slate-50/80 transition-colors duration-200 group"
-                  >
+                  <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg">
                     <div className="flex items-center gap-2">
                       {CategoryIcon && (
-                        <CategoryIcon className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600 transition-colors duration-200" />
+                        <CategoryIcon className="w-3.5 h-3.5 text-slate-400" />
                       )}
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-slate-600 transition-colors duration-200">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         {cat.name}
                       </p>
                     </div>
-                    <ChevronDown
-                      className={cn(
-                        "w-3.5 h-3.5 text-slate-400 transition-transform duration-200",
-                        isExpanded ? "rotate-180" : ""
-                      )}
-                    />
-                  </button>
+                  </div>
                 )}
                 <AnimatePresence initial={false}>
                   {isExpanded && (

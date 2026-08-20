@@ -325,115 +325,148 @@ export default function ManageUsers({ scriptUrl }: Props) {
           <p className="text-sm font-medium text-slate-400">No users yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
-          {users.map(user => {
-            const isExpanded = expanded === user.username;
-            const grantedCount = Object.values(user.permissions).filter(Boolean).length;
-            return (
-              <div key={user.username} className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">
-                <button
-                  onClick={() => toggleExpand(user)}
-                  className="w-full flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50/60 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                      {user.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-brand-600" /> : <UserIcon className="w-4 h-4 text-slate-400" />}
-                    </div>
-                    <div className="min-w-0 text-left">
-                      <p className="text-sm font-bold text-slate-700 truncate">{user.username}</p>
-                      <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
-                        {user.type || 'Entry'} • {user.type === 'Admin' ? 'Full Access' : `${grantedCount} department${grantedCount === 1 ? '' : 's'}`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span
-                      onClick={(e) => { e.stopPropagation(); handleDelete(user.username); }}
-                      role="button"
-                      className="p-2 hover:bg-rose-50 rounded-lg transition-colors text-slate-300 hover:text-rose-600"
-                      title="Delete user"
+        <div className="bg-white border border-slate-200/80 rounded-xl shadow-sm overflow-hidden">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200/80 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-4 font-bold">User</th>
+                <th className="px-6 py-4 font-bold">Access Level</th>
+                <th className="px-6 py-4 font-bold">Departments</th>
+                <th className="px-6 py-4 font-bold text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {users.map(user => {
+                const isExpanded = expanded === user.username;
+                const grantedCount = Object.values(user.permissions).filter(Boolean).length;
+                return (
+                  <React.Fragment key={user.username}>
+                    <tr 
+                      className={cn(
+                        "transition-colors hover:bg-slate-50/60",
+                        isExpanded ? "bg-slate-50/60" : "bg-white"
+                      )}
                     >
-                      {busyKey === user.username && !isExpanded ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                    </span>
-                    <Pencil className="w-3.5 h-3.5 text-slate-300 mx-1" />
-                    <ChevronDown className={cn('w-4 h-4 text-slate-300 transition-transform', isExpanded && 'rotate-180')} />
-                  </div>
-                </button>
-
-                <AnimatePresence>
-                  {isExpanded && draft && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="overflow-hidden border-t border-slate-100"
-                    >
-                      <div className="p-5 space-y-5 bg-slate-50/40">
-                        <div className="grid sm:grid-cols-2 gap-4">
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">Access Level</label>
-                            <select
-                              value={draft.type}
-                              onChange={e => setDraft(d => d && ({ ...d, type: e.target.value }))}
-                              className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-700"
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                            {user.type === 'Admin' ? <ShieldCheck className="w-4 h-4 text-brand-600" /> : <UserIcon className="w-4 h-4 text-slate-400" />}
+                          </div>
+                          <span className="text-sm font-bold text-slate-700">{user.username}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={cn(
+                          "px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                          user.type === 'Admin' ? "bg-brand-50 text-brand-700" : "bg-slate-100 text-slate-600"
+                        )}>
+                          {user.type || 'Entry'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-500 font-medium">
+                        {user.type === 'Admin' ? 'Full Access' : `${grantedCount} department${grantedCount === 1 ? '' : 's'}`}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => toggleExpand(user)}
+                            className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-400 hover:text-brand-600"
+                            title="Edit user"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(user.username)}
+                            className="p-2 hover:bg-rose-50 rounded-lg transition-colors text-slate-400 hover:text-rose-600"
+                            title="Delete user"
+                          >
+                            {busyKey === user.username && !isExpanded ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    
+                    {/* Expanded Edit Form */}
+                    <AnimatePresence>
+                      {isExpanded && draft && (
+                        <tr>
+                          <td colSpan={4} className="p-0 border-0">
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              className="overflow-hidden bg-slate-50/80 shadow-inner"
                             >
-                              {USER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
-                            </select>
-                          </div>
-                          <div className="space-y-1.5">
-                            <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">Reset Password (optional)</label>
-                            <input
-                              type="text"
-                              value={draft.password}
-                              onChange={e => setDraft(d => d && ({ ...d, password: e.target.value }))}
-                              placeholder="Leave blank to keep current password"
-                              className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
-                            />
-                          </div>
-                        </div>
+                              <div className="p-6 space-y-6">
+                                <div className="grid sm:grid-cols-2 gap-5">
+                                  <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">Access Level</label>
+                                    <select
+                                      value={draft.type}
+                                      onChange={e => setDraft(d => d && ({ ...d, type: e.target.value }))}
+                                      className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-700"
+                                    >
+                                      {USER_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">Reset Password (optional)</label>
+                                    <input
+                                      type="text"
+                                      value={draft.password}
+                                      onChange={e => setDraft(d => d && ({ ...d, password: e.target.value }))}
+                                      placeholder="Leave blank to keep current password"
+                                      className="w-full h-11 px-4 bg-white border border-slate-200 rounded-xl focus:border-brand-500 focus:ring-4 focus:ring-brand-50 transition-all outline-none text-sm font-medium text-slate-700 placeholder:text-slate-300"
+                                    />
+                                  </div>
+                                </div>
 
-                        {draft.type !== 'Admin' && (
-                          <div className="space-y-2">
-                            <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">Department Access</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                              {permissionColumns.map(col => (
-                                <label key={col} className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-600 cursor-pointer hover:border-brand-300">
-                                  <input
-                                    type="checkbox"
-                                    checked={draft.permissions.has(col)}
-                                    onChange={() => togglePermission(draft.permissions, col, s => setDraft(d => d && ({ ...d, permissions: s })))}
-                                    className="accent-brand-500 w-3.5 h-3.5"
-                                  />
-                                  {col}
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                                {draft.type !== 'Admin' && (
+                                  <div className="space-y-3 border-t border-slate-200/60 pt-5">
+                                    <label className="text-[10px] font-bold text-slate-500 ml-1 uppercase tracking-wider">Department Access</label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                      {permissionColumns.map(col => (
+                                        <label key={col} className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-600 cursor-pointer hover:border-brand-300 hover:shadow-sm transition-all">
+                                          <input
+                                            type="checkbox"
+                                            checked={draft.permissions.has(col)}
+                                            onChange={() => togglePermission(draft.permissions, col, s => setDraft(d => d && ({ ...d, permissions: s })))}
+                                            className="accent-brand-500 w-4 h-4 rounded"
+                                          />
+                                          {col}
+                                        </label>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
 
-                        <div className="flex justify-end gap-2">
-                          <button
-                            onClick={() => { setExpanded(null); setDraft(null); }}
-                            className="px-5 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
-                          >
-                            Cancel
-                          </button>
-                          <button
-                            onClick={() => handleSave(user.username)}
-                            disabled={busyKey === user.username}
-                            className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50 transition-all"
-                          >
-                            {busyKey === user.username ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
-                            Save
-                          </button>
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            );
-          })}
+                                <div className="flex justify-end gap-3 pt-2">
+                                  <button
+                                    onClick={() => { setExpanded(null); setDraft(null); }}
+                                    className="px-6 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 rounded-xl transition-colors"
+                                  >
+                                    Cancel
+                                  </button>
+                                  <button
+                                    onClick={() => handleSave(user.username)}
+                                    disabled={busyKey === user.username}
+                                    className="flex items-center gap-2 px-6 py-2.5 bg-brand-600 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-brand-700 disabled:opacity-50 transition-all shadow-md shadow-brand-500/20"
+                                  >
+                                    {busyKey === user.username ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                    Save Changes
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          </td>
+                        </tr>
+                      )}
+                    </AnimatePresence>
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

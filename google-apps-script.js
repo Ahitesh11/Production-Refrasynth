@@ -605,7 +605,7 @@ function getHeadersForDepartment(name) {
       midHeaders = ["Campaign No.", "Date", "Semi Finished Product Name", "Ispileg Re-feeded Qty"];
       break;
     case "Actual Production":
-      midHeaders = ["Campaign No.", "Shift", "Product Name", "Date Of Production", "Incharge Name", "Qty", "Fuel Qty Used", "Electric Used", "Remark"];
+      midHeaders = ["Campaign No.", "Shift", "Product Name", "Date Of Production", "Qty", "Fuel Qty Used", "Electric Used", "Remark", "Incharge Name", "Rm1", "Qty1", "Rm2", "Qty2", "Rm3", "Qty3"];
       break;
     case "Campaign Opening":
       midHeaders = ["Campaign No.", "Date of Opening of kiln", "Start Time", "Date Of Calculation", "Incharge Name", "SB3 Hopper3", "SB3 Hopper4", "SB3 Hopper5", "PPT Qty", "SB4 Qty", "Ball Mill", "BC 10", "BC 11", "BC 12", "BC 13", "Mixture (Balling Dics)", "Balling Disc X 4Nos.", "Tg Beg", "Kiln", "Cooler", "Remarks/Reason"];
