@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { Entry, DEPARTMENTS, Department } from '../types';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -23,6 +23,7 @@ import {
   AlertCircle,
   Flame,
   ChevronRight,
+  ChevronDown,
   Box,
   Beaker,
   Droplets,
@@ -220,9 +221,30 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   const [customDateRange, setCustomDateRange] = useState({ start: '', startShift: 'All', end: '', endShift: 'All' });
   const [appliedCustomDateRange, setAppliedCustomDateRange] = useState({ start: '', startShift: 'All', end: '', endShift: 'All' });
   const [activeRmTab, setActiveRmTab] = useState<string>('');
-  const [campaignFilter, setCampaignFilter] = useState<string>('All');
+  const [campaignFilters, setCampaignFilters] = useState<string[]>([]);
+  const [campaignDropdownOpen, setCampaignDropdownOpen] = useState(false);
+  const campaignDropdownRef = useRef<HTMLDivElement>(null);
   const [productFilter, setProductFilter] = useState<string>('All');
   const [compositionSearch, setCompositionSearch] = useState('');
+
+  const toggleCampaignFilter = (c: string) => {
+    setCampaignFilters(prev => {
+      const next = prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c];
+      if (next.length > 0) setDateFilter('all');
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!campaignDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (campaignDropdownRef.current && !campaignDropdownRef.current.contains(e.target as Node)) {
+        setCampaignDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [campaignDropdownOpen]);
 
   const allCampaigns = useMemo(() => {
     const caps = new Set<string>();
@@ -244,10 +266,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
 
   const filteredEntries = useMemo(() => {
     let result = entries;
-    if (campaignFilter !== 'All') {
+    if (campaignFilters.length > 0) {
       result = result.filter(entry => {
         const campaign = entry.data.campaign_no || entry.data.campaign || entry.data['Campaign No.'] || entry.data['Campaign'];
-        return String(campaign).trim() === String(campaignFilter).trim();
+        return campaignFilters.includes(String(campaign).trim());
       });
     }
     if (productFilter !== 'All') {
@@ -294,7 +316,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       });
     }
     return result;
-  }, [entries, campaignFilter, productFilter, dateFilter, appliedCustomDateRange]);
+  }, [entries, campaignFilters, productFilter, dateFilter, appliedCustomDateRange]);
 
   const stats = useMemo(() => {
     const total = filteredEntries.length;
@@ -344,10 +366,10 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       });
     }
 
-    if (campaignFilter !== 'All') {
+    if (campaignFilters.length > 0) {
       data = data.filter(row => {
         const c = row.campaign_no || row.campaign || row.Campaign || row['Campaign No.'] || row['Campaign No'];
-        return String(c) === String(campaignFilter);
+        return campaignFilters.includes(String(c));
       });
     }
 
@@ -359,7 +381,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       );
     }
     return data;
-  }, [compositionData, dateFilter, compositionSearch, appliedCustomDateRange]);
+  }, [compositionData, dateFilter, compositionSearch, appliedCustomDateRange, campaignFilters]);
 
   const chartData = useMemo(() => {
     const now = new Date();
@@ -686,10 +708,14 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
   }, [filteredEntries]);
 
   const selectedProducts = useMemo(() => {
-    if (campaignFilter === 'All') return [];
-    const campaign = campaignSummary.find(c => c.id === campaignFilter);
-    return campaign ? Object.keys(campaign.products).filter(p => p !== 'Unknown Product') : [];
-  }, [campaignFilter, campaignSummary]);
+    if (campaignFilters.length === 0) return [];
+    const products = new Set<string>();
+    campaignFilters.forEach(cf => {
+      const campaign = campaignSummary.find(c => c.id === cf);
+      if (campaign) Object.keys(campaign.products).forEach(p => { if (p !== 'Unknown Product') products.add(p); });
+    });
+    return Array.from(products);
+  }, [campaignFilters, campaignSummary]);
 
   const spillageStats = useMemo(() => {
     const rows = filteredEntries.filter(e => e.departmentId === 'spillage');
@@ -858,10 +884,11 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       // Scan all sources for matching campaign
       sources.forEach(sheetData => {
         let kampRecords = sheetData;
-        if (campaignFilter !== 'All') {
+        if (campaignFilters.length > 0) {
+          const lowerFilters = campaignFilters.map(cf => cf.toLowerCase().trim());
           kampRecords = sheetData.filter(r => {
             const c = String(r.campaign_no || r.campaign || r['Campaign No.'] || r['Campaign No'] || r.Campaign || '');
-            return c.toLowerCase().trim() === String(campaignFilter).toLowerCase().trim();
+            return lowerFilters.includes(c.toLowerCase().trim());
           });
         }
 
@@ -929,7 +956,7 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
       progressPct, periodTarget, dailyAvg, uniqueDays,
       wipStatsOutput, unaccountedLoss, theoreticalLossMT, consumptionLogic
     };
-  }, [materialStats, hopperStats, productStats, spillageStats, pptStats, wipStats, dateFilter, filteredEntries, filteredCompositionData]);
+  }, [materialStats, hopperStats, productStats, spillageStats, pptStats, wipStats, dateFilter, filteredEntries, filteredCompositionData, campaignFilters]);
 
   const consumptionStats = useMemo(() => {
     const totalProd = accountingSummary.totalProduction || 0;
@@ -1558,21 +1585,55 @@ export default function Dashboard({ entries, compositionData, onSelect, masterDa
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
-              <select
-                value={campaignFilter}
-                onChange={(e) => {
-                  setCampaignFilter(e.target.value);
-                  if (e.target.value !== 'All') {
-                    setDateFilter('all');
-                  }
-                }}
-                className="w-[160px] bg-transparent text-slate-700 text-xs font-semibold outline-none cursor-pointer pr-1"
+            <div className="relative" ref={campaignDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setCampaignDropdownOpen(o => !o)}
+                className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm text-slate-700 text-xs font-semibold cursor-pointer min-w-[160px]"
               >
-                <option value="All">All Campaigns</option>
-                {allCampaigns.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+                <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span className="flex-1 text-left truncate">
+                  {campaignFilters.length === 0
+                    ? 'All Campaigns'
+                    : campaignFilters.length === 1
+                      ? campaignFilters[0]
+                      : `${campaignFilters.length} Campaigns`}
+                </span>
+                <ChevronDown className={cn("w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200", campaignDropdownOpen && "rotate-180")} />
+              </button>
+
+              {campaignDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1.5 w-56 bg-white border border-slate-200 rounded-xl shadow-lg z-50 py-1.5 max-h-72 overflow-y-auto">
+                  <button
+                    type="button"
+                    onClick={() => setCampaignFilters([])}
+                    className={cn(
+                      "w-full text-left px-3 py-1.5 text-xs font-bold hover:bg-slate-50",
+                      campaignFilters.length === 0 ? "text-brand-600" : "text-slate-600"
+                    )}
+                  >
+                    All Campaigns
+                  </button>
+                  <div className="my-1 border-t border-slate-100" />
+                  {allCampaigns.map(c => (
+                    <label
+                      key={c}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={campaignFilters.includes(c)}
+                        onChange={() => toggleCampaignFilter(c)}
+                        className="w-3.5 h-3.5 rounded border-slate-300 text-brand-600 focus:ring-brand-500 cursor-pointer"
+                      />
+                      {c}
+                    </label>
+                  ))}
+                  {allCampaigns.length === 0 && (
+                    <p className="px-3 py-1.5 text-[11px] text-slate-400 font-medium">No campaigns found</p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl shadow-sm">
